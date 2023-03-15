@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+
+        <!-- Commands -->
+        <service id="LedgerDirect\Command\XrplTransactionLookupCommand">
+            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="LedgerDirect\Service\XrplTransactionFileService"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="LedgerDirect\Command\XrpPriceLookupCommand">
+            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="LedgerDirect\Command\XrplTransactionSyncCommand">
+            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <!-- Controllers -->
+        <service id="LedgerDirect\Storefront\Controller\XrpPriceAggregatorController" public="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container" />
+            </call>
+        </service>
+
+        <service id="LedgerDirect\Storefront\Controller\XrpPaymentController" public="true">
+            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
+            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
+            <argument type="service" id="LedgerDirect\Service\OrderTransactionService" />
+            <argument type="service" id="LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
+
+            <call method="setContainer">
+                <argument type="service" id="service_container" />
+            </call>
+            <call method="setTwig">
+                <argument type="service" id="twig"/>
+            </call>
+        </service>
+
+        <!-- Payment Handlers -->
+        <service id="LedgerDirect\Components\PaymentHandler\XrpPaymentHandler">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+
+            <tag name="shopware.payment.method.async"/>
+        </service>
+
+        <!-- Providers -->
+        <service id="LedgerDirect\Provider\XrpPriceProvider">
+            <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="order.repository" />
+            <argument type="service" id="currency.repository" />
+        </service>
+
+        <!-- Routes -->
+        <service id="LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" public="true">
+            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+        </service>
+
+        <!-- Services -->
+        <service id="LedgerDirect\Service\ConfigurationService">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <service id="LedgerDirect\Service\OrderTransactionService">
+            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
+            <argument type="service" id="order.repository" />
+            <argument type="service" id="order_transaction.repository" />
+            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
+        </service>
+
+        <service id="LedgerDirect\Service\XrplClientService">
+            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
+        </service>
+
+        <service id="LedgerDirect\Service\XrplTxService">
+            <argument type="service" id="LedgerDirect\Service\XrplClientService"/>
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+
+        <service id="LedgerDirect\Service\XrplTransactionFileService">
+            <argument>%kernel.project_dir%/files</argument>
+        </service>
+
+        
+    </services>
+</container>

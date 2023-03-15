@@ -1,0 +1,30 @@
+{% sw_extends '@Storefront/storefront/component/payment/payment-method.html.twig' %}
+
+{% block component_payment_method_field %}
+    {% set checked = payment.id is same as(selectedPaymentMethodId) %}
+    {% set paymentMethodIsXrp = 'XrpPaymentHandler' in payment.handlerIdentifier %}
+
+    {{ parent() }}
+{% endblock %}
+
+{% block component_payment_method_image %}
+    {% if paymentMethodIsXrp %}
+        {% block page_checkout_confirm_payment_current_xrp_logo %}
+            <img src="{{ asset('bundles/ledgerdirect/storefront/img/xrp_payment.svg') }}" id="ledgerdirect-xrp-logo" alt="Xrp" title="Xrp">
+        {% endblock %}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
+
+{% block component_payment_method_description %}
+    {{ parent() }}
+
+    {% if paymentMethodIsXrp %}
+        <a id="lederdirect-change-xrp-payment"
+           href="#test"
+           title="{{ "LedgerDirect.confirm.payment.changeXrpPaymentMethod"|trans|striptags }}">
+            {{ "LedgerDirect.confirm.payment.changeXrpPaymentMethod"|trans|striptags }}
+        </a>
+    {% endif %}
+{% endblock %}

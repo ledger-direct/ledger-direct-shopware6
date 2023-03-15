@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <input-field type="bool">
+            <name>useTestnet</name>
+            <label>Use Testnet</label>
+            <label lang="de-DE">Testnet verwenden</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
+    </card>
+
+
+    <card>
+        <title>LedgerDirect - XRPL Testnet Account Settings</title>
+        <title lang="de-DE">LedgerDirect - XRPL Testnet Account Einstellungen</title>
+
+        <input-field type="text">
+            <name>xrplTestnetAccount</name>
+            <label>Account (Testnet)</label>
+            <label lang="de-DE">Account (Testnet)</label>
+        </input-field>
+
+    </card>
+
+    <card>
+        <title>LedgerDirect - XRPL Mainnet Account Settings</title>
+        <title lang="de-DE">LedgerDirect - XRPL Mainnet Account Einstellungen</title>
+
+        <input-field type="text">
+            <name>xrplMainnetAccount</name>
+            <label>Account (Mainnet)</label>
+            <label lang="de-DE">Account (Mainnet)</label>
+        </input-field>
+
+    </card>
+
+</config>
