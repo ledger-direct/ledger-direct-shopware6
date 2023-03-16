@@ -42,12 +42,12 @@
                     <div class="col">
                         <label for="destination-tag" class="form-label">Exchange rate:</label>
                         <div class="input-group">
-                            <span class="input-group-text">$</span>
+                            <span class="input-group-text">{{ currencyCode }}</span>
                             <input type="text"
                                    id="exchange-rate"
                                    class="form-control d-block"
                                    readonly="readonly"
-                                   value="XRP: 0.xyz"/>
+                                   value="{{ exchangeRate }} XRP"/>
                         </div>
                     </div>
                 </div>
@@ -81,8 +81,8 @@
                         <input type="hidden" name="orderId" value="{{ orderId }}"/>
                         <button type="submit"
                                 class="btn btn-success float-end"
-                                id="check-payment-button
-                                data-order-id="{{ orderId }}>
+                                id="check-payment-button"
+                                data-order-id="{{ orderId }}">
                             Check payment status
                         </button>
                         <!--

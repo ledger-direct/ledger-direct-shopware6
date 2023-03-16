@@ -1,6 +1,7 @@
 {
-  "name": "xrpl-connector",
+  "name": "ledger-direct-storefromt",
   "version": "0.0.1",
-  "description": "XRPL-Connector for Shopware 6",
-  "license": "#äisc"
+  "private": true,
+  "description": "LedgerDirect Shopware 6",
+  "license": "MIT"
 }

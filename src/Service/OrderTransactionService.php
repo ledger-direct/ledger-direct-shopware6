@@ -4,6 +4,7 @@ namespace LedgerDirect\Service;
 
 use DateTime;
 use Doctrine\DBAL\Connection;
+use LedgerDirect\Provider\XrpPriceProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Defaults;
@@ -29,6 +30,9 @@ class OrderTransactionService
 
     private XrplTxService $xrplSyncService;
 
+
+    private EntityRepository $currencyRepository;
+
     private CryptoPriceProviderInterface $priceProvider;
 
     public function __construct(
@@ -36,6 +40,7 @@ class OrderTransactionService
         EntityRepository $orderRepository,
         EntityRepository $orderTransactionRepository,
         XrplTxService    $xrplSyncService,
+        EntityRepository $currencyRepository,
         CryptoPriceProviderInterface $priceProvider
     )
     {
@@ -43,7 +48,29 @@ class OrderTransactionService
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->xrplSyncService = $xrplSyncService;
+        $this->currencyRepository = $currencyRepository;
         $this->priceProvider = $priceProvider;
+    }
+
+    /**
+     *
+     *
+     * @param OrderEntity $order
+     * @param Context $context
+     * @return array
+     * @throws Exception
+     */
+    public function getCurrentPriceForOrder(OrderEntity $order, Context $context): array
+    {
+        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
+        $currencyAmountTotal = $order->getAmountTotal();
+        $xrpUnitPrice = $this->priceProvider->getCurrentExchangeRate($currency->getIsoCode());
+
+        return [
+            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
+            'exchange_rate' => $xrpUnitPrice,
+            'amount' => $currencyAmountTotal / $xrpUnitPrice
+        ];
     }
 
     public function getOrderWithTransactions(string $orderId, Context $context): ?OrderEntity
@@ -66,15 +93,16 @@ class OrderTransactionService
     {
         $destination = $this->configurationService->getDestinationAccount();
         $destinationTag = $this->xrplSyncService->generateDestinationTag();
-        $xrpAmount = $this->priceProvider->getCurrentPriceForOrder($order, $context);
+
+        $xrplCustomFields = [
+            'type' => 'xrp-payment',
+            'destination_account' => $destination,
+            'destination_tag' => $destinationTag // TODO: Use consistent naming or use separate service
+        ];
+        $orderPriceCustomFields = $this->getCurrentPriceForOrder($order, $context);
 
         $customFields = [
-            'xrpl' => [
-                'type' => 'xrp-payment',
-                'destination' => $destination,
-                'destination_tag' => $destinationTag, // TODO: Use consistent naming or use separate service
-                'amount' => $xrpAmount
-            ]
+            'xrpl' => array_merge($xrplCustomFields, $orderPriceCustomFields)
         ];
 
         $this->addCustomFieldsToTransaction($orderTransaction, $customFields, $context);

@@ -50,7 +50,7 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelContext->getContext()
         );
 
-        $redirectUrl = $this->router->generate('frontend.checkout.xrpl-connector.payment', [
+        $redirectUrl = $this->router->generate('frontend.checkout.ledger-direct.payment', [
             'orderId' => $transaction->getOrder()->getId(),
             'returnUrl' => $transaction->getReturnUrl()
         ]);

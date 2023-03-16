@@ -41,7 +41,7 @@ class XrpPaymentController extends StorefrontController
     }
 
     /**
-     * @Route("/xrpl-connector/payment/{orderId}", name="frontend.checkout.xrpl-connector.payment", methods={"GET", "POST"}, options={"seo"="false"})
+     * @Route("/ledger-direct/payment/{orderId}", name="frontend.checkout.ledger-direct.payment", methods={"GET", "POST"}, options={"seo"="false"})
      */
     public function payment(SalesChannelContext $context, string $orderId, Request $request)
     {
@@ -62,25 +62,23 @@ class XrpPaymentController extends StorefrontController
             // TODO: Throw new Exception, this TA cannot be paid in XRP
         }
 
-        $destinationTag = $customFields['xrpl']['destination_tag'];
-
-        $currentXrpAmount = $this->priceProvider->getCurrentPriceForOrder($order, $context->getContext());
-
         // https://goqr.me/api/doc/create-qr-code/
 
-        return $this->renderStorefront('@Storefront/storefront/xrpl-connector/payment.html.twig', [
-            'destinationAccount' => $this->configurationService->getDestinationAccount(),
-            'destinationTag' => $destinationTag,
+        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
             'orderId' => $orderId,
             'orderNumber' => $order->getOrderNumber(),
+            'destinationAccount' => $customFields['xrpl']['destination_account'],
+            'destinationTag' => $customFields['xrpl']['destination_tag'],
+            'xrpAmount' => $customFields['xrpl']['amount'],
+            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'exchangeRate' => $customFields['xrpl']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
-            'xrpAmount' => $currentXrpAmount
         ]);
     }
 
     /**
-     * @Route("/xrpl-connector/payment/check/{orderId}", name="frontend.checkout.xrpl-connector.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true})
+     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true})
      */
     public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
     {

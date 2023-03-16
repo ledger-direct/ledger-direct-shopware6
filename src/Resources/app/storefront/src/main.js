@@ -6,7 +6,7 @@ import HttpClient from 'src/service/http-client.service';
 
 class XrpPayment  extends Plugin {
     init() {
-        console.log('Xrpl-Connector XrpPayment - init');
+        console.log('LedgerDirect XrpPayment - init');
         window.DomAccess = DomAccess;
 
         this.client = new HttpClient();
@@ -25,7 +25,7 @@ class XrpPayment  extends Plugin {
 
     _fetchPaymentData() {
         const orderId = this.checkPaymentButton.dataset.orderId;
-        this.client.get('/xrpl-connector/check-payment/' + orderId , this._handlePaymentData.bind(this), 'application/json', true);
+        this.client.get('/ledger-direct/check-payment/' + orderId , this._handlePaymentData.bind(this), 'application/json', true);
     }
 
     _handlePaymentData(data) {

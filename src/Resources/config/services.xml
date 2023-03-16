@@ -59,8 +59,6 @@
         <!-- Providers -->
         <service id="LedgerDirect\Provider\XrpPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
-            <argument type="service" id="order.repository" />
-            <argument type="service" id="currency.repository" />
         </service>
 
         <!-- Routes -->
@@ -78,6 +76,7 @@
             <argument type="service" id="order.repository" />
             <argument type="service" id="order_transaction.repository" />
             <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="currency.repository" />
             <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
         </service>
 

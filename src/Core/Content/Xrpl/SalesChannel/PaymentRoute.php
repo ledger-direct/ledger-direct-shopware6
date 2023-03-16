@@ -26,7 +26,7 @@ class PaymentRoute
     }
 
     /**
-     * @Route("/store-api/xrpl-connector/payment/check/{orderId}", name="store-api.xrpl-connector.payment.check", methods={"GET", "POST"})
+     * @Route("/store-api/ledger-direct/payment/check/{orderId}", name="store-api.ledger-direct.payment.check", methods={"GET", "POST"})
      */
     public function check(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
@@ -55,7 +55,7 @@ class PaymentRoute
     }
 
     /**
-     * @Route("/store-api/xrpl-connector/payment/price/{orderId}", name="store-api.xrpl-connector.payment.price", methods={"GET", "POST"})
+     * @Route("/store-api/ledger-direct/payment/price/{orderId}", name="store-api.ledger-direct.payment.price", methods={"GET", "POST"})
      */
     public function price(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
@@ -63,7 +63,7 @@ class PaymentRoute
     }
 
     /**
-     * @Route("/store-api/xrpl-connector/payment/quote/{orderId}", name="store-api.xrpl-connector.payment.quote", methods={"GET", "POST"})
+     * @Route("/store-api/ledger-direct/payment/quote/{orderId}", name="store-api.ledger-direct.payment.quote", methods={"GET", "POST"})
      */
     public function quote(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
