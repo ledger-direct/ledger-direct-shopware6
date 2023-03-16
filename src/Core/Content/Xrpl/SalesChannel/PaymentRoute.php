@@ -20,6 +20,10 @@ use LedgerDirect\Service\OrderTransactionService;
 class PaymentRoute
 {
     private OrderTransactionService $orderTransactionService;
+
+    /**
+     * @param OrderTransactionService $orderTransactionService
+     */
     public function __construct(OrderTransactionService $orderTransactionService)
     {
         $this->orderTransactionService = $orderTransactionService;
@@ -59,6 +63,9 @@ class PaymentRoute
      */
     public function price(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
+        $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+        $orderTransaction = $order->getTransactions()->first();
+
         return new PaymentRouteResponse(new ArrayStruct(['todo' => 'implement']));
     }
 
@@ -67,9 +74,8 @@ class PaymentRoute
      */
     public function quote(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
-        // Sum
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
-
+        $orderTransaction = $order->getTransactions()->first();
 
         return new PaymentRouteResponse(new ArrayStruct(['todo' => 'implement']));
     }
