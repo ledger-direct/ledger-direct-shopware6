@@ -6,34 +6,40 @@ import HttpClient from 'src/service/http-client.service';
 
 class XrpPayment  extends Plugin {
     init() {
-        console.log('LedgerDirect XrpPayment - init');
         window.DomAccess = DomAccess;
 
         this.client = new HttpClient();
 
+        this.copyDestinationAccountInput = DomAccess.querySelector(document, '#destination-account');
+        this.copyDestinationTagInput = DomAccess.querySelector(document, '#destination-tag');
         this.checkPaymentButton = DomAccess.querySelector(document, '#check-payment-button');
 
-        //
-        //this._registerEvents()
+        this.registerEvents()
 
         //process.env.NODE_ENV
     }
 
-    _registerEvents() {
-        this.checkPaymentButton.onclick = this._fetchPaymentData.bind(this);
+    registerEvents() {
+        this.copyDestinationAccountInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.copyDestinationAccountInput));
+        this.copyDestinationTagInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.copyDestinatinoTagInput));
+        //this.checkPaymentButton.addEventListener('click', this.fetchPaymentData.bind(this));
     }
 
-    _fetchPaymentData() {
+    fetchPaymentData() {
         const orderId = this.checkPaymentButton.dataset.orderId;
-        this.client.get('/ledger-direct/check-payment/' + orderId , this._handlePaymentData.bind(this), 'application/json', true);
+        this.client.get('/ledger-direct/check-payment/' + orderId , this.handlePaymentData.bind(this), 'application/json', true);
     }
 
-    _handlePaymentData(data) {
+    handlePaymentData(data) {
         const result = JSON.parse(data);
         if(result.success) {
 
         }
 
+    }
+
+    copyToClipboard(element, event) {
+        navigator.clipboard.writeText(element.value);
     }
 }
 

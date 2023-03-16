@@ -25,7 +25,11 @@
                                    id="destination-account"
                                    class="form-control d-block" readonly="readonly"
                                    value="{{ destinationAccount }}"/>
-                            <span class="input-group-text">cp</span>
+                            <span class="input-group-text ld-hover"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-title="Copy">
+                                {% sw_icon 'products' %}
+                            </span>
                         </div>
                     </div>
                     <div class="col">
@@ -36,7 +40,11 @@
                                    class="form-control d-block"
                                    readonly="readonly"
                                    value="{{ destinationTag }}"/>
-                            <span class="input-group-text">cp</span>
+                            <span class="input-group-text ld-hover"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-title="Copy">
+                                {% sw_icon 'products' %}
+                            </span>
                         </div>
                     </div>
                     <div class="col">
