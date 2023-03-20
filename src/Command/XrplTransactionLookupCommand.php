@@ -15,11 +15,8 @@ class XrplTransactionLookupCommand extends Command
 
     protected XrplTxService $txService;
 
-    protected XrplTransactionFileService $fileService;
-
     public function __construct(
-        XrplTxService $txService,
-        XrplTransactionFileService $fileService
+        XrplTxService $txService
     ) {
         parent::__construct();
 

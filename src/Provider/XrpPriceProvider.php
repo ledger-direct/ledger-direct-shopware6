@@ -41,6 +41,8 @@ class XrpPriceProvider implements CryptoPriceProviderInterface
         } catch (Exception $exception) {
             // TODO: Log error
         }
+
+        return 0; //TODO: Catch in Frontend and do not use in quote!
     }
 
     /**

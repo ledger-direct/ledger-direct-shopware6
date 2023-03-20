@@ -28,19 +28,19 @@ class LedgerDirect extends Plugin
 
     public function update(UpdateContext $updateContext): void
     {
-        /** @var PaymentMethodRepositoryDecorator $paymentMethodRepository */
+        /** @var EntityRepository  $paymentMethodRepository */
         $paymentMethodRepository = $this->container->get('payment_method.repository');
     }
 
     public function deactivate(DeactivateContext $deactivateContext): void
     {
-        /** @var PaymentMethodRepositoryDecorator $paymentRepository */
+        /** @var EntityRepository  $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
     }
 
     public function uninstall(UninstallContext $uninstallContext): void
     {
-        /** @var PaymentMethodRepositoryDecorator $paymentMethodRepository */
+        /** @var EntityRepository  $paymentMethodRepository */
         $paymentMethodRepository = $this->container->get('payment_method.repository');
     }
 }

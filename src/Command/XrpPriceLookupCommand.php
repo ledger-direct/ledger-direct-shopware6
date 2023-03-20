@@ -26,12 +26,14 @@ class XrpPriceLookupCommand extends Command
         parent::configure();
 
         $this->setDescription('XRP price lookup, when no options are provided, default price providers will be looked up');
-        $this->addOption('provider', 's', InputOption::VALUE_OPTIONAL, 'define providers to be queried for price');
+        $this->addOption('iso', null, InputOption::VALUE_REQUIRED, 'define providers to be queried for price');
+        $this->addOption('provider', null, InputOption::VALUE_OPTIONAL, 'define providers to be queried for price');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $currentPrice = $this->priceFinder->getCurrentExchangeRate();
+        $iso = $input->getOption('iso');
+        $currentPrice = $this->priceFinder->getCurrentExchangeRate($iso);
         $output->writeln('Current XRP price: ' . $currentPrice);
 
         return Command::SUCCESS;

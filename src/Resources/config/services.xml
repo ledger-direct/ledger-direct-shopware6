@@ -9,7 +9,6 @@
         <!-- Commands -->
         <service id="LedgerDirect\Command\XrplTransactionLookupCommand">
             <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
-            <argument type="service" id="LedgerDirect\Service\XrplTransactionFileService"/>
 
             <tag name="console.command"/>
         </service>
@@ -34,8 +33,6 @@
         </service>
 
         <service id="LedgerDirect\Storefront\Controller\XrpPaymentController" public="true">
-            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
-            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
             <argument type="service" id="LedgerDirect\Service\OrderTransactionService" />
             <argument type="service" id="LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
 

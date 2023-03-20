@@ -2,21 +2,14 @@
 
 namespace LedgerDirect\Service;
 
-use DateTime;
-use Doctrine\DBAL\Connection;
+use Exception;
 use LedgerDirect\Provider\XrpPriceProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use Shopware\Core\Framework\Uuid\Uuid;
-use XRPL_PHP\Client\JsonRpcClient;
-use XRPL_PHP\Models\Account\AccountTxRequest;
-use LedgerDirect\Entity\XrplTxEntity;
 use LedgerDirect\Provider\CryptoPriceProviderInterface;
 
 class OrderTransactionService

@@ -20,22 +20,14 @@ use LedgerDirect\Service\OrderTransactionService;
  */
 class XrpPaymentController extends StorefrontController
 {
-    private ConfigurationService $configurationService;
-
-    private CryptoPriceProviderInterface $priceProvider;
-
     private OrderTransactionService $orderTransactionService;
 
     private PaymentRoute $paymentRoute;
 
     public function __construct(
-        ConfigurationService $configurationService,
-        CryptoPriceProviderInterface $priceProvider,
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute
     ) {
-        $this->configurationService = $configurationService;
-        $this->priceProvider = $priceProvider;
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
     }
