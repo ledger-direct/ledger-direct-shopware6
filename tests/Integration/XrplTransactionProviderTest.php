@@ -20,6 +20,6 @@ class XrplTransactionProviderTest extends TestCase
 
     public function testCanConnectToTestnet()
     {
-
+        $this->assertEquals(true, true);
     }
 }

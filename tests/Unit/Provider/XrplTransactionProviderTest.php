@@ -6,11 +6,6 @@ use PHPUnit\Framework\TestCase;
 
 class XrplTransactionProviderTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-    }
-
     public function testCanConnectToTestnet()
     {
         $this->assertEquals(true, true);
