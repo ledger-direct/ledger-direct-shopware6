@@ -9,6 +9,8 @@ jobs:
       image: dockware/dev:6.5.0.0-rc1
       env:
         PHP_VERSION: 8.1
+      volumes:
+        - ./src:/var/www/html
 
     steps:
       - name: Install dependencies
