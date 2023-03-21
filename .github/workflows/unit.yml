@@ -6,7 +6,7 @@ jobs:
     name: "PHPUnit"
     runs-on: ubuntu-latest
     container:
-      image: dockware.6.5.rc
+      image: dockware/dev:6.5.0.0-rc1
       env:
         PHP_VERSION: 8.1
 
