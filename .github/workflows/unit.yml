@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run:
+        run: |
           apt install php8.1-gmp
           composer require hardcastle/xrpl_php dev-master
           composer require --dev phpunit/phpunit ^9
