@@ -1,0 +1,16 @@
+name: Unit Test
+on: push
+
+jobs:
+  phpunit:
+    name: "PHPUnit"
+    runs-on: ubuntu-latest
+    container:
+      image: dockware.6.5.rc
+      env:
+        PHP_VERSION: 8.1
+
+    steps:
+      - name: Check Code
+        run: make phpunit
+
