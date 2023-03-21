@@ -1,0 +1,15 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "open": "node_modules/.bin/cypress open"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@shopware-ag/e2e-testsuite-platform": "^7.0.4"
+  }
+}
