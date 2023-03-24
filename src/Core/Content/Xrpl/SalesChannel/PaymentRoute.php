@@ -77,6 +77,20 @@ class PaymentRoute
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
         $orderTransaction = $order->getTransactions()->first();
 
-        return new PaymentRouteResponse(new ArrayStruct(['todo' => 'implement']));
+        $customFields = $orderTransaction->getCustomFields();
+        if (!isset($customFields['xrpl'])) {
+            // TODO: Throw new Exception, this TA cannot be paid in XRP
+        }
+
+        return new PaymentRouteResponse(new ArrayStruct([
+            'orderId' => $orderId,
+            'orderNumber' => $order->getOrderNumber(),
+            'destinationAccount' => $customFields['xrpl']['destination_account'],
+            'destinationTag' => $customFields['xrpl']['destination_tag'],
+            'xrpAmount' => $customFields['xrpl']['amount'],
+            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'exchangeRate' => $customFields['xrpl']['exchange_rate'],
+            'showNoTransactionFoundError' => true,
+        ]));
     }
 }
