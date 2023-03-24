@@ -3,6 +3,7 @@
 namespace LedgerDirect\Core\Content\Xrpl\SalesChannel;
 
 use OpenApi\Annotations as OA;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -75,6 +76,7 @@ class PaymentRoute
     public function quote(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+        /** @var OrderTransactionEntity $orderTransaction */
         $orderTransaction = $order->getTransactions()->first();
 
         $customFields = $orderTransaction->getCustomFields();
@@ -85,10 +87,13 @@ class PaymentRoute
         return new PaymentRouteResponse(new ArrayStruct([
             'orderId' => $orderId,
             'orderNumber' => $order->getOrderNumber(),
+            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'currencySymbol' => $order->getCurrency()->getSymbol(),
+            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'network' => $customFields['xrpl']['network'],
             'destinationAccount' => $customFields['xrpl']['destination_account'],
             'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'xrpAmount' => $customFields['xrpl']['amount'],
-            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'xrpAmount' => $customFields['xrpl']['amount_requested'],
             'exchangeRate' => $customFields['xrpl']['exchange_rate'],
             'showNoTransactionFoundError' => true,
         ]));

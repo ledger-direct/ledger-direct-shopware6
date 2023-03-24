@@ -64,8 +64,17 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
         $customFields = $orderTransaction->getCustomFields();
 
         if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
-            // Payment completed, set transaction status to "paid"
-            $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
+            // Payment is settled, let's check wether the paid amount is enough
+            $requestedXrpAmount = (float) $customFields['xrpl']['amount_requested'];
+            $paidXrpAmount = (float) $customFields['xrpl']['amount_paid'];
+            $slippage = 0.0015; // TODO: Make this configurable
+            $slipped = 1.0 - $paidXrpAmount / $requestedXrpAmount;
+            if($slipped < $slippage) {
+                // Payment completed, set transaction status to "paid"
+                $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
+            }
+            // Payment partially completed, mark as such
+            $this->transactionStateHandler->payPartially($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
         } else {
             // Payment not completed, set transaction status to "open"
             $this->transactionStateHandler->reopen($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());

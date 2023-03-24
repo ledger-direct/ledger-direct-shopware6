@@ -1,110 +1,98 @@
 {% sw_extends '@Storefront/storefront/base.html.twig' %}
 
+{% block base_body_classes %}{{ parent() }} ledger-direct{% endblock %}
+
 {% block base_body_inner %}
-    <div class="container-md p-4 border xrp-payment-page" data-xrp-payment-page="true">
 
-            <form method="POST">
+    {% set basicConfig = config('core.basicInformation') %}
 
-                <h3 class="text-center border-bottom pb-2 mb-3">
-                    XRP Payment for Order No. {{ orderNumber }}
-                </h3>
+    <div class="ld-container" data-xrp-payment-page="true">
+        <div class="ld-content">
 
-                <div class="row">
-                    <div class="col">
-                        <p class="text-center d-block pb-2 mb-3">
-                            Send your payment of <strong>{{ xrpAmount|round(6) }} XRP</strong> to the following address:
-                        </p>
+            <div class="ld-header">
+                <h2>{{ basicConfig.shopName }} - XRP Payment Page</h2>
+            </div>
+
+            <div class="ld-card">
+
+                <div class="ld-card-left">
+                    <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%value%": xrpAmount|round(2)})|raw }}</p>
+                    <label for="destinationAccount" class="bootstrap-form-label">
+                        {{ "LedgerDirect.paymentPage.destinationAccountLabel"|trans }}
+                    </label>
+                    <div class="bootstrap-input-group">
+                        <input id="destination-account"
+                               type="text"
+                               name="destination-account"
+                               class="bootstrap-form-control"
+                               value="{{ destinationAccount }}"
+                               readonly
+
+                        />
+                        <span class="bootstrap-input-group-text ld-hover" data-bs-toggle="tooltip" data-bs-title="Copy">
+                            {% sw_icon 'products' %}
+                        </span>
+                        <i class="ld-icon">
+                            {% sw_icon 'money-wallet' %}
+                        </i>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-6">
-                        <label for="destination-account" class="form-label">Receiving Account:</label>
-                        <div class="input-group">
-                            <input type="text"
-                                   id="destination-account"
-                                   class="form-control d-block" readonly="readonly"
-                                   value="{{ destinationAccount }}"/>
-                            <span class="input-group-text ld-hover"
-                                  data-bs-toggle="tooltip"
-                                  data-bs-title="Copy">
-                                {% sw_icon 'products' %}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <label for="destination-tag" class="form-label">Destination Tag:</label>
-                        <div class="input-group">
-                            <input type="text"
-                                   id="destination-tag"
-                                   class="form-control d-block"
-                                   readonly="readonly"
-                                   value="{{ destinationTag }}"/>
-                            <span class="input-group-text ld-hover"
-                                  data-bs-toggle="tooltip"
-                                  data-bs-title="Copy">
-                                {% sw_icon 'products' %}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <label for="destination-tag" class="form-label">Exchange rate:</label>
-                        <div class="input-group">
-                            <span class="input-group-text">{{ currencyCode }}</span>
-                            <input type="text"
-                                   id="exchange-rate"
-                                   class="form-control d-block"
-                                   readonly="readonly"
-                                   value="{{ exchangeRate }} XRP"/>
-                        </div>
-                    </div>
-                </div>
+                    <label for="destinationTag" class="bootstrap-form-label">
+                        {{ "LedgerDirect.paymentPage.destinationTagLabel"|trans }}
+                    </label>
+                    <div class="bootstrap-input-group">
 
-                <div class="row">
-                    <div class="col">
+                        <input id="destination-tag"
+                               type="text"
+                               name="destination-tag"
+                               class="bootstrap-form-control"
+                               value="{{ destinationTag }}"
+                               readonly
+                        />
+                        <span class="bootstrap-input-group-text ld-hover" data-bs-toggle="tooltip" data-bs-title="Copy">
+                            {% sw_icon 'products' %}
+                        </span>
+                        <i class="ld-icon">
+                            {% sw_icon 'tags' %}
+                        </i>
+                    </div>
+
+                    <div class="ld-warning">
                         <div role="alert" class="alert alert-warning alert-has-icon">
                             {% sw_icon 'warning' %}
                             <div class="alert-content-container">
                                 <div class="alert-content">
-                                    It's important to include the given destination tag when sending XRP from your wallet.
+                                    {{ "LedgerDirect.paymentPage.destinationTagWarning"|trans }}
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div style="display: none">
-                    OrderNumber: {{ orderNumber }} <br/>
-                    OrderId: {{ orderId }}
-                    RedirectUrl: {{ redirectUrl }}
-                </div>
-
-                <div class="row">
-                    <div class="col">
-                        {% if showNoTransactionFoundError %}
-                            Transaction sync in progress...
-                        {% endif %}
-                    </div>
-                    <div class="col">
-                        <input type="hidden" name="orderId" value="{{ orderId }}"/>
-                        <button type="submit"
-                                class="btn btn-success float-end"
-                                id="check-payment-button"
-                                data-order-id="{{ orderId }}">
-                            Check payment status
+                    <div class="ld-sync">
+                        <button id="check-payment-button" data-order-id="{{ orderId }}">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none"></span>
+                            {{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}
                         </button>
-                        <!--
-                        <button type="submit"
-                                class="btn btn-success float-right"
-                                id="get-new-quote-button
-                                data-order-id="{{ orderId }}>
-                            Get new quote
-                        </button>
-                        -->
                     </div>
+
                 </div>
 
-            </form>
+                <div class="ld-card-right">
+                    <div class="ld-sum">{{ price|currency }}</div>
+                    <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
+                    <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
+                    <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ xrpAmount }} XRP</span><br/>
+                    <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span>
+                    <img src="{{ asset('bundles/ledgerdirect/storefront/img/astronaut.png') }}" class="ld-astronaut" />
+                </div>
 
+            </div>
+
+            <div class="ld-footer">
+                {{ network }} - Ledger Direct Payment Plugin
+            </div>
+
+        </div>
     </div>
+
 {% endblock %}

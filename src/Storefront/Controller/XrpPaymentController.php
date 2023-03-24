@@ -2,17 +2,14 @@
 
 namespace LedgerDirect\Storefront\Controller;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute;
-use LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRouteResponse;
-use LedgerDirect\Provider\CryptoPriceProviderInterface;
-use LedgerDirect\Service\ConfigurationService;
 use LedgerDirect\Service\OrderTransactionService;
 
 /**
@@ -54,15 +51,16 @@ class XrpPaymentController extends StorefrontController
             // TODO: Throw new Exception, this TA cannot be paid in XRP
         }
 
-        // https://goqr.me/api/doc/create-qr-code/
-
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
             'orderId' => $orderId,
             'orderNumber' => $order->getOrderNumber(),
+            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'currencySymbol' => $order->getCurrency()->getSymbol(),
+            'network' => $customFields['xrpl']['network'],
             'destinationAccount' => $customFields['xrpl']['destination_account'],
             'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'xrpAmount' => $customFields['xrpl']['amount'],
-            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'xrpAmount' => $customFields['xrpl']['amount_requested'],
             'exchangeRate' => $customFields['xrpl']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,

@@ -1,0 +1,21 @@
+{
+  "LedgerDirect": {
+    "confirm": {
+      "payment": {
+        "changeXrpPaymentMethod": "Change XRP payment method"
+      }
+    },
+    "errors": {
+    },
+    "paymentPage": {
+      "sendXrpMessage": "Please send <strong>%value%</strong> XRP to the following address:",
+      "destinationAccountLabel": "Account",
+      "destinationTagLabel": "Destination Tag",
+      "destinationTagWarning": "It's important to include the given destination tag when sending XRP from your wallet.",
+      "checkPaymentButton": "Check payment processing",
+      "orderNumber": "Order No.",
+      "price": "Price",
+      "exchangeRate": "Rate"
+    }
+  }
+}
