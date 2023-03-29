@@ -2,7 +2,10 @@
 
 namespace LedgerDirect\Core\Content\Xrpl\SalesChannel;
 
+use DateTimeImmutable;
+use LedgerDirect\Exception\TransactionLifetimeException;
 use OpenApi\Annotations as OA;
+use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -64,8 +67,14 @@ class PaymentRoute
      */
     public function price(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
+        $customer = $context->getCustomer();
+
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
         $orderTransaction = $order->getTransactions()->first();
+
+        if (!$customer || $customer->getId() !== $order->getOrderCustomer()->getCustomerId()) {
+            throw CartException::customerNotLoggedIn();
+        }
 
         return new PaymentRouteResponse(new ArrayStruct(['todo' => 'implement']));
     }
@@ -75,13 +84,30 @@ class PaymentRoute
      */
     public function quote(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
+        $customer = $context->getCustomer();
+
+        if (!$customer) {
+            throw CartException::customerNotLoggedIn();
+        }
+
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+
+        if ($customer->getId() !== $order->getOrderCustomer()->getCustomerId()) {
+            throw CartException::insufficientPermission();
+        }
+
         /** @var OrderTransactionEntity $orderTransaction */
         $orderTransaction = $order->getTransactions()->first();
 
+        $tsOrder = $orderTransaction->getCreatedAt()->getTimestamp();
+        $tsNow = (new DateTimeImmutable('now'))->getTimestamp();
+        if ($tsNow - $tsOrder > 3600) {
+            //throw new TransactionLifetimeException('This transaction is not valid anymore');
+        }
+
         $customFields = $orderTransaction->getCustomFields();
-        if (!isset($customFields['xrpl'])) {
-            // TODO: Throw new Exception, this TA cannot be paid in XRP
+         if (!isset($customFields['xrpl'])) {
+            // TODO: Throw Exception, this TA cannot be paid in XRP
         }
 
         return new PaymentRouteResponse(new ArrayStruct([
