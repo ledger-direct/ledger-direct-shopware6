@@ -10,7 +10,7 @@ class BinanceOracle implements OracleInterface
     private Client $client;
     public function getCurrentPriceForPair(string $code1, string $code2): float
     {
-        $symbol = $code1 . $code2;
+        $symbol = $code1 . (($code2 === 'USD') ? 'USDT' : $code2);
         $url = 'https://api.binance.com/api/v1/ticker/price?symbol=' . $symbol;
 
 
