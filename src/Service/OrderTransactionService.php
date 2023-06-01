@@ -142,13 +142,14 @@ class OrderTransactionService
     private function addCustomFieldsToTransaction(OrderTransactionEntity $orderTransaction, array $customFields, Context $context): void
     {
         $existingCustomFields = $orderTransaction->getCustomFields() ?? [];
+        $mergedCustomFields = array_replace_recursive($existingCustomFields, $customFields);
 
-        $orderTransaction->setCustomFields(array_merge_recursive($existingCustomFields, $customFields));
+        $orderTransaction->setCustomFields($mergedCustomFields);
 
         $this->orderTransactionRepository->upsert([
             [
                 'id' => $orderTransaction->getId(),
-                'customFields' => array_merge_recursive($existingCustomFields, $customFields),
+                'customFields' => $mergedCustomFields,
             ],
         ], $context);
     }
