@@ -165,6 +165,18 @@ body {
     &:hover {
       background-color: #59c2ef;
     }
+
+    &.wallet-active {
+
+    }
+
+    &.wallet-disabled {
+      background-color: grey;
+      cursor: default;
+      &:hover {
+        background-color: #59c2ef;
+      }
+    }
   }
 }
 

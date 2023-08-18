@@ -34,7 +34,7 @@ class PaymentRoute
     }
 
     /**
-     * @Route("/store-api/ledger-direct/payment/check/{orderId}", name="store-api.ledger-direct.payment.check", methods={"GET", "POST"})
+     * @Route("/store-api/ledger-direct/payment/check/{orderId}", name="store-api.ledger-direct.payment.check", methods={"GET", "POST"}, defaults={"_loginRequired"=true})
      */
     public function check(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {

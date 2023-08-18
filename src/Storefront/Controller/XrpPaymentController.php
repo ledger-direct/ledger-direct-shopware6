@@ -30,7 +30,7 @@ class XrpPaymentController extends StorefrontController
     }
 
     /**
-     * @Route("/ledger-direct/payment/{orderId}", name="frontend.checkout.ledger-direct.payment", methods={"GET", "POST"}, options={"seo"="false"})
+     * @Route("/ledger-direct/payment/{orderId}", name="frontend.checkout.ledger-direct.payment", methods={"GET", "POST"}, defaults={"_loginRequired"=true}, options={"seo"="false"})
      */
     public function payment(SalesChannelContext $context, string $orderId, Request $request)
     {
@@ -68,7 +68,7 @@ class XrpPaymentController extends StorefrontController
     }
 
     /**
-     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true})
+     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true, "_loginRequired"=true})
      */
     public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
     {

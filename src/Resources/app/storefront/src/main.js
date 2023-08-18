@@ -4,28 +4,43 @@ import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
 import HttpClient from 'src/service/http-client.service';
 
-class XrpPayment  extends Plugin {
-    init() {
-        window.DomAccess = DomAccess;
+import setupGemWallet from "./wallets/gemWallet";
 
+class XrpPayment extends Plugin {
+    init() {
         this.client = new HttpClient();
 
-        this.copyDestinationAccountInput = DomAccess.querySelector(document, '#destination-account');
-        this.copyDestinationTagInput = DomAccess.querySelector(document, '#destination-tag');
+        this.xrpAmountInput = DomAccess.querySelector(document, '#xrp-amount');
+        this.destinationAccountInput = DomAccess.querySelector(document, '#destination-account');
+        this.destinationTagInput = DomAccess.querySelector(document, '#destination-tag');
         this.checkPaymentButton = DomAccess.querySelector(document, '#check-payment-button');
         this.spinner = DomAccess.querySelector(this.checkPaymentButton, 'span');
 
-        this.registerEvents()
+        this.xrpPaymentData = {
+            //amount: parseFloat(this.xrpAmountInput.value),
+            amount: parseFloat('29.533'),
+            destination: this.destinationAccountInput.value,
+            destinationTag: parseInt(this.destinationTagInput.value)
+        }
 
-        //process.env.NODE_ENV
+        this.gemWalletButton = DomAccess.querySelector(document, '#gem-wallet-button');
+        this.crossmarkWalletButton = DomAccess.querySelector(document, '#gem-wallet-button');
+        this.xummWalletButton = DomAccess.querySelector(document, '#gem-wallet-button');
 
-        window.ldPlugin = this;
+        this.registerEvents();
+
+        setTimeout(this.setupWallets.bind(this), 1000);
+
     }
 
     registerEvents() {
-        this.copyDestinationAccountInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.copyDestinationAccountInput));
-        this.copyDestinationTagInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.copyDestinationTagInput));
+        this.destinationAccountInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccountInput));
+        this.destinationTagInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTagInput));
         this.checkPaymentButton.addEventListener('click', this.fetchPaymentData.bind(this));
+    }
+
+    setupWallets() {
+        setupGemWallet.bind(this)()
     }
 
     fetchPaymentData() {

@@ -3,5 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "description": "LedgerDirect Shopware 6",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@gemwallet/api": "^3.3.0",
+    "bignumber.js": "^9.1.1"
+  }
 }

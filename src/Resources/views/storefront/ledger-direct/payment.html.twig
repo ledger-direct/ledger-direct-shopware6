@@ -17,6 +17,13 @@
 
                 <div class="ld-card-left">
                     <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%value%": xrpAmount|round(2)})|raw }}</p>
+                    <input id="xrp-amount"
+                           type="text"
+                           name="xrp-amount"
+                           value="{{ xrpAmount }}"
+                           readonly
+                           style="display: none;"
+                    />
                     <label for="destinationAccount" class="bootstrap-form-label">
                         {{ "LedgerDirect.paymentPage.destinationAccountLabel"|trans }}
                     </label>
@@ -27,7 +34,6 @@
                                class="bootstrap-form-control"
                                value="{{ destinationAccount }}"
                                readonly
-
                         />
                         <span class="bootstrap-input-group-text ld-hover" data-bs-toggle="tooltip" data-bs-title="Copy">
                             {% sw_icon 'products' %}
@@ -69,6 +75,9 @@
                     </div>
 
                     <div class="ld-sync">
+                        <button id="gem-wallet-button" class="wallet-disabled">G</button>
+                        <button id="crossmark-wallet-button" class="wallet-disabled">C</button>
+                        <button id="xumm-wallet-button" class="wallet-disabled">X</button>
                         <button id="check-payment-button" data-order-id="{{ orderId }}">
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none"></span>
                             {{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}
