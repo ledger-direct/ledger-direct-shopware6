@@ -8,7 +8,8 @@
     "errors": {
     },
     "paymentPage": {
-      "sendXrpMessage": "Please send <strong>%value%</strong> XRP to the following address:",
+      "sendXrpMessage": "Please send <strong>%amount%</strong> XRP to the following address:",
+      "sendTokenMessage": "Please send <strong>%amount%</strong> <strong>%tokenName%</strong> to the following address:",
       "destinationAccountLabel": "Account",
       "destinationTagLabel": "Destination Tag",
       "destinationTagWarning": "It's important to include the given destination tag when sending XRP from your wallet.",

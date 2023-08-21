@@ -10,18 +10,10 @@ class XrpPayment extends Plugin {
     init() {
         this.client = new HttpClient();
 
-        this.xrpAmountInput = DomAccess.querySelector(document, '#xrp-amount');
         this.destinationAccountInput = DomAccess.querySelector(document, '#destination-account');
         this.destinationTagInput = DomAccess.querySelector(document, '#destination-tag');
         this.checkPaymentButton = DomAccess.querySelector(document, '#check-payment-button');
         this.spinner = DomAccess.querySelector(this.checkPaymentButton, 'span');
-
-        this.xrpPaymentData = {
-            //amount: parseFloat(this.xrpAmountInput.value),
-            amount: parseFloat('29.533'),
-            destination: this.destinationAccountInput.value,
-            destinationTag: parseInt(this.destinationTagInput.value)
-        }
 
         this.gemWalletButton = DomAccess.querySelector(document, '#gem-wallet-button');
         this.crossmarkWalletButton = DomAccess.querySelector(document, '#gem-wallet-button');

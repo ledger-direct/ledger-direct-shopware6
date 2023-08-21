@@ -115,7 +115,7 @@ class XrplTxService
     private function filterIncomingTransactions(array $transactions, string $ownAddress): array
     {
         foreach ($transactions as $key => $transaction) {
-            if ($transaction['tx']['Destination'] !== $ownAddress) {
+            if (!isset($transaction['tx']['Destination']) || $transaction['tx']['Destination'] !== $ownAddress) {
                 unset($transactions[$key]);
             }
         }

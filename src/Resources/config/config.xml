@@ -22,6 +22,17 @@
             <label lang="de-DE">Account (Testnet)</label>
         </input-field>
 
+        <input-field type="text">
+            <name>xrplTestnetCustomTokenName</name>
+            <label>Token (Testnet)</label>
+            <label lang="de-DE">Token (Testnet)</label>
+        </input-field>
+
+        <input-field type="text">
+            <name>xrplTestnetCustomTokenIssuer</name>
+            <label>Issuer (Testnet)</label>
+            <label lang="de-DE">Issuer (Testnet)</label>
+        </input-field>
     </card>
 
     <card>
@@ -34,6 +45,17 @@
             <label lang="de-DE">Account (Mainnet)</label>
         </input-field>
 
+        <input-field type="text">
+            <name>xrplMainnetCustomTokenName</name>
+            <label>Token (Mainnet)</label>
+            <label lang="de-DE">Token (Mainnet)</label>
+        </input-field>
+
+        <input-field type="text">
+            <name>xrplMainnetCustomTokenIssuer</name>
+            <label>Issuer (Mainnet)</label>
+            <label lang="de-DE">Issuer (Mainnet)</label>
+        </input-field>
     </card>
 
 </config>

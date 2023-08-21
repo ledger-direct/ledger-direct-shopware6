@@ -11,13 +11,14 @@ use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
+use LedgerDirect\Components\PaymentHandler\TokenPaymentHandler;
 use LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use LedgerDirect\LedgerDirect;
 
 class PaymentMethodInstaller
 {
     public const XRP_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bb';
-
+    public const TOKEN_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bc';
 
     private const PAYMENT_METHODS = [
         [
@@ -32,6 +33,21 @@ class PaymentMethodInstaller
                 'en-GB' => [
                     'name' => 'XRP',
                     'description' => 'Pay with XRP',
+                ],
+            ],
+        ],
+        [
+            'id' => self::TOKEN_PAYMENT_ID,
+            'handlerIdentifier' => TokenPaymentHandler::class,
+            'name' => 'Token',
+            'translations' => [
+                'de-DE' => [
+                    'name' => 'Token',
+                    'description' => 'Mit Token bezahlen',
+                ],
+                'en-GB' => [
+                    'name' => 'Token',
+                    'description' => 'Pay with Token',
                 ],
             ],
         ],

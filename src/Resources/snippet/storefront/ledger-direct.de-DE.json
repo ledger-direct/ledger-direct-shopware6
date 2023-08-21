@@ -9,6 +9,7 @@
     },
     "paymentPage": {
       "sendXrpMessage": "Bitte sende %value% XRP an die folgende Addresse:",
+      "sendXrpMessage": "Bitte sende %value% %tokenName% an die folgende Addresse:",
       "destinationAccountLabel": "Account",
       "destinationTagLabel": "Destination Tag",
       "destinationTagWarning": "Der Destination Tag muss für eine Korrekte Zuordnung der Zahlung mit angegeben werden.",

@@ -15,7 +15,7 @@ use Symfony\Component\Routing\RouterInterface;
 use LedgerDirect\Provider\CryptoPriceProviderInterface;
 use LedgerDirect\Service\OrderTransactionService;
 
-class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
+class TokenPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
     private RouterInterface $router;
 
@@ -65,17 +65,16 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
 
         if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
-            $requestedXrpAmount = (float) $customFields['xrpl']['amount_requested'];
-            $paidXrpAmount = (float) $customFields['xrpl']['amount_paid'];
-            $slippage = 0.0015; // TODO: Make this configurable
-            $slipped = 1.0 - $paidXrpAmount / $requestedXrpAmount;
-            if($slipped < $slippage) {
+            $requestedTokenAmount = (float) $customFields['xrpl']['value'];
+            $paidTokenAmount = (float) $customFields['xrpl']['amount_paid'];
+            if ($requestedTokenAmount === $paidTokenAmount) {
                 // Payment completed, set transaction status to "paid"
                 $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
                 return;
+            } else {
+                // Payment partially completed, mark as such
+                $this->transactionStateHandler->payPartially($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
             }
-            // Payment partially completed, mark as such
-            $this->transactionStateHandler->payPartially($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
         } else {
             // Payment not completed, set transaction status to "open"
             $this->transactionStateHandler->reopen($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());

@@ -3,6 +3,7 @@
 namespace LedgerDirect\Service;
 
 use Exception;
+use LedgerDirect\Installer\PaymentMethodInstaller;
 use LedgerDirect\Provider\XrpPriceProvider;
 use LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -54,7 +55,7 @@ class OrderTransactionService
      * @return array
      * @throws Exception
      */
-    public function getCurrentPriceForOrder(OrderEntity $order, Context $context): array
+    public function getCurrentXrpPriceForOrder(OrderEntity $order, Context $context): array
     {
         $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
         $currencyAmountTotal = $order->getAmountTotal();
@@ -86,25 +87,63 @@ class OrderTransactionService
         Context $context
     ): void
     {
+        $paymentMethod = $orderTransaction->getPaymentMethod();
+
         $network = $this->configurationService->isTest() ? 'Testnet' : 'Mainnet'; // TODO: Use NetworkId
         $destination = $this->configurationService->getDestinationAccount();
         $destinationTag = $this->xrplSyncService->generateDestinationTag();
 
         $xrplCustomFields = [
-            'type' => 'xrp-payment',
-            'network' => $network,
-            'destination_account' => $destination,
-            'destination_tag' => $destinationTag // TODO: Use consistent naming or use separate service
-        ];
-        $orderPriceCustomFields = $this->getCurrentPriceForOrder($order, $context);
-
-        $customFields = [
-            'xrpl' => array_merge($xrplCustomFields, $orderPriceCustomFields)
+            'xrpl' => [
+                'type' => 'xrp-payment',
+                'network' => $network,
+                'destination_account' => $destination,
+                'destination_tag' => $destinationTag // TODO: Use consistent naming or use separate service
+            ]
         ];
 
-        $this->addCustomFieldsToTransaction($orderTransaction, $customFields, $context);
+        $this->addCustomFieldsToTransaction($orderTransaction, $xrplCustomFields, $context);
 
+        match ($paymentMethod->getId()) {
+            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->prepareXrpPayment($order, $orderTransaction, $context),
+            PaymentMethodInstaller::TOKEN_PAYMENT_ID => $this->prepareTokenPayment($order, $orderTransaction, $context),
+        };
 
+        // Throw exception here
+    }
+
+    private function prepareXrpPayment(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        Context $context
+    ): void
+    {
+
+        $xrpPriceCustomFields = [
+            'xrpl' => $this->getCurrentXrpPriceForOrder($order, $context)
+        ];
+        $xrpPriceCustomFields['xrpl']['type'] = 'xrp-payment';
+
+        $this->addCustomFieldsToTransaction($orderTransaction, $xrpPriceCustomFields, $context);
+    }
+
+    private function prepareTokenPayment(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        Context $context): void
+    {
+        $issuer = $this->configurationService->getIssuer();
+        $tokenName = $order->getCurrency()->getIsoCode();
+        $tokenAmountCustomFields = [
+            'xrpl' => [
+                'type' => 'token',
+                'issuer' => $issuer,
+                'currency' => $tokenName,
+                'value' => $order->getAmountTotal(),
+            ]
+        ];
+
+        $this->addCustomFieldsToTransaction($orderTransaction, $tokenAmountCustomFields, $context);
     }
 
     public function syncOrderTransactionWithXrpl(OrderTransactionEntity $orderTransaction, Context $context): ?array
@@ -124,11 +163,18 @@ class OrderTransactionService
 
             if ($tx) {
                 $txPayload = json_decode($tx['tx'], true);
+
+                if (is_array($txPayload['Amount'])) {
+                    $amount = $txPayload['Amount']['value'];
+                } else {
+                    $amount = ropsToXrp($txPayload['Amount']);
+                }
+
                 $this->addCustomFieldsToTransaction($orderTransaction, [
                     'xrpl' => [
                         'hash' => $tx['hash'],
                         'ctid' => $tx['hash'], // TODO: Add CTID here
-                        'amount_paid' => dropsToXrp($txPayload['Amount'])
+                        'amount_paid' => $amount
                     ]
                 ], $context);
 

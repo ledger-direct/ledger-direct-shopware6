@@ -10,20 +10,50 @@
         <div class="ld-content">
 
             <div class="ld-header">
-                <h2>{{ basicConfig.shopName }} - XRP Payment Page</h2>
+                {% if mode == 'xrp' %}
+                    <h2>{{ basicConfig.shopName }} - XRP Payment Page</h2>
+                {% elseif mode == 'token' %}
+                    <h2>{{ basicConfig.shopName }} - Token Payment Page</h2>
+                {% endif %}
             </div>
 
             <div class="ld-card">
 
                 <div class="ld-card-left">
-                    <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%value%": xrpAmount|round(2)})|raw }}</p>
-                    <input id="xrp-amount"
-                           type="text"
-                           name="xrp-amount"
-                           value="{{ xrpAmount }}"
-                           readonly
-                           style="display: none;"
-                    />
+                    {% if mode == 'xrp' %}
+                        <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%amount%": xrpAmount|round(2)})|raw }}</p>
+                        <input id="xrp-amount"
+                               type="text"
+                               name="xrp-amount"
+                               value="{{ xrpAmount }}"
+                               readonly
+                               style="display: none;"
+                        />
+                    {% elseif mode == 'token' %}
+                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": tokenAmount|round(2), "%tokenName%": currencyCode})|raw}}</p>
+                        <input id="token-amount"
+                               type="text"
+                               name="token-amount"
+                               value="{{ tokenAmount }}"
+                               readonly
+                               style="display: none;"
+                        />
+                        <input id="issuer"
+                               type="text"
+                               name="token-amount"
+                               value="{{ issuer }}"
+                               readonly
+                               style="display: none;"
+                        />
+                        <input id="currency"
+                               type="text"
+                               name="currency"
+                               value="{{ currencyCode }}"
+                               readonly
+                               style="display: none;"
+                        />
+                    {% endif %}
+
                     <label for="destinationAccount" class="bootstrap-form-label">
                         {{ "LedgerDirect.paymentPage.destinationAccountLabel"|trans }}
                     </label>
@@ -87,11 +117,17 @@
                 </div>
 
                 <div class="ld-card-right">
-                    <div class="ld-sum">{{ price|currency }}</div>
-                    <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ xrpAmount }} XRP</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span>
+                    {% if mode == 'xrp' %}
+                        <div class="ld-sum">{{ price|currency }}</div>
+                        <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ xrpAmount }} XRP</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span>
+                    {% elseif mode == 'token' %}
+                        <div class="ld-sum">{{ price|currency }}</div>
+                        <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
+                    {% endif %}
                     <img src="{{ asset('bundles/ledgerdirect/storefront/img/astronaut.png') }}" class="ld-astronaut" />
                 </div>
 

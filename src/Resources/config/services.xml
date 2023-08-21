@@ -53,6 +53,14 @@
             <tag name="shopware.payment.method.async"/>
         </service>
 
+        <service id="LedgerDirect\Components\PaymentHandler\TokenPaymentHandler">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+
+            <tag name="shopware.payment.method.async"/>
+        </service>
+
         <!-- Providers -->
         <service id="LedgerDirect\Provider\XrpPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>

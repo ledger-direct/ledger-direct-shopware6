@@ -11,7 +11,15 @@ class ConfigurationService
 
     private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetAccount';
 
+    private const CONFIG_KEY_MAINNET_TOKEN_NAME = 'xrplMainnetCustomTokenName';
+
+    private const CONFIG_KEY_MAINNET_TOKEN_ISSUER = 'xrplMainnetCustomTokenIssuer';
+
     private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetAccount';
+
+    private const CONFIG_KEY_TESTNET_TOKEN_NAME = 'xrplTestsnetCustomTokenName';
+
+    private const CONFIG_KEY_TESTNET_TOKEN_ISSUER = 'xrplTestnetCustomTokenIssuer';
 
     private SystemConfigService $systemConfigService;
 
@@ -43,5 +51,23 @@ class ConfigurationService
        }
 
        return $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
+   }
+
+    public function getTokenName(): string
+    {
+        if ($this->isTest()) {
+            return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_NAME);
+        }
+
+        return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_NAME);
+    }
+
+   public function getIssuer(): string
+   {
+       if ($this->isTest()) {
+           return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_ISSUER);
+       }
+
+       return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_ISSUER);
    }
 }

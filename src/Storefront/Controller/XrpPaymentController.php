@@ -2,7 +2,9 @@
 
 namespace LedgerDirect\Storefront\Controller;
 
+use LedgerDirect\Installer\PaymentMethodInstaller;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -32,7 +34,7 @@ class XrpPaymentController extends StorefrontController
     /**
      * @Route("/ledger-direct/payment/{orderId}", name="frontend.checkout.ledger-direct.payment", methods={"GET", "POST"}, defaults={"_loginRequired"=true}, options={"seo"="false"})
      */
-    public function payment(SalesChannelContext $context, string $orderId, Request $request)
+    public function payment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
         //TODO: Check if orderTransaction ist still valid
 
@@ -46,13 +48,35 @@ class XrpPaymentController extends StorefrontController
             return new RedirectResponse($request->get('returnUrl'));
         }
 
+        return match ($orderTransaction->getPaymentMethodId()) {
+            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
+            PaymentMethodInstaller::TOKEN_PAYMENT_ID => $this->renderTokenPaymentPage($order, $orderTransaction, $returnUrl),
+        };
+    }
+
+    /**
+     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true, "_loginRequired"=true})
+     */
+    public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
+    {
+        return $this->paymentRoute->check($orderId, $context);
+    }
+
+    private function renderXrpPaymentPage(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        string $returnUrl,
+    ): Response
+    {
         $customFields = $orderTransaction->getCustomFields();
+
         if (!isset($customFields['xrpl'])) {
             // TODO: Throw new Exception, this TA cannot be paid in XRP
         }
 
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
-            'orderId' => $orderId,
+            'mode' => 'xrp',
+            'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'price' => $orderTransaction->getAmount()->getTotalPrice(),
             'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
@@ -67,12 +91,33 @@ class XrpPaymentController extends StorefrontController
         ]);
     }
 
-    /**
-     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true, "_loginRequired"=true})
-     */
-    public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
+    private function renderTokenPaymentPage(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        string $returnUrl,
+    ): Response
     {
-        return $this->paymentRoute->check($orderId, $context);
+        $customFields = $orderTransaction->getCustomFields();
+
+        if (!isset($customFields['xrpl'])) {
+            // TODO: Throw new Exception, this TA cannot be paid in XRP
+        }
+
+        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
+            'mode' => 'token',
+            'orderId' => $order->getId(),
+            'orderNumber' => $order->getOrderNumber(),
+            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'currencyCode' => $order->getCurrency()->getIsoCode(),
+            'currencySymbol' => $order->getCurrency()->getSymbol(),
+            'network' => $customFields['xrpl']['network'],
+            'destinationAccount' => $customFields['xrpl']['destination_account'],
+            'destinationTag' => $customFields['xrpl']['destination_tag'],
+            'tokenAmount' => $customFields['xrpl']['value'],
+            'issuer' => $customFields['xrpl']['issuer'],
+            'returnUrl' => $returnUrl,
+            'showNoTransactionFoundError' => true,
+        ]);
     }
 
 }
