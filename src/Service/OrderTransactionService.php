@@ -167,7 +167,7 @@ class OrderTransactionService
                 if (is_array($txPayload['Amount'])) {
                     $amount = $txPayload['Amount']['value'];
                 } else {
-                    $amount = ropsToXrp($txPayload['Amount']);
+                    $amount = dropsToXrp($txPayload['Amount']);
                 }
 
                 $this->addCustomFieldsToTransaction($orderTransaction, [

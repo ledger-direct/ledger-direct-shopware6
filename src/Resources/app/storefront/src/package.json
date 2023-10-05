@@ -5,7 +5,9 @@
   "description": "LedgerDirect Shopware 6",
   "license": "MIT",
   "dependencies": {
+    "@crossmarkio/sdk": "^0.2.9-beta",
     "@gemwallet/api": "^3.3.0",
-    "bignumber.js": "^9.1.1"
+    "bignumber.js": "^9.1.1",
+    "crossmark": "^0.0.0"
   }
 }
