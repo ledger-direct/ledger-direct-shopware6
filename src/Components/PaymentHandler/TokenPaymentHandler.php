@@ -37,6 +37,8 @@ class TokenPaymentHandler implements AsynchronousPaymentHandlerInterface
     // https://developer.shopware.com/docs/guides/plugins/plugins/checkout/payment/add-payment-plugin
 
     /**
+     *
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
@@ -58,6 +60,14 @@ class TokenPaymentHandler implements AsynchronousPaymentHandlerInterface
         return new RedirectResponse($redirectUrl);
     }
 
+    /**
+     *
+     *
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return void
+     */
     public function finalize(AsyncPaymentTransactionStruct $transaction, Request $request, SalesChannelContext $salesChannelContext): void
     {
         $orderTransaction = $transaction->getOrderTransaction();

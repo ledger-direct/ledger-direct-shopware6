@@ -81,6 +81,7 @@ class OrderTransactionService
         )->first();
     }
 
+    // prepareXrplOrderTransaction
     public function prepareOrderTransactionForXrpl(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -159,7 +160,6 @@ class OrderTransactionService
                 $customFields['xrpl']['destination_account'],
                 (int)$customFields['xrpl']['destination_tag']
             );
-
 
             if ($tx) {
                 $txPayload = json_decode($tx['tx'], true);

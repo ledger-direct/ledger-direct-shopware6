@@ -60,7 +60,7 @@ class XrplClientService
     }
      */
 
-    private function _initClient()
+    private function _initClient(): void
     {
         $jsonRpcUrl = $this->getNetwork()['jsonRpcUrl'];
         $this->client = new JsonRpcClient($jsonRpcUrl);

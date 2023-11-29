@@ -8,11 +8,11 @@
     "errors": {
     },
     "paymentPage": {
-      "sendXrpMessage": "Bitte sende %value% XRP an die folgende Addresse:",
-      "sendXrpMessage": "Bitte sende %value% %tokenName% an die folgende Addresse:",
+      "sendXrpMessage": "Bitte zahlen Sie %value% XRP an die folgende Adresse:",
+      "sendTokenMessage": "Bitte zahlen sie <strong>%amount%</strong> <strong>%tokenName%</strong> an folgende Adresse:",
       "destinationAccountLabel": "Account",
       "destinationTagLabel": "Destination Tag",
-      "destinationTagWarning": "Der Destination Tag muss für eine Korrekte Zuordnung der Zahlung mit angegeben werden.",
+      "destinationTagWarning": "Der Destination Tag muss für eine korrekte Zuordnung der Zahlung mit angegeben werden.",
       "checkPaymentButton": "Zahlungseingang prüfen",
       "orderNumber": "Bestellnummer",
       "price": "Preis",
