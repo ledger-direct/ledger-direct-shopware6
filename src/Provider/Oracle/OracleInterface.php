@@ -1,6 +1,6 @@
 <?php
 
-namespace LedgerDirect\Provider\Oracle;
+namespace LedgerDirect\.github\Oracle;
 
 interface OracleInterface
 {

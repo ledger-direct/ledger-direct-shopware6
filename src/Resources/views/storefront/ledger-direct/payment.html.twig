@@ -1,6 +1,6 @@
 {% sw_extends '@Storefront/storefront/base.html.twig' %}
 
-{% block base_body_classes %}{{ parent() }} ledger-direct{% endblock %}
+{% block base_body_classes %}{{ parent() }} ld-body{% endblock %}
 
 {% block base_body_inner %}
 
@@ -9,13 +9,11 @@
     <div class="ld-container" data-xrp-payment-page="true">
         <div class="ld-content">
 
-            <div class="ld-header">
-                {% if mode == 'xrp' %}
-                    <h2>{{ basicConfig.shopName }} - XRP Payment Page</h2>
-                {% elseif mode == 'token' %}
-                    <h2>{{ basicConfig.shopName }} - Token Payment Page</h2>
-                {% endif %}
-            </div>
+            {% if paymentPageTitle %}
+                <div class="ld-header">
+                    <h2>{{ paymentPageTitle }}</h2>
+                </div>
+            {% endif %}
 
             <div class="ld-card">
 
@@ -54,48 +52,50 @@
                         />
                     {% endif %}
 
-                    <label for="destinationAccount" class="bootstrap-form-label">
+                    <div class="ld-payment-info">
+                    <span>
                         {{ "LedgerDirect.paymentPage.destinationAccountLabel"|trans }}
-                    </label>
-                    <div class="bootstrap-input-group">
-                        <input id="destination-account"
-                               type="text"
-                               name="destination-account"
-                               class="bootstrap-form-control"
-                               value="{{ destinationAccount }}"
-                               readonly
-                        />
-                        <span class="bootstrap-input-group-text ld-hover" data-bs-toggle="tooltip" data-bs-title="Copy">
-                            {% sw_icon 'products' %}
-                        </span>
-                        <i class="ld-icon">
-                            {% sw_icon 'money-wallet' %}
-                        </i>
+                        {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/wallet_svg.html.twig' with {
+                            class: 'inline-svg',
+                            height:'16',
+                            width:'16',
+                            viewBox: '0 0 24 24'
+                        } %}
+                    </span>
+                        <div class="ld-payment-info-text">
+                            <div id="destination-account" class="" data-value="{{ destinationAccount }}">
+                                {{ destinationAccount }}
+                            </div>
+                            <div class="ld-payment-info-functions">
+                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/copy_svg.html.twig' with { class: 'action-svg' } %}
+                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/qr_svg.html.twig' with { class: 'action-svg' } %}
+                            </div>
+                        </div>
                     </div>
 
-                    <label for="destinationTag" class="bootstrap-form-label">
+                    <div class="ld-payment-info">
+                    <span>
                         {{ "LedgerDirect.paymentPage.destinationTagLabel"|trans }}
-                    </label>
-                    <div class="bootstrap-input-group">
-
-                        <input id="destination-tag"
-                               type="text"
-                               name="destination-tag"
-                               class="bootstrap-form-control"
-                               value="{{ destinationTag }}"
-                               readonly
-                        />
-                        <span class="bootstrap-input-group-text ld-hover" data-bs-toggle="tooltip" data-bs-title="Copy">
-                            {% sw_icon 'products' %}
-                        </span>
-                        <i class="ld-icon">
-                            {% sw_icon 'tags' %}
-                        </i>
+                        {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/tag_svg.html.twig' with {
+                            class: 'inline-svg',
+                            height:'16',
+                            width:'16',
+                            viewBox: '0 0 24 24'
+                        } %}
+                    </span>
+                        <div class="ld-payment-info-text">
+                            <div id="destination-tag" class="" data-value="{{ destinationTag }}">
+                                {{ destinationTag }}
+                            </div>
+                            <div class="ld-payment-info-functions">
+                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/copy_svg.html.twig' with { class: 'action-svg' } %}
+                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/qr_svg.html.twig' with { class: 'action-svg' } %}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="ld-warning">
                         <div role="alert" class="alert alert-warning alert-has-icon">
-                            {% sw_icon 'warning' %}
                             <div class="alert-content-container">
                                 <div class="alert-content">
                                     {{ "LedgerDirect.paymentPage.destinationTagWarning"|trans }}
@@ -122,11 +122,13 @@
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ xrpAmount }} XRP</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span>
+                        <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
                     {% elseif mode == 'token' %}
                         <div class="ld-sum">{{ price|currency }}</div>
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
                     {% endif %}
                     <img src="{{ asset('bundles/ledgerdirect/storefront/img/astronaut.png') }}" class="ld-astronaut" />
                 </div>
@@ -134,7 +136,9 @@
             </div>
 
             <div class="ld-footer">
-                {{ network }} - Ledger Direct Payment Plugin
+                <a href="{{ path('frontend.checkout.cart.page') }}" class="btn btn-primary ld-footer-button">
+                    {{ "LedgerDirect.paymentPage.backToCart"|trans }}
+                </a>
             </div>
 
         </div>

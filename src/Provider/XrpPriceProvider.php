@@ -3,14 +3,10 @@
 namespace LedgerDirect\Provider;
 
 use Exception;
+use github\Oracle\BinanceOracle;
+use github\Oracle\KrakenOracle;
+use github\Oracle\RippleOracle;
 use GuzzleHttp\Client;
-use LedgerDirect\Provider\Oracle\BinanceOracle;
-use LedgerDirect\Provider\Oracle\KrakenOracle;
-use LedgerDirect\Provider\Oracle\RippleOracle;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
 class XrpPriceProvider implements CryptoPriceProviderInterface
 {
