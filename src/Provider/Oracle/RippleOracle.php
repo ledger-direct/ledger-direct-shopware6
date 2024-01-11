@@ -1,10 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\.github\Oracle;
+namespace Hardcastle\LedgerDirect\Provider\Oracle;
 
 use GuzzleHttp\Client;
-
-LedgerDirect\use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
 class RippleOracle implements OracleInterface
 {

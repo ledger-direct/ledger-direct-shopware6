@@ -1,8 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Storefront\Controller;
+namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
-use LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -11,8 +13,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute;
-use LedgerDirect\Service\OrderTransactionService;
 
 /**
  * @Route(defaults={"_routeScope"={"storefront"}})

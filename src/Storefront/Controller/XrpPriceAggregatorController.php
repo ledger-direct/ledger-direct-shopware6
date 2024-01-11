@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Storefront\Controller;
+namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
 use Shopware\Storefront\Controller\StorefrontController;
 

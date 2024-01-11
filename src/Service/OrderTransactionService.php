@@ -1,18 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Service;
+namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
-use LedgerDirect\Installer\PaymentMethodInstaller;
-use LedgerDirect\Provider\XrpPriceProvider;
-use LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
+use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use function XRPL_PHP\Sugar\dropsToXrp;
+use function Hardcastle\XRPL_PHP\Sugar\dropsToXrp;
 
 class OrderTransactionService
 {

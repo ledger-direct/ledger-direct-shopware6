@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Provider;
+namespace Hardcastle\LedgerDirect\Provider;
 
 interface CryptoPriceProviderInterface
 {

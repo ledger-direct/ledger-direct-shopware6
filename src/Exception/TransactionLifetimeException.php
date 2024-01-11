@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Exception;
+namespace Hardcastle\LedgerDirect\Exception;
 
 use Shopware\Core\Framework\ShopwareHttpException;
 

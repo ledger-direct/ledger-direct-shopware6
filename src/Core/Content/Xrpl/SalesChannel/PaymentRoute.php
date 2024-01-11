@@ -1,22 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Core\Content\Xrpl\SalesChannel;
+namespace Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel;
 
 use DateTimeImmutable;
-use LedgerDirect\Exception\TransactionLifetimeException;
-use OpenApi\Annotations as OA;
+use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
-use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use LedgerDirect\Service\OrderTransactionService;
 
 /**
  * @Route(defaults={"_routeScope"={"store-api"}})

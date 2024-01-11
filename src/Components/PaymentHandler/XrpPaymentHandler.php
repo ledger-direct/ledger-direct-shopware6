@@ -1,19 +1,16 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace LedgerDirect\Components\PaymentHandler;
+namespace Hardcastle\LedgerDirect\Components\PaymentHandler;
 
+use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
-use LedgerDirect\Provider\CryptoPriceProviderInterface;
-use LedgerDirect\Service\OrderTransactionService;
 
 class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
 {

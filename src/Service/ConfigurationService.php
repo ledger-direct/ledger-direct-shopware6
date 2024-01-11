@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Service;
+namespace Hardcastle\LedgerDirect\Service;
 
-use XRPL_PHP\Core\Networks;
+use Hardcastle\XRPL_PHP\Core\Networks;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService

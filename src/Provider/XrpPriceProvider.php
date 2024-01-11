@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Provider;
+namespace Hardcastle\LedgerDirect\Provider;
 
 use Exception;
-use github\Oracle\BinanceOracle;
-use github\Oracle\KrakenOracle;
-use github\Oracle\RippleOracle;
 use GuzzleHttp\Client;
+use Hardcastle\LedgerDirect\Provider\Oracle\BinanceOracle;
+use Hardcastle\LedgerDirect\Provider\Oracle\KrakenOracle;
+use Hardcastle\LedgerDirect\Provider\Oracle\RippleOracle;
 
 class XrpPriceProvider implements CryptoPriceProviderInterface
 {
