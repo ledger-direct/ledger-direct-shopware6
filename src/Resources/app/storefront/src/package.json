@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@crossmarkio/sdk": "^0.3.1-beta",
-    "@gemwallet/api": "^3.5.1",
+    "@gemwallet/api": "^3.6.0",
     "bignumber.js": "^9.1.1"
   }
 }

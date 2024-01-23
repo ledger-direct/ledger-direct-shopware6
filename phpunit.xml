@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+        bootstrap="../../../vendor/shopware/core/TestBootstrap.php"
+        cacheResult="false"
+        cacheDirectory=".phpunit.cache"
+        colors="true"
+>
+  <php>
+    <ini name="error_reporting" value="-1"/>
+    <server name="APP_ENV" value="test" force="true"/>
+    <server name="KERNEL_CLASS" value="\Shopware\Core\Framework\Test\TestKernel" />
+    <env name="APP_DEBUG" value="1"/>
+    <env name="APP_SECRET" value="s$cretf0rt3st"/>
+    <env name="SHELL_VERBOSITY" value="-1"/>
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="weak"/>
+  </php>
+  <testsuites>
+    <testsuite name="LedgerDirect - Shopware6 Plugin Tests">
+      <directory>tests/</directory>
+    </testsuite>
+  </testsuites>
+  <source>
+    <include>
+      <directory suffix=".php">./</directory>
+    </include>
+  </source>
+</phpunit>

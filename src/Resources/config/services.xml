@@ -74,6 +74,7 @@
         <!-- Services -->
         <service id="Hardcastle\LedgerDirect\Service\ConfigurationService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Service\OrderTransactionService">

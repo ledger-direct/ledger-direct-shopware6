@@ -162,19 +162,19 @@ class OrderTransactionService
             );
 
             if ($tx) {
-                $txPayload = json_decode($tx['tx'], true);
+                $txMeta = json_decode($tx['meta'], true);
 
-                if (is_array($txPayload['Amount'])) {
-                    $amount = $txPayload['Amount']['value'];
+                if (is_array($txMeta['delivered_amount'])) {
+                    $amount = $txMeta['delivered_amount']['value'];
                 } else {
-                    $amount = dropsToXrp($txPayload['Amount']);
+                    $amount = dropsToXrp($txMeta['delivered_amount']);
                 }
 
                 $this->addCustomFieldsToTransaction($orderTransaction, [
                     'xrpl' => [
                         'hash' => $tx['hash'],
-                        'ctid' => $tx['hash'], // TODO: Add CTID here
-                        'amount_paid' => $amount
+                        'ctid' => $tx['ctid'], // TODO: Add CTID here
+                        'delivered_amount' => $amount
                     ]
                 ], $context);
 

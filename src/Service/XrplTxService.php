@@ -71,8 +71,6 @@ class XrplTxService
 
     public function syncTransactions(string $address): void
     {
-        // TODO: Use only last ledger index
-
         $lastLedgerIndex = (int) $this->connection->fetchOne('SELECT MAX(ledger_index) FROM xrpl_tx');
 
         if (!$lastLedgerIndex) {

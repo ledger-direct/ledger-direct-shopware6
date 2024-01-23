@@ -63,7 +63,7 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
         if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
             $requestedXrpAmount = (float) $customFields['xrpl']['amount_requested'];
-            $paidXrpAmount = (float) $customFields['xrpl']['amount_paid'];
+            $paidXrpAmount = (float) $customFields['xrpl']['delivered_amount'];
             $slippage = 0.0015; // TODO: Make this configurable
             $slipped = 1.0 - $paidXrpAmount / $requestedXrpAmount;
             if($slipped < $slippage) {

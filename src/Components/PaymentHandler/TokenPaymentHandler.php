@@ -73,7 +73,7 @@ class TokenPaymentHandler implements AsynchronousPaymentHandlerInterface
         if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
             $requestedTokenAmount = (float) $customFields['xrpl']['value'];
-            $paidTokenAmount = (float) $customFields['xrpl']['amount_paid'];
+            $paidTokenAmount = (float) $customFields['xrpl']['delivered_amount'];
             if ($requestedTokenAmount === $paidTokenAmount) {
                 // Payment completed, set transaction status to "paid"
                 $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
