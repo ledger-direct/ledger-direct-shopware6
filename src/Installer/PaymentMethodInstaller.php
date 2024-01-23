@@ -1,7 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace LedgerDirect\Installer;
+namespace Hardcastle\LedgerDirect\Installer;
 
+use Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
+use Hardcastle\LedgerDirect\LedgerDirect;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -11,9 +14,6 @@ use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
-use LedgerDirect\Components\PaymentHandler\TokenPaymentHandler;
-use LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
-use LedgerDirect\LedgerDirect;
 
 class PaymentMethodInstaller
 {

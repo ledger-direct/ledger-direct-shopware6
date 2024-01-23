@@ -1,16 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Provider;
+namespace Hardcastle\LedgerDirect\Provider;
 
 use Exception;
 use GuzzleHttp\Client;
-use LedgerDirect\Provider\Oracle\BinanceOracle;
-use LedgerDirect\Provider\Oracle\KrakenOracle;
-use LedgerDirect\Provider\Oracle\RippleOracle;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Hardcastle\LedgerDirect\Provider\Oracle\BinanceOracle;
+use Hardcastle\LedgerDirect\Provider\Oracle\KrakenOracle;
+use Hardcastle\LedgerDirect\Provider\Oracle\RippleOracle;
 
 class XrpPriceProvider implements CryptoPriceProviderInterface
 {

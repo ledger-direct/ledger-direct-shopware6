@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Service;
+namespace Hardcastle\LedgerDirect\Service;
 
 class XrplTransactionFileService
 {

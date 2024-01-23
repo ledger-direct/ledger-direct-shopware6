@@ -1,11 +1,10 @@
-body {
-  &.ledger-direct {
-    font-family: Montserrat, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    outline: 0!important;
-    background-color: #e62355;
-  }
+body.ld-body {
+  font-family: Montserrat, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 18px;
+  outline: 0!important;
+  background-color: #e62355;
 }
 
 .ld-container {
@@ -23,9 +22,10 @@ body {
   margin-top: 2rem;
   margin-bottom: 2rem;
   text-align: center;
-  h2 {
-    color: white;
-  }
+}
+
+.ld-header h2 {
+  color: white;
 }
 
 .ld-footer {
@@ -54,134 +54,153 @@ body {
   background-color: #1daae6;
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-
-  img.ld-astronaut {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-  }
 }
 
-.bootstrap-input-group {
-  position: relative;
-  display: -ms-flexbox;
-  display: -webkit-flex;
+img.ld-astronaut {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 128px;
+  height: 128px;
+}
+
+.ld-payment-info {
+  margin-bottom: 8px
+}
+
+.ld-payment-info-text {
   display: flex;
-  -ms-flex-wrap: wrap;
-  flex-wrap: wrap;
-  -ms-flex-align: stretch;
-  align-items: stretch;
-  width: 100%;
-  margin-bottom: 0.5rem;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
 }
 
-.bootstrap-form-label {
+.ld-payment-info-functions {
+  display: grid;
+  column-gap: 6px;
+  grid-auto-flow: column;
+  margin-left: auto;
+}
+
+.inline-svg {
   display: inline-block;
-  margin-bottom: 0.5rem;
+  margin-bottom: -2px;
+  color: #3a3a3a;
 }
 
-.bootstrap-form-control {
+.action-svg {
   display: block;
-  padding: 0.375rem 0.75rem 0.375rem 3rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
-  background-clip: padding-box;
-  border: 1px solid #ced4da;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border-radius: 0.375rem;
-  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-
-  position: relative;
-  -ms-flex: 1 1 auto;
-  flex: 1 1 auto;
-  width: 1%;
-  min-width: 0;
-
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+  cursor: pointer;
+  fill: #758ca3;
 }
-
-.bootstrap-input-group-text {
-  display: flex;
-  -ms-flex-align: center;
-  align-items: center;
-  padding: 0.5625rem 0.5625rem;
-  font-size: .875rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #2b3136;
-  text-align: center;
-  white-space: nowrap;
-  background-color: #eee;
-  border: 1px solid #ced4da;
-
-  margin-left: -1px;
-  border-top-right-radius: 0.375rem;
-  border-bottom-right-radius: 0.375rem;
-
-  &:hover {
-    background-color: whitesmoke;
-  }
-
-  span.icon {
-    svg {
-      top: 0;
-    }
-  }
+.action-svg:hover {
+  fill: #3a3a3a;
 }
 
 .ld-icon {
   display: block;
   position: absolute;
   padding: 0.5625rem 0.5625rem;
+}
 
-  span.icon {
-    svg {
-      top: 0;
-    }
-  }
+.ld-icon span.icon {
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.ld-icon span.icon svg {
+  top: 0;
 }
 
 .ld-warning {
   margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .ld-sync {
   text-align: center;
+}
 
-  button {
-    padding: 0.5rem;
-    font-weight: bold;
-    color: white;
-    background-color: #1daae6;
-    border: none;
-    border-radius: 0.375rem;
+.ld-sync button {
+  padding: 0.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #1daae6;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
 
-    &:hover {
-      background-color: #59c2ef;
-    }
+.ld-sync button:hover {
+  background-color: #59c2ef;
+}
 
-    &.wallet-active {
+.ld-sync button.wallet-active {
 
-    }
+}
 
-    &.wallet-disabled {
-      background-color: grey;
-      cursor: default;
-      &:hover {
-        background-color: #59c2ef;
-      }
-    }
-  }
+.ld-sync button.wallet-active:hover {
+  background-color: #59c2ef;
+}
+
+.ld-sync button.wallet-disabled {
+  background-color: grey;
+  cursor: default;
 }
 
 .ld-sum {
   font-size: 3rem;
   font-weight: bold;
   text-align: center;
+}
+
+.ld-back-to-cart {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+@media only screen and (max-width: 768px) {
+  body.ld-body {
+    font-size: 14px;
+    background-color: white;
+  }
+
+  .ld-header{
+    display: none;
+  }
+
+  .ld-card {
+    flex-direction: column;
+  }
+
+  .ld-card-left {
+    width: 100%;
+    padding: 16px;
+    border-radius: 0;
+  }
+
+  .ld-card-right {
+    width: 100%;
+    padding: 16px;
+    border-radius: 0;
+  }
+
+  img.ld-astronaut {
+    width: 128px;
+    height: 128px;
+  }
+
+  .ld-payment-info-text {
+    padding: 6px;
+    font-size: 12px;
+    border-radius: 1px;
+  }
+
+  .ld-payment-info-functions svg {
+    width: 20px;
+    height: 20px;
+  }
 }

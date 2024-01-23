@@ -16,7 +16,9 @@
       "checkPaymentButton": "Zahlungseingang prüfen",
       "orderNumber": "Bestellnummer",
       "price": "Preis",
-      "exchangeRate": "Wechselkurs"
+      "exchangeRate": "Wechselkurs",
+      "network": "Netzwerk",
+      "backToCart": "Zurück zum Warenkorb"
     }
   }
 }

@@ -1,8 +1,7 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Provider\Oracle;
+namespace Hardcastle\LedgerDirect\Provider\Oracle;
 
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use GuzzleHttp\Client;
 
 class BinanceOracle implements OracleInterface

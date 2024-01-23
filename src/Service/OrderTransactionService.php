@@ -1,18 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Service;
+namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
-use LedgerDirect\Installer\PaymentMethodInstaller;
-use LedgerDirect\Provider\XrpPriceProvider;
-use LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
+use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use function XRPL_PHP\Sugar\dropsToXrp;
+use function Hardcastle\XRPL_PHP\Sugar\dropsToXrp;
 
 class OrderTransactionService
 {
@@ -162,19 +162,19 @@ class OrderTransactionService
             );
 
             if ($tx) {
-                $txPayload = json_decode($tx['tx'], true);
+                $txMeta = json_decode($tx['meta'], true);
 
-                if (is_array($txPayload['Amount'])) {
-                    $amount = $txPayload['Amount']['value'];
+                if (is_array($txMeta['delivered_amount'])) {
+                    $amount = $txMeta['delivered_amount']['value'];
                 } else {
-                    $amount = dropsToXrp($txPayload['Amount']);
+                    $amount = dropsToXrp($txMeta['delivered_amount']);
                 }
 
                 $this->addCustomFieldsToTransaction($orderTransaction, [
                     'xrpl' => [
                         'hash' => $tx['hash'],
-                        'ctid' => $tx['hash'], // TODO: Add CTID here
-                        'amount_paid' => $amount
+                        'ctid' => $tx['ctid'], // TODO: Add CTID here
+                        'delivered_amount' => $amount
                     ]
                 ], $context);
 

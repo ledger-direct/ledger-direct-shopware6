@@ -14,24 +14,26 @@ function setupGemWallet() {
 
 function performPayment() {
     const paymentPayload = preparePaymentPayload.bind(this)();
-    console.log(paymentPayload)
+
     sendPayment(paymentPayload).then((response) => {
         this.log(response.result?.hash)
         this.checkPayment()
     }, (reason) => {
         this.log(reason)
+    }).catch(error => {
+
     })
 }
 
 function preparePaymentPayload() {
     // XRP Payment
     try {
-        this.xrpAmountInput = DomAccess.querySelector(document, '#xrp-amount')
+        this.xrpAmount = DomAccess.querySelector(document, '#xrp-amount')
 
         const xrpPaymentData = {
-            amount: parseFloat(this.xrpAmountInput.value).toFixed(6),
-            destination: this.destinationAccountInput.value,
-            destinationTag: parseInt(this.destinationTagInput.value)
+            amount: parseFloat(this.xrpAmount.value).toFixed(6),
+            destination: this.destinationAccount.dataset.value,
+            destinationTag: parseInt(this.destinationTag.dataset.value)
         }
 
         return {
@@ -55,8 +57,8 @@ function preparePaymentPayload() {
                 issuer: issuerInput.value,
                 value: tokenAmountInput.value
             },
-            destination: this.destinationAccountInput.value,
-            destinationTag: parseInt(this.destinationTagInput.value)
+            destination: this.destinationAccount.dataset.value,
+            destinationTag: parseInt(this.destinationTag.dataset.value)
         }
     } catch (error) {
         console.log(error)

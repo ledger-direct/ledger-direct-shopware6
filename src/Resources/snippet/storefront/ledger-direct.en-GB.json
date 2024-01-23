@@ -16,7 +16,9 @@
       "checkPaymentButton": "Check payment processing",
       "orderNumber": "Order No.",
       "price": "Price",
-      "exchangeRate": "Rate"
+      "exchangeRate": "Rate",
+      "network": "Network",
+      "backToCart": "Back to cart"
     }
   }
 }

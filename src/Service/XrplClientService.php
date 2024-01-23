@@ -1,20 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace LedgerDirect\Service;
+namespace Hardcastle\LedgerDirect\Service;
 
-use DateTime;
-use Doctrine\DBAL\Connection;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Uuid\Uuid;
-use XRPL_PHP\Client\JsonRpcClient;
-use XRPL_PHP\Core\Networks;
-use XRPL_PHP\Models\Account\AccountTxRequest;
-use LedgerDirect\Entity\XrplTxEntity;
+use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
+use Hardcastle\XRPL_PHP\Core\Networks;
+use Hardcastle\XRPL_PHP\Models\Account\AccountTxRequest;
+use Hardcastle\LedgerDirect\Entity\XrplTxEntity;
 
 class XrplClientService
 {

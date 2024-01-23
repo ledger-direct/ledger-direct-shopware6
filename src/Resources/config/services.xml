@@ -7,34 +7,34 @@
     <services>
 
         <!-- Commands -->
-        <service id="LedgerDirect\Command\XrplTransactionLookupCommand">
-            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+        <service id="Hardcastle\LedgerDirect\Command\XrplTransactionLookupCommand">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
 
             <tag name="console.command"/>
         </service>
 
-        <service id="LedgerDirect\Command\XrpPriceLookupCommand">
-            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
+        <service id="Hardcastle\LedgerDirect\Command\XrpPriceLookupCommand">
+            <argument type="service" id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider" />
 
             <tag name="console.command"/>
         </service>
 
-        <service id="LedgerDirect\Command\XrplTransactionSyncCommand">
-            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+        <service id="Hardcastle\LedgerDirect\Command\XrplTransactionSyncCommand">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
 
             <tag name="console.command"/>
         </service>
 
         <!-- Controllers -->
-        <service id="LedgerDirect\Storefront\Controller\XrpPriceAggregatorController" public="true">
+        <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrpPriceAggregatorController" public="true">
             <call method="setContainer">
                 <argument type="service" id="service_container" />
             </call>
         </service>
 
-        <service id="LedgerDirect\Storefront\Controller\XrpPaymentController" public="true">
-            <argument type="service" id="LedgerDirect\Service\OrderTransactionService" />
-            <argument type="service" id="LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
+        <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrpPaymentController" public="true">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
@@ -45,56 +45,57 @@
         </service>
 
         <!-- Payment Handlers -->
-        <service id="LedgerDirect\Components\PaymentHandler\XrpPaymentHandler">
+        <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler">
             <argument type="service" id="router"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
             <tag name="shopware.payment.method.async"/>
         </service>
 
-        <service id="LedgerDirect\Components\PaymentHandler\TokenPaymentHandler">
+        <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler">
             <argument type="service" id="router"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
             <tag name="shopware.payment.method.async"/>
         </service>
 
         <!-- Providers -->
-        <service id="LedgerDirect\Provider\XrpPriceProvider">
+        <service id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
         </service>
 
         <!-- Routes -->
-        <service id="LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" public="true">
-            <argument type="service" id="LedgerDirect\Service\OrderTransactionService"/>
+        <service id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" public="true">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
         </service>
 
         <!-- Services -->
-        <service id="LedgerDirect\Service\ConfigurationService">
+        <service id="Hardcastle\LedgerDirect\Service\ConfigurationService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="logger"/>
         </service>
 
-        <service id="LedgerDirect\Service\OrderTransactionService">
-            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
+        <service id="Hardcastle\LedgerDirect\Service\OrderTransactionService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService" />
             <argument type="service" id="order.repository" />
             <argument type="service" id="order_transaction.repository" />
-            <argument type="service" id="LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
             <argument type="service" id="currency.repository" />
-            <argument type="service" id="LedgerDirect\Provider\XrpPriceProvider" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider" />
         </service>
 
-        <service id="LedgerDirect\Service\XrplClientService">
-            <argument type="service" id="LedgerDirect\Service\ConfigurationService" />
+        <service id="Hardcastle\LedgerDirect\Service\XrplClientService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService" />
         </service>
 
-        <service id="LedgerDirect\Service\XrplTxService">
-            <argument type="service" id="LedgerDirect\Service\XrplClientService"/>
+        <service id="Hardcastle\LedgerDirect\Service\XrplTxService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplClientService"/>
             <argument type="service" id="Doctrine\DBAL\Connection" />
         </service>
 
-        <service id="LedgerDirect\Service\XrplTransactionFileService">
+        <service id="Hardcastle\LedgerDirect\Service\XrplTransactionFileService">
             <argument>%kernel.project_dir%/files</argument>
         </service>
 

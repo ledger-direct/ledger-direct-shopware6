@@ -13,8 +13,8 @@ class XrpPayment extends Plugin {
 
         this.client = new HttpClient();
 
-        this.destinationAccountInput = DomAccess.querySelector(document, '#destination-account')
-        this.destinationTagInput = DomAccess.querySelector(document, '#destination-tag')
+        this.destinationAccount = DomAccess.querySelector(document, '#destination-account')
+        this.destinationTag = DomAccess.querySelector(document, '#destination-tag')
         this.checkPaymentButton = DomAccess.querySelector(document, '#check-payment-button')
         this.spinner = DomAccess.querySelector(this.checkPaymentButton, 'span')
 
@@ -28,8 +28,8 @@ class XrpPayment extends Plugin {
     }
 
     registerEvents() {
-        this.destinationAccountInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccountInput))
-        this.destinationTagInput.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTagInput))
+        this.destinationAccount.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccount))
+        this.destinationTag.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTag))
         this.checkPaymentButton.addEventListener('click', this.checkPayment.bind(this))
     }
 
@@ -57,7 +57,7 @@ class XrpPayment extends Plugin {
 
     copyToClipboard(element, event) {
         console.log('cop-to-clipboard')
-        navigator.clipboard.writeText(element.value)
+        navigator.clipboard.writeText(element.dataset.value)
     }
 
     log(value) {

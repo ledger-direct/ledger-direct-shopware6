@@ -29,6 +29,7 @@ async function pay() {
     console.log('pay')
     const account = sdk.getAddress()
     const paymentPayload = preparePaymentPayload.bind(this)(account)
+    console.log(paymentPayload)
     this.crossmarkBlocked = true
     return await sdk.signAndSubmitAndWait(paymentPayload).then((response) => {
         this.crossmarkBlocked = false
@@ -52,8 +53,8 @@ function preparePaymentPayload(account) {
 
         const xrpPaymentData = {
             amount: parseFloat(this.xrpAmountInput.value).toFixed(6),
-            destination: this.destinationAccountInput.value,
-            destinationTag: parseInt(this.destinationTagInput.value)
+            destination: this.destinationAccount.dataset.value,
+            destinationTag: parseInt(this.destinationTag.dataset.value)
         }
 
         return {
@@ -76,8 +77,8 @@ function preparePaymentPayload(account) {
         return {
             TransactionType: 'Payment',
             Account: sdk.sign({TransactionType: 'SignIn'}),
-            Destination: this.destinationAccountInput.value,
-            DestinationTag: parseInt(this.destinationTagInput.value),
+            Destination: this.destinationAccount.dataset.value,
+            DestinationTag: parseInt(this.destinationTag.dataset.value),
             Amount: {
                 currency: currencyInput.value,
                 issuer: issuerInput.value,
