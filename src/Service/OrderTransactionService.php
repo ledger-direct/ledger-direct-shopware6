@@ -6,6 +6,7 @@ use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\XRPL_PHP\Models\Common\Amount;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
@@ -47,27 +48,12 @@ class OrderTransactionService
         $this->priceProvider = $priceProvider;
     }
 
+
     /**
-     *
-     *
-     * @param OrderEntity $order
+     * @param string $orderId
      * @param Context $context
-     * @return array
-     * @throws Exception
+     * @return OrderEntity|null
      */
-    public function getCurrentXrpPriceForOrder(OrderEntity $order, Context $context): array
-    {
-        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
-        $currencyAmountTotal = $order->getAmountTotal();
-        $xrpUnitPrice = $this->priceProvider->getCurrentExchangeRate($currency->getIsoCode());
-
-        return [
-            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
-            'exchange_rate' => $xrpUnitPrice,
-            'amount_requested' => $currencyAmountTotal / $xrpUnitPrice
-        ];
-    }
-
     public function getOrderWithTransactions(string $orderId, Context $context): ?OrderEntity
     {
         $criteria = new Criteria([$orderId]);
@@ -145,6 +131,27 @@ class OrderTransactionService
         ];
 
         $this->addCustomFieldsToTransaction($orderTransaction, $tokenAmountCustomFields, $context);
+    }
+
+    /**
+     * Get XRP price for Order
+     *
+     * @param OrderEntity $order
+     * @param Context $context
+     * @return array
+     * @throws Exception
+     */
+    public function getCurrentXrpPriceForOrder(OrderEntity $order, Context $context): array
+    {
+        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
+        $currencyAmountTotal = $order->getAmountTotal();
+        $exchangeRate = $this->priceProvider->getCurrentExchangeRate($currency->getIsoCode());
+
+        return [
+            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
+            'exchange_rate' => $exchangeRate,
+            'amount_requested' => $currencyAmountTotal / $exchangeRate
+        ];
     }
 
     public function syncOrderTransactionWithXrpl(OrderTransactionEntity $orderTransaction, Context $context): ?array

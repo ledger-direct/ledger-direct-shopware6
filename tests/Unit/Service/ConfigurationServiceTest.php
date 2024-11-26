@@ -3,18 +3,18 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Service;
 
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
+use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
+use Hardcastle\LedgerDirect\Tests\Manual\ClassHelper;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationServiceTest extends TestCase
 {
     private ConfigurationService $configurationService;
-    private SystemConfigService $systemConfigService;
-    private LoggerInterface $logger;
 
     protected function setUp(): void
     {
+        /*
         $this->systemConfigService = $this->createMock(SystemConfigService::class);
 
         $this->systemConfigService->method('get')->willReturnMap([
@@ -26,6 +26,10 @@ class ConfigurationServiceTest extends TestCase
 
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->configurationService = new ConfigurationService($this->systemConfigService, $this->logger);
+        */
+
+        ClassHelper::getClassesInNamespace('Hardcastle\LedgerDirect\Service');
+        $this->configurationService = ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration());
     }
 
     public function testIsTest(): void
