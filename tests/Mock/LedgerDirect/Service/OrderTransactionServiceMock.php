@@ -3,11 +3,10 @@
 namespace Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service;
 
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
-use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 
 use Hardcastle\LedgerDirect\Service\XrplTxService;
-use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
+use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Mockery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -16,7 +15,7 @@ class OrderTransactionServiceMock
 {
     public static function createInstance(): OrderTransactionService
     {
-        $configurationService = ConfigurationServiceMock::createInstance(); // ConfigurationService
+        $configurationService = ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration()); // ConfigurationService
         $orderRepository = Mockery::mock(EntityRepository::class); // EntityRepository
         $orderTransactionRepository = Mockery::mock(EntityRepository::class); // EntityRepository
         $xrplSyncService = Mockery::mock(XrplTxService::class); // XrplTxService

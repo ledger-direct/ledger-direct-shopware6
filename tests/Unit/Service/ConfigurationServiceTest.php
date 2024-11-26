@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Service;
 
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
+use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Hardcastle\LedgerDirect\Tests\Manual\ClassHelper;
 use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use PHPUnit\Framework\TestCase;
@@ -26,8 +27,9 @@ class ConfigurationServiceTest extends TestCase
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->configurationService = new ConfigurationService($this->systemConfigService, $this->logger);
         */
+
         ClassHelper::getClassesInNamespace('Hardcastle\LedgerDirect\Service');
-        $this->configurationService = ConfigurationServiceMock::createInstance();
+        $this->configurationService = ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration());
     }
 
     public function testIsTest(): void

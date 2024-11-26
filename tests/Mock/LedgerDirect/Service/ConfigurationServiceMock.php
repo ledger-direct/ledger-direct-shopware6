@@ -10,22 +10,15 @@ use Mockery;
 
 class ConfigurationServiceMock
 {
-    public static function createInstance(): ConfigurationService
+    public static function createInstance(array $configValues): ConfigurationService
     {
         $systemConfigServiceMock = Mockery::mock(SystemConfigService::class);
 
-        $systemConfigServiceMock->shouldReceive('get')
-            ->with('LedgerDirect.config.useTestnet')
-            ->andReturn(true);
-        $systemConfigServiceMock->shouldReceive('get')
-            ->with('LedgerDirect.config.xrplTestnetAccount')
-            ->andReturn('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr');
-        $systemConfigServiceMock->shouldReceive('get')
-            ->with('LedgerDirect.config.xrplTestnetCustomTokenName')
-            ->andReturn('EUR');
-        $systemConfigServiceMock->shouldReceive('get')
-            ->with('LedgerDirect.config.xrplTestnetCustomTokenIssuer')
-            ->andReturn('rUFqxm6cfRQTvxgAqJny1dGMprrXQXhTLb');
+        foreach ($configValues as $key => $value) {
+            $systemConfigServiceMock->shouldReceive('get')
+                ->with($key)
+                ->andReturn($value);
+        }
 
         $loggerMock = Mockery::mock(LoggerInterface::class);
 
