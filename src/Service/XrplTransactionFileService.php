@@ -22,6 +22,5 @@ class XrplTransactionFileService
 
         $fileName = $path . DIRECTORY_SEPARATOR . 'account_tx_' . time() . '.json';
         file_put_contents($fileName, $accountTransactionResult);
-
     }
 }

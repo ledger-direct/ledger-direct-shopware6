@@ -1,4 +1,11 @@
+# Package Managers
 **/node_modules
 **/package-lock.json
 
+# Test and Caches
+.phpunit.result.cache
+.phpunit.cache
+
+# Project specific
+TODO.md
 NOTES.md

@@ -5,7 +5,6 @@ namespace Hardcastle\LedgerDirect\Service;
 use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
 use Hardcastle\XRPL_PHP\Core\Networks;
 use Hardcastle\XRPL_PHP\Models\Account\AccountTxRequest;
-use Hardcastle\LedgerDirect\Entity\XrplTxEntity;
 
 class XrplClientService
 {
