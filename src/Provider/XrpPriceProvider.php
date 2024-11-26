@@ -49,7 +49,7 @@ class XrpPriceProvider implements CryptoPriceProviderInterface
                     $oracleResults[] = $price;
                 }
             } catch (Exception $exception) {
-                echo $exception->getMessage();
+                // TODO: Log error
             }
         }
 
