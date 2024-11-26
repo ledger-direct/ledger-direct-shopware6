@@ -4,7 +4,7 @@ namespace Hardcastle\LedgerDirect\Tests\Fixtures;
 
 class Fixtures
 {
-    public static function getCurrentConfiguration(): array
+    public static function getIntegrationTestConfiguration(): array
     {
         return [
             'LedgerDirect.config.useTestnet' => true,

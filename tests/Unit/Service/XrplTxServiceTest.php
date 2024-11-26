@@ -17,6 +17,7 @@ class XrplTxServiceTest extends TestCase
     {
         $this->clientService = $this->createMock(XrplClientService::class);
         $this->connection = $this->createMock(Connection::class);
+
         $this->xrplTxService = new XrplTxService($this->clientService, $this->connection);
     }
 

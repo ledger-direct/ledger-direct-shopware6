@@ -11,17 +11,20 @@ use Psr\Http\Message\ResponseInterface;
 class XrpPriceProviderTest extends TestCase
 {
     private XrpPriceProvider $xrpPriceProvider;
+
+    private Client $client;
+
     protected function setUp(): void
     {
         $response = Mockery::mock(ResponseInterface::class);
         $response->shouldReceive('getBody')
             ->andReturn('{"price": 0.5}');
 
-        $client = Mockery::mock(Client::class);
-        $client->shouldReceive('get')
+        $this->client = Mockery::mock(Client::class);
+        $this->client->shouldReceive('get')
             ->andReturn($response);
 
-        $this->xrpPriceProvider = new XrpPriceProvider($client);
+        $this->xrpPriceProvider = new XrpPriceProvider($this->client);
     }
     public function testGetCurrentExchangeRate(): void
     {

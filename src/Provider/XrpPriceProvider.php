@@ -37,21 +37,23 @@ class XrpPriceProvider implements CryptoPriceProviderInterface
         $oracles = [
             new BinanceOracle(),
             new KrakenOracle(),
-            new RippleOracle(),
+            // new RippleOracle(), // Disabled due to issues with the Ripple API
         ];
 
         foreach ($oracles as $oracle) {
             try {
+
                 $price = $oracle->prepare($this->client)->getCurrentPriceForPair(self::CRYPTO_CODE, $code);
+
                 if ($price > 0.0) {
                     $oracleResults[] = $price;
                 }
             } catch (Exception $exception) {
-                // TODO: Log error
+                echo $exception->getMessage();
             }
         }
 
-        if(count($oracleResults) === 0) {
+        if (count($oracleResults) === 0) {
             return false;
         }
 

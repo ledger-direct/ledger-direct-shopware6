@@ -6,6 +6,7 @@ use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\XRPL_PHP\Models\Common\Amount;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
