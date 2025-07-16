@@ -9,6 +9,12 @@
             <label lang="de-DE">Testnet verwenden</label>
             <defaultValue>true</defaultValue>
         </input-field>
+        <input-field type="bool">
+            <name>rlusdEnabled</name>
+            <label>Enable RLUSD Payments</label>
+            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
     </card>
 
 
@@ -18,10 +24,12 @@
 
         <input-field type="text">
             <name>xrplTestnetAccount</name>
-            <label>Account (Testnet)</label>
-            <label lang="de-DE">Account (Testnet)</label>
+            <label>Merchant Wallet Address (Testnet)</label>
+            <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
         </input-field>
 
+        <!-- Disabled -Custom token settings for XRPL Testnet -->
+        <!--
         <input-field type="text">
             <name>xrplTestnetCustomTokenName</name>
             <label>Token (Testnet)</label>
@@ -33,6 +41,7 @@
             <label>Issuer (Testnet)</label>
             <label lang="de-DE">Issuer (Testnet)</label>
         </input-field>
+        -->
     </card>
 
     <card>
@@ -41,10 +50,12 @@
 
         <input-field type="text">
             <name>xrplMainnetAccount</name>
-            <label>Account (Mainnet)</label>
-            <label lang="de-DE">Account (Mainnet)</label>
+            <label>Merchant Wallet Address (Mainnet)</label>
+            <label lang="de-DE">Addresse des Händler-Wallets (Mainnet)</label>
         </input-field>
 
+        <!-- Disabled -Custom token settings for XRPL Testnet -->
+        <!--
         <input-field type="text">
             <name>xrplMainnetCustomTokenName</name>
             <label>Token (Mainnet)</label>
@@ -56,6 +67,7 @@
             <label>Issuer (Mainnet)</label>
             <label lang="de-DE">Issuer (Mainnet)</label>
         </input-field>
+        -->
     </card>
 
 </config>
