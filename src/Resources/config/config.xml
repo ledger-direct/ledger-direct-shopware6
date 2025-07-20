@@ -9,18 +9,19 @@
             <label lang="de-DE">Testnet verwenden</label>
             <defaultValue>true</defaultValue>
         </input-field>
-        <input-field type="bool">
-            <name>rlusdEnabled</name>
-            <label>Enable RLUSD Payments</label>
-            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
-            <defaultValue>true</defaultValue>
-        </input-field>
     </card>
 
 
     <card>
         <title>LedgerDirect - XRPL Testnet Account Settings</title>
         <title lang="de-DE">LedgerDirect - XRPL Testnet Account Einstellungen</title>
+
+        <input-field type="bool">
+            <name>xrplTestnetRlusdEnabled</name>
+            <label>Enable RLUSD Payments</label>
+            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
 
         <input-field type="text">
             <name>xrplTestnetAccount</name>
@@ -47,6 +48,13 @@
     <card>
         <title>LedgerDirect - XRPL Mainnet Account Settings</title>
         <title lang="de-DE">LedgerDirect - XRPL Mainnet Account Einstellungen</title>
+
+        <input-field type="bool">
+            <name>xrplMainnetRlusdEnabled</name>
+            <label>Enable RLUSD Payments</label>
+            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
 
         <input-field type="text">
             <name>xrplMainnetAccount</name>

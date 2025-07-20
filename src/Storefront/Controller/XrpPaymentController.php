@@ -51,6 +51,7 @@ class XrpPaymentController extends StorefrontController
         return match ($orderTransaction->getPaymentMethodId()) {
             PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
             PaymentMethodInstaller::TOKEN_PAYMENT_ID => $this->renderTokenPaymentPage($order, $orderTransaction, $returnUrl),
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderRlusdPaymentPage($order, $orderTransaction, $returnUrl),
         };
     }
 
@@ -84,7 +85,7 @@ class XrpPaymentController extends StorefrontController
             'network' => $customFields['xrpl']['network'],
             'destinationAccount' => $customFields['xrpl']['destination_account'],
             'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'xrpAmount' => $customFields['xrpl']['amount_requested'],
+            'amountRequested' => $customFields['xrpl']['amount_requested'],
             'exchangeRate' => $customFields['xrpl']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
@@ -113,11 +114,37 @@ class XrpPaymentController extends StorefrontController
             'network' => $customFields['xrpl']['network'],
             'destinationAccount' => $customFields['xrpl']['destination_account'],
             'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'tokenAmount' => $customFields['xrpl']['value'],
-            'issuer' => $customFields['xrpl']['issuer'],
+            'amountRequested' => $customFields['xrpl']['amount_requested'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
         ]);
     }
 
+    private function renderRlusdPaymentPage(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        string $returnUrl,
+    ): Response
+    {
+        $customFields = $orderTransaction->getCustomFields();
+
+        if (!isset($customFields['xrpl'])) {
+
+        }
+
+        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
+            'mode' => 'rlusd',
+            'orderId' => $order->getId(),
+            'orderNumber' => $order->getOrderNumber(),
+            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'currencyCode' => $order->getCurrency()->getIsoCode(),
+            'currencySymbol' => $order->getCurrency()->getSymbol(),
+            'network' => $customFields['xrpl']['network'],
+            'destinationAccount' => $customFields['xrpl']['destination_account'],
+            'destinationTag' => $customFields['xrpl']['destination_tag'],
+            'amountRequested' => $customFields['xrpl']['amount_requested'],
+            'returnUrl' => $returnUrl,
+            'showNoTransactionFoundError' => true,
+        ]);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Installer;
 
+use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\LedgerDirect;
@@ -19,6 +20,7 @@ class PaymentMethodInstaller
 {
     public const XRP_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bb';
     public const TOKEN_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bc';
+    public const RLUSD_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bd';
 
     private const PAYMENT_METHODS = [
         [
@@ -48,6 +50,21 @@ class PaymentMethodInstaller
                 'en-GB' => [
                     'name' => 'Token',
                     'description' => 'Pay with Token',
+                ],
+            ],
+        ],
+        [
+            'id' => self::RLUSD_PAYMENT_ID,
+            'handlerIdentifier' => RlusdPaymentHandler::class,
+            'name' => 'RLUSD',
+            'translations' => [
+                'de-DE' => [
+                    'name' => 'RLUSD',
+                    'description' => 'Mit RLUSD bezahlen',
+                ],
+                'en-GB' => [
+                    'name' => 'RLUSD',
+                    'description' => 'Pay with RLUSD',
                 ],
             ],
         ],

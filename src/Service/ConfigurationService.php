@@ -52,6 +52,11 @@ class ConfigurationService
         return $this->get('useTestnet', true);
     }
 
+    public function getNetwork(): string
+    {
+        return $this->isTest() ? 'testnet' : 'mainnet';
+    }
+
    public function getDestinationAccount(): string
    {
        if ($this->isTest()) {
@@ -78,4 +83,13 @@ class ConfigurationService
 
        return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_ISSUER);
    }
+
+    public function isRlusdEnabled()
+    {
+        if ($this->isTest()) {
+            return $this->get('xrplTestnetRlusdEnabled', false);
+        }
+
+        return $this->get('xrplMainnetRlusdEnabled', false);
+    }
 }

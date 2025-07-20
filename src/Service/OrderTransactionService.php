@@ -6,6 +6,7 @@ use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\XRPL_PHP\Core\Stablecoin;
 use Hardcastle\XRPL_PHP\Models\Common\Amount;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -29,7 +30,9 @@ class OrderTransactionService
 
     private EntityRepository $currencyRepository;
 
-    private CryptoPriceProviderInterface $priceProvider;
+    private CryptoPriceProviderInterface $xrpPriceProvider;
+
+    private CryptoPriceProviderInterface $rlusdPriceProvider;
 
     public function __construct(
         ConfigurationService $configurationService,
@@ -37,7 +40,8 @@ class OrderTransactionService
         EntityRepository $orderTransactionRepository,
         XrplTxService    $xrplSyncService,
         EntityRepository $currencyRepository,
-        CryptoPriceProviderInterface $priceProvider
+        CryptoPriceProviderInterface $xrpPriceProvider,
+        CryptoPriceProviderInterface $rlusdPriceProvider
     )
     {
         $this->configurationService = $configurationService;
@@ -45,7 +49,8 @@ class OrderTransactionService
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->xrplSyncService = $xrplSyncService;
         $this->currencyRepository = $currencyRepository;
-        $this->priceProvider = $priceProvider;
+        $this->xrpPriceProvider = $xrpPriceProvider;
+        $this->rlusdPriceProvider = $rlusdPriceProvider;
     }
 
 
@@ -67,7 +72,44 @@ class OrderTransactionService
         )->first();
     }
 
-    // prepareXrplOrderTransaction
+    public function getCryptoPriceForOrder(
+        OrderEntity $order,
+        Context $context,
+        string $cryptoCode,
+        ?string $network = null
+    ): array
+    {
+        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
+        $currencyAmountTotal = $order->getAmountTotal();
+
+        if ($cryptoCode === 'XRP'){
+            $exchangeRate = $this->xrpPriceProvider->getCurrentExchangeRate($currency->getIsoCode());
+            $amountRequested = $currencyAmountTotal / $exchangeRate;
+        } elseif ($cryptoCode === 'RLUSD') {
+            $exchangeRate = $this->rlusdPriceProvider->getCurrentExchangeRate($currency->getIsoCode());
+            $amountRequested = Stablecoin::getRLUSDAmount(
+                $network,
+                (string) round($currencyAmountTotal / $exchangeRate, 2)
+            );
+        } else {
+            throw new Exception('Unsupported crypto code: ' . $cryptoCode);
+        }
+
+        return [
+            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
+            'exchange_rate' => $exchangeRate,
+            'amount_requested' => $amountRequested
+        ];
+    }
+
+    /**
+     * Prepares OrderTransaction for XRPL payment
+     *
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @throws Exception
+     */
     public function prepareOrderTransactionForXrpl(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -76,44 +118,63 @@ class OrderTransactionService
     {
         $paymentMethod = $orderTransaction->getPaymentMethod();
 
-        $network = $this->configurationService->isTest() ? 'Testnet' : 'Mainnet'; // TODO: Use NetworkId
+        $network = $this->configurationService->getNetwork(); // use NetworkId
         $destination = $this->configurationService->getDestinationAccount();
         $destinationTag = $this->xrplSyncService->generateDestinationTag();
 
         $xrplCustomFields = [
             'xrpl' => [
-                'type' => 'xrp-payment',
+                'chain' => 'XRPL',
                 'network' => $network,
                 'destination_account' => $destination,
-                'destination_tag' => $destinationTag // TODO: Use consistent naming or use separate service
+                'destination_tag' => $destinationTag
             ]
         ];
 
         $this->addCustomFieldsToTransaction($orderTransaction, $xrplCustomFields, $context);
 
         match ($paymentMethod->getId()) {
-            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->prepareXrpPayment($order, $orderTransaction, $context),
-            PaymentMethodInstaller::TOKEN_PAYMENT_ID => $this->prepareTokenPayment($order, $orderTransaction, $context),
-        };
+            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->prepareXrpPayment($order, $orderTransaction, $context, $network),
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->prepareRlusdPayment($order, $orderTransaction, $context, $network),
+            default => throw new Exception('Unsupported payment method: ' . $paymentMethod->getId())
 
-        // Throw exception here
+        };
     }
 
+
+    /**
+     * Prepare XRP payment for OrderTransaction
+     *
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @throws Exception
+     */
     private function prepareXrpPayment(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
-        Context $context
+        Context $context,
+        string $network = 'testnet'
     ): void
     {
 
         $xrpPriceCustomFields = [
-            'xrpl' => $this->getCurrentXrpPriceForOrder($order, $context)
+            'xrpl' => $this->getCryptoPriceForOrder($order, $context, 'XRP', $network)
         ];
+        $xrpPriceCustomFields['xrpl']['network'] = $network;
         $xrpPriceCustomFields['xrpl']['type'] = 'xrp-payment';
 
         $this->addCustomFieldsToTransaction($orderTransaction, $xrpPriceCustomFields, $context);
     }
 
+    /**
+     * Prepare Token payment for OrderTransaction
+     *
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @throws Exception
+     */
     private function prepareTokenPayment(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -125,8 +186,7 @@ class OrderTransactionService
             'xrpl' => [
                 'type' => 'token',
                 'issuer' => $issuer,
-                'currency' => $tokenName,
-                'value' => $order->getAmountTotal(),
+                'currency' => $tokenName
             ]
         ];
 
@@ -134,26 +194,43 @@ class OrderTransactionService
     }
 
     /**
-     * Get XRP price for Order
+     * Prepare RLUSD payment for OrderTransaction
      *
      * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
      * @param Context $context
-     * @return array
+     * @param string $network
      * @throws Exception
      */
-    public function getCurrentXrpPriceForOrder(OrderEntity $order, Context $context): array
+    private function prepareRlusdPayment(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        Context $context,
+        string $network = 'Testnet'
+    ): void
     {
-        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
-        $currencyAmountTotal = $order->getAmountTotal();
-        $exchangeRate = $this->priceProvider->getCurrentExchangeRate($currency->getIsoCode());
+        // Can be done via Shopware configuration
+        // if (!$this->configurationService->isRlusdEnabled()) {
+        //    throw new Exception('RLUSD payments are not enabled in the configuration.');
+        //}
 
-        return [
-            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
-            'exchange_rate' => $exchangeRate,
-            'amount_requested' => $currencyAmountTotal / $exchangeRate
+        $rlusdPriceCustomFields = [
+            'xrpl' => $this->getCryptoPriceForOrder($order, $context, 'RLUSD', $network)
         ];
+        $rlusdPriceCustomFields['xrpl']['network'] = $network;
+        $rlusdPriceCustomFields['xrpl']['type'] = 'rlusd-payment';
+
+        $this->addCustomFieldsToTransaction($orderTransaction, $rlusdPriceCustomFields, $context);
     }
 
+    /**
+     *
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @return array|null
+     * @throws Exception
+     */
     public function syncOrderTransactionWithXrpl(OrderTransactionEntity $orderTransaction, Context $context): ?array
     {
         $customFields = $orderTransaction->getCustomFields();

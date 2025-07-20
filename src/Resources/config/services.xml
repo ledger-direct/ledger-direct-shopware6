@@ -61,8 +61,20 @@
             <tag name="shopware.payment.method.async"/>
         </service>
 
+        <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+
+            <tag name="shopware.payment.method.async"/>
+        </service>
+
         <!-- Providers -->
         <service id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider">
+            <argument type="service" id="shopware.app_system.guzzle"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Provider\RlusdPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
         </service>
 
@@ -84,6 +96,7 @@
             <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
             <argument type="service" id="currency.repository" />
             <argument type="service" id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Provider\RlusdPriceProvider" />
         </service>
 
         <service id="Hardcastle\LedgerDirect\Service\XrplClientService">
