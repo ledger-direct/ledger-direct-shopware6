@@ -11,6 +11,7 @@ use Hardcastle\XRPL_PHP\Models\Common\Amount;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -18,6 +19,10 @@ use function Hardcastle\XRPL_PHP\Sugar\dropsToXrp;
 
 class OrderTransactionService
 {
+    public const METADATA_VERSION = 1.0;
+
+    public const DEFAULT_EXPIRY = 60 * 15; // 15 minutes
+
     private ConfigurationService $configurationService;
 
     private EntityRepository $orderRepository;
@@ -53,13 +58,14 @@ class OrderTransactionService
         $this->rlusdPriceProvider = $rlusdPriceProvider;
     }
 
-
     /**
-     * @param string $orderId
-     * @param Context $context
-     * @return OrderEntity|null
+     * Retrieves an order with its associated transactions and currency information
+     *
+     * @param string $orderId The ID of the order to retrieve
+     * @param Context $context The Shopware context
+     * @return Entity The order entity with transactions
      */
-    public function getOrderWithTransactions(string $orderId, Context $context): ?OrderEntity
+    public function getOrderWithTransactions(string $orderId, Context $context): Entity
     {
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('currency');
@@ -72,6 +78,16 @@ class OrderTransactionService
         )->first();
     }
 
+    /**
+     * Get Crypto price for Order
+     *
+     * @param OrderEntity $order
+     * @param Context $context
+     * @param string $cryptoCode
+     * @param string|null $network
+     * @return array
+     * @throws Exception
+     */
     public function getCryptoPriceForOrder(
         OrderEntity $order,
         Context $context,
@@ -122,8 +138,9 @@ class OrderTransactionService
         $destination = $this->configurationService->getDestinationAccount();
         $destinationTag = $this->xrplSyncService->generateDestinationTag();
 
-        $xrplCustomFields = [
-            'xrpl' => [
+        $transactionCustomFields = [
+            'ledger_direct' => [
+                'version' => self::METADATA_VERSION,
                 'chain' => 'XRPL',
                 'network' => $network,
                 'destination_account' => $destination,
@@ -131,7 +148,7 @@ class OrderTransactionService
             ]
         ];
 
-        $this->addCustomFieldsToTransaction($orderTransaction, $xrplCustomFields, $context);
+        $this->addCustomFieldsToTransaction($orderTransaction, $transactionCustomFields, $context);
 
         match ($paymentMethod->getId()) {
             PaymentMethodInstaller::XRP_PAYMENT_ID => $this->prepareXrpPayment($order, $orderTransaction, $context, $network),
@@ -148,6 +165,7 @@ class OrderTransactionService
      * @param OrderEntity $order
      * @param OrderTransactionEntity $orderTransaction
      * @param Context $context
+     * @param string $network
      * @throws Exception
      */
     private function prepareXrpPayment(
@@ -158,13 +176,13 @@ class OrderTransactionService
     ): void
     {
 
-        $xrpPriceCustomFields = [
-            'xrpl' => $this->getCryptoPriceForOrder($order, $context, 'XRP', $network)
+        $transactionCustomFields = [
+            'ledger_direct' => $this->getCryptoPriceForOrder($order, $context, 'XRP', $network)
         ];
-        $xrpPriceCustomFields['xrpl']['network'] = $network;
-        $xrpPriceCustomFields['xrpl']['type'] = 'xrp-payment';
+        $transactionCustomFields['ledger_direct']['network'] = $network;
+        $transactionCustomFields['ledger_direct']['type'] = 'xrp-payment';
 
-        $this->addCustomFieldsToTransaction($orderTransaction, $xrpPriceCustomFields, $context);
+        $this->addCustomFieldsToTransaction($orderTransaction, $transactionCustomFields, $context);
     }
 
     /**
@@ -183,7 +201,7 @@ class OrderTransactionService
         $issuer = $this->configurationService->getIssuer();
         $tokenName = $order->getCurrency()->getIsoCode();
         $tokenAmountCustomFields = [
-            'xrpl' => [
+            'ledger_direct' => [
                 'type' => 'token',
                 'issuer' => $issuer,
                 'currency' => $tokenName
@@ -215,16 +233,16 @@ class OrderTransactionService
         //}
 
         $rlusdPriceCustomFields = [
-            'xrpl' => $this->getCryptoPriceForOrder($order, $context, 'RLUSD', $network)
+            'ledger_direct' => $this->getCryptoPriceForOrder($order, $context, 'RLUSD', $network)
         ];
-        $rlusdPriceCustomFields['xrpl']['network'] = $network;
-        $rlusdPriceCustomFields['xrpl']['type'] = 'rlusd-payment';
+        $rlusdPriceCustomFields['ledger_direct']['network'] = $network;
+        $rlusdPriceCustomFields['ledger_direct']['ledger_direct'] = 'rlusd-payment';
 
         $this->addCustomFieldsToTransaction($orderTransaction, $rlusdPriceCustomFields, $context);
     }
 
     /**
-     *
+     * Sync Shopware OrderTransaction with XRPL transaction data
      *
      * @param OrderTransactionEntity $orderTransaction
      * @param Context $context
@@ -234,30 +252,30 @@ class OrderTransactionService
     public function syncOrderTransactionWithXrpl(OrderTransactionEntity $orderTransaction, Context $context): ?array
     {
         $customFields = $orderTransaction->getCustomFields();
-        if (isset($customFields['xrpl']['destination_account']) && isset($customFields['xrpl']['destination_tag'])) {
+        if (isset($customFields['ledger_direct']['destination_account']) && isset($customFields['ledger_direct']['destination_tag'])) {
 
             // TODO: Exception when orderTransaction.customFields are different form xrpl_tx
 
-            $this->xrplSyncService->syncTransactions($customFields['xrpl']['destination_account']);
+            $this->xrplSyncService->syncTransactions($customFields['ledger_direct']['destination_account']);
 
             $tx = $this->xrplSyncService->findTransaction(
-                $customFields['xrpl']['destination_account'],
-                (int)$customFields['xrpl']['destination_tag']
+                $customFields['ledger_direct']['destination_account'],
+                (int)$customFields['ledger_direct']['destination_tag']
             );
 
             if ($tx) {
                 $txMeta = json_decode($tx['meta'], true);
 
                 if (is_array($txMeta['delivered_amount'])) {
-                    $amount = $txMeta['delivered_amount']['value'];
+                    $amount = $txMeta['delivered_amount'];
                 } else {
                     $amount = dropsToXrp($txMeta['delivered_amount']);
                 }
 
                 $this->addCustomFieldsToTransaction($orderTransaction, [
-                    'xrpl' => [
+                    'ledger_direct' => [
                         'hash' => $tx['hash'],
-                        'ctid' => $tx['ctid'], // TODO: Add CTID here
+                        'ctid' => $tx['ctid'],
                         'delivered_amount' => $amount
                     ]
                 ], $context);
@@ -269,6 +287,13 @@ class OrderTransactionService
         return null;
     }
 
+    /**
+     * Adds or updates custom fields in the OrderTransaction and persists the changes.
+     *
+     * @param OrderTransactionEntity $orderTransaction The order transaction entity to update
+     * @param array $customFields The custom fields to add or update
+     * @param Context $context The Shopware context
+     */
     private function addCustomFieldsToTransaction(OrderTransactionEntity $orderTransaction, array $customFields, Context $context): void
     {
         $existingCustomFields = $orderTransaction->getCustomFields() ?? [];

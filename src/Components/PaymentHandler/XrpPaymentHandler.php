@@ -34,10 +34,12 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
     // https://developer.shopware.com/docs/guides/plugins/plugins/checkout/payment/add-payment-plugin
 
     /**
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
+     * @throws \Exception
      */
     public function pay(AsyncPaymentTransactionStruct $transaction, RequestDataBag $dataBag, SalesChannelContext $salesChannelContext): RedirectResponse
     {
@@ -60,10 +62,10 @@ class XrpPaymentHandler implements AsynchronousPaymentHandlerInterface
         $orderTransaction = $transaction->getOrderTransaction();
         $customFields = $orderTransaction->getCustomFields();
 
-        if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
+        if (isset($customFields['ledger_direct']['hash']) && isset($customFields['ledger_direct']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
-            $requestedXrpAmount = (float) $customFields['xrpl']['amount_requested'];
-            $paidXrpAmount = (float) $customFields['xrpl']['delivered_amount'];
+            $requestedXrpAmount = (float) $customFields['ledger_direct']['amount_requested'];
+            $paidXrpAmount = (float) $customFields['ledger_direct']['delivered_amount'];
             $slippage = 0.0015; // TODO: Make this configurable
             $slipped = 1.0 - $paidXrpAmount / $requestedXrpAmount;
             if($slipped < $slippage) {

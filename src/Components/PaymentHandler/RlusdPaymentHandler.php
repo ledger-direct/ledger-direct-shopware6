@@ -71,10 +71,10 @@ class RlusdPaymentHandler implements AsynchronousPaymentHandlerInterface
         $orderTransaction = $transaction->getOrderTransaction();
         $customFields = $orderTransaction->getCustomFields();
 
-        if (isset($customFields['xrpl']['hash']) && isset($customFields['xrpl']['ctid'])) {
+        if (isset($customFields['ledger_direct']['hash']) && isset($customFields['ledger_direct']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
-            $requestedTokenAmount = (float) $customFields['xrpl']['value'];
-            $paidTokenAmount = (float) $customFields['xrpl']['delivered_amount'];
+            $requestedTokenAmount = $customFields['ledger_direct']['amount_requested'];
+            $paidTokenAmount = $customFields['ledger_direct']['delivered_amount'];
             if ($requestedTokenAmount === $paidTokenAmount) {
                 // Payment completed, set transaction status to "paid"
                 $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());

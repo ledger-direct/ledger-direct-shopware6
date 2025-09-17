@@ -13,22 +13,28 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\RouterInterface;
+
 
 /**
  * @Route(defaults={"_routeScope"={"storefront"}})
  */
-class XrpPaymentController extends StorefrontController
+class XrplPaymentController extends StorefrontController
 {
     private OrderTransactionService $orderTransactionService;
 
     private PaymentRoute $paymentRoute;
 
+    private RouterInterface $router;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
-        PaymentRoute $paymentRoute
+        PaymentRoute $paymentRoute,
+        RouterInterface $router
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
+        $this->router = $router;
     }
 
     /**
@@ -39,9 +45,18 @@ class XrpPaymentController extends StorefrontController
         //TODO: Check if orderTransaction ist still valid
 
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+
+        if (!$order) {
+            $this->addFlash('danger', 'Die Bestellung wurde nicht gefunden.');
+            return $this->redirectToRoute('frontend.account.home.page');
+        }
+
         $orderTransaction = $order->getTransactions()->first();
 
         $returnUrl = $request->get('returnUrl');
+        if (!$returnUrl) {
+            $returnUrl = $orderTransaction->getReturnUrl();
+        }
 
         $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
         if ($tx) {
@@ -63,6 +78,9 @@ class XrpPaymentController extends StorefrontController
         return $this->paymentRoute->check($orderId, $context);
     }
 
+    /**
+     * Renders the payment page for XRP payments.
+     */
     private function renderXrpPaymentPage(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -71,26 +89,30 @@ class XrpPaymentController extends StorefrontController
     {
         $customFields = $orderTransaction->getCustomFields();
 
-        if (!isset($customFields['xrpl'])) {
-            // TODO: Throw new Exception, this TA cannot be paid in XRP
+        if (!isset($customFields['ledger_direct'])) {
+            // Redirect to the checkout page with an error message stating that this message cannot be paid in XRP
+            $this->addFlash('danger', 'This order cannot be paid with XRP. Please contact support.');
+            return $this->redirectToRoute('frontend.checkout.cart.page');
+
         }
 
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
             'mode' => 'xrp',
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
-            'price' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'total' => $orderTransaction->getAmount()->getTotalPrice(),
+            'currencyCode' => str_replace('XRP/','', $customFields['ledger_direct']['pairing']),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['xrpl']['network'],
-            'destinationAccount' => $customFields['xrpl']['destination_account'],
-            'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'amountRequested' => $customFields['xrpl']['amount_requested'],
-            'exchangeRate' => $customFields['xrpl']['exchange_rate'],
+            'network' => $customFields['ledger_direct']['network'],
+            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
+            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
+            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
+            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
         ]);
     }
+
 
     private function renderTokenPaymentPage(
         OrderEntity $order,
@@ -100,7 +122,7 @@ class XrpPaymentController extends StorefrontController
     {
         $customFields = $orderTransaction->getCustomFields();
 
-        if (!isset($customFields['xrpl'])) {
+        if (!isset($customFields['ledger_direct'])) {
             // TODO: Throw new Exception, this TA cannot be paid in XRP
         }
 
@@ -108,18 +130,24 @@ class XrpPaymentController extends StorefrontController
             'mode' => 'token',
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
-            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'total' => $orderTransaction->getAmount()->getTotalPrice(),
             'currencyCode' => $order->getCurrency()->getIsoCode(),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['xrpl']['network'],
-            'destinationAccount' => $customFields['xrpl']['destination_account'],
-            'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'amountRequested' => $customFields['xrpl']['amount_requested'],
+            'network' => $customFields['ledger_direct']['network'],
+            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
+            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
+            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
         ]);
     }
 
+    /**
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @param string $returnUrl
+     * @return Response
+     */
     private function renderRlusdPaymentPage(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -128,7 +156,7 @@ class XrpPaymentController extends StorefrontController
     {
         $customFields = $orderTransaction->getCustomFields();
 
-        if (!isset($customFields['xrpl'])) {
+        if (!isset($customFields['ledger_direct'])) {
 
         }
 
@@ -136,13 +164,14 @@ class XrpPaymentController extends StorefrontController
             'mode' => 'rlusd',
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
-            'price' => $orderTransaction->getAmount()->getTotalPrice(),
+            'total' => $orderTransaction->getAmount()->getTotalPrice(),
             'currencyCode' => $order->getCurrency()->getIsoCode(),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['xrpl']['network'],
-            'destinationAccount' => $customFields['xrpl']['destination_account'],
-            'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'amountRequested' => $customFields['xrpl']['amount_requested'],
+            'network' => $customFields['ledger_direct']['network'],
+            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
+            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
+            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
+            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
         ]);

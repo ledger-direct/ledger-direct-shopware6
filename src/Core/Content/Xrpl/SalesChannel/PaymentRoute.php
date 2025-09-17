@@ -38,7 +38,7 @@ class PaymentRoute
             $orderTransaction = $order->getTransactions()->first();
             $customFields = $orderTransaction->getCustomFields();
 
-            if (isset($customFields['xrpl'])) {
+            if (isset($customFields['ledger_direct'])) {
                 $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
 
                 if ($tx) {
@@ -98,21 +98,21 @@ class PaymentRoute
         }
 
         $customFields = $orderTransaction->getCustomFields();
-         if (!isset($customFields['xrpl'])) {
+         if (!isset($customFields['ledger_direct'])) {
             // TODO: Throw Exception, this TA cannot be paid in XRP
         }
 
         return new PaymentRouteResponse(new ArrayStruct([
             'orderId' => $orderId,
             'orderNumber' => $order->getOrderNumber(),
-            'currencyCode' => str_replace('XRP/','', $customFields['xrpl']['pairing']),
+            'currencyCode' => str_replace('XRP/','', $customFields['ledger_direct']['pairing']),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'price' => $orderTransaction->getAmount()->getTotalPrice(),
-            'network' => $customFields['xrpl']['network'],
-            'destinationAccount' => $customFields['xrpl']['destination_account'],
-            'destinationTag' => $customFields['xrpl']['destination_tag'],
-            'xrpAmount' => $customFields['xrpl']['amount_requested'],
-            'exchangeRate' => $customFields['xrpl']['exchange_rate'],
+            'network' => $customFields['ledger_direct']['network'],
+            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
+            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
+            'xrpAmount' => $customFields['ledger_direct']['amount_requested'],
+            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'showNoTransactionFoundError' => true,
         ]));
     }

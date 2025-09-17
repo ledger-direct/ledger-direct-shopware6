@@ -32,9 +32,10 @@
             </call>
         </service>
 
-        <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrpPaymentController" public="true">
+        <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrplPaymentController" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
+            <argument type="service" id="router"/>
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />

@@ -50,6 +50,9 @@
                                readonly
                                style="display: none;"
                         />
+                    {% elseif mode == 'rlusd' %}
+                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": amountRequested.value, "%tokenName%": 'RLUSD'})|raw}}</p>
+
                     {% endif %}
 
                     <div class="ld-payment-info">
@@ -105,9 +108,11 @@
                     </div>
 
                     <div class="ld-sync">
+                        <!--
                         <button id="gem-wallet-button" class="wallet-disabled">G</button>
                         <button id="crossmark-wallet-button" class="wallet-disabled">C</button>
                         <button id="xumm-wallet-button" class="wallet-disabled">X</button>
+                        -->
                         <button id="check-payment-button" data-order-id="{{ orderId }}">
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none"></span>
                             {{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}
@@ -118,16 +123,23 @@
 
                 <div class="ld-card-right">
                     {% if mode == 'xrp' %}
-                        <div class="ld-sum">{{ price|currency }}</div>
+                        <div class="ld-sum">{{ total|currency }}</div>
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ xrpAmount }} XRP</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ xrpAmount }} XRP</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
                     {% elseif mode == 'token' %}
-                        <div class="ld-sum">{{ price|currency }}</div>
+                        <div class="ld-sum">{{ total|currency }}</div>
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.price"|trans }}: {{ price }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
+                    {% elseif mode == 'rlusd' %}
+                        <div class="ld-sum">{{ total|currency }}</div>
+                        <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ amountRequested.value }} RLUSD</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} RLUSD / {{ currencyCode }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
                     {% endif %}
                     <img src="{{ asset('bundles/ledgerdirect/storefront/img/astronaut.png') }}" class="ld-astronaut" />

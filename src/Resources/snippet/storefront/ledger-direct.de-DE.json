@@ -15,7 +15,7 @@
       "destinationTagWarning": "Der Destination Tag muss für eine korrekte Zuordnung der Zahlung mit angegeben werden.",
       "checkPaymentButton": "Zahlungseingang prüfen",
       "orderNumber": "Bestellnummer",
-      "price": "Preis",
+      "total": "Preis",
       "exchangeRate": "Wechselkurs",
       "network": "Netzwerk",
       "backToCart": "Zurück zum Warenkorb"

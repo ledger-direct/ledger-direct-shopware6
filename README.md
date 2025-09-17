@@ -1,8 +1,18 @@
-# LedgerDirect - Shopware6
+# LedgerDirect Payment plugin for Shopware
 
-## An integration of the [XRPL](https://xrpl.org/) for [Shopware 6](https://github.com/shopware/platform) 
+LedgerDirect is a payment plugin for Shopware. Receive crypto and stablecoin payments directly – without middlemen,
+intermediary wallets, extra servers or external payment providers. Maximum control, minimal detours!
+
+Project Website: https://www.ledger-direct.com
+
+Plugin URL: placeholder for now, will be available in the Shopware Plugin Store after Beta.
+
+GitHub: https://github.com/ledger-direct/ledger-direct-shopware
+
 
 ## Installation
+
+### Manual Installation
 
 1. Installation via git/CLI: In `custom/plugins`, use execute`git clone https://github.com/ledger-direct/ledger-direct-shopware6.git LedgerDirect`.
 2. Manually by downloading the .zip archive of this plugin (`Code -> Download ZIP) and extracting its contents into ``custom/plugins/LedgerDirect`.

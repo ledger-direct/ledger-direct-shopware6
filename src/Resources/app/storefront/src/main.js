@@ -18,9 +18,9 @@ class XrpPayment extends Plugin {
         this.checkPaymentButton = DomAccess.querySelector(document, '#check-payment-button')
         this.spinner = DomAccess.querySelector(this.checkPaymentButton, 'span')
 
-        this.gemWalletButton = DomAccess.querySelector(document, '#gem-wallet-button')
-        this.crossmarkWalletButton = DomAccess.querySelector(document, '#crossmark-wallet-button')
-        this.xummWalletButton = DomAccess.querySelector(document, '#xumm-wallet-button')
+        //this.gemWalletButton = DomAccess.querySelector(document, '#gem-wallet-button')
+        //this.crossmarkWalletButton = DomAccess.querySelector(document, '#crossmark-wallet-button')
+        //this.xummWalletButton = DomAccess.querySelector(document, '#xumm-wallet-button')
 
         this.registerEvents()
 
@@ -28,14 +28,16 @@ class XrpPayment extends Plugin {
     }
 
     registerEvents() {
-        this.destinationAccount.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccount))
-        this.destinationTag.nextElementSibling.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTag))
+        const daIcon = this.destinationAccount.nextElementSibling.firstElementChild
+        const dtIcon = this.destinationTag.nextElementSibling.firstElementChild
+        daIcon.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccount, daIcon))
+        dtIcon.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTag, dtIcon))
         this.checkPaymentButton.addEventListener('click', this.checkPayment.bind(this))
     }
 
     setupWallets() {
-        setupGemWallet.bind(this)()
-        setupCrossmark.bind(this)()
+        //setupGemWallet.bind(this)()
+        //setupCrossmark.bind(this)()
     }
 
     checkPayment() {
@@ -55,9 +57,40 @@ class XrpPayment extends Plugin {
         }
     }
 
-    copyToClipboard(element, event) {
-        console.log('cop-to-clipboard')
-        navigator.clipboard.writeText(element.dataset.value)
+    copyToClipboard(element, icon, event) {
+        if (typeof navigator.clipboard === 'undefined') {
+            console.log('Clipboard API not supported - is this a secure context?');
+
+            return;
+        }
+
+        const message = 'copied!';
+        console.log("icon: " + icon.getAttribute('width'));
+        navigator.clipboard.writeText(element.getAttribute("data-value")).then(() => {
+            this.showCopyFeedback(message, icon);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            this.showCopyFeedback('Failed to copy to clipboard', icon, true);
+        });
+    }
+
+    showCopyFeedback(message, icon, isError = false) {
+        const oldToast = document.querySelector('.copy-toast')
+        if (oldToast) {
+            oldToast.remove()
+        }
+
+        const toast = document.createElement('div')
+        toast.classList.add('copy-toast')
+        toast.textContent = message
+        toast.style.backgroundColor = isError ? '#f44336' : '#1daae6'
+
+        icon.parentElement.append(toast);
+
+        setTimeout(() => {
+            toast.classList.add('fade-out')
+            setTimeout(() => toast.remove(), 300)
+        }, 3000)
     }
 
     log(value) {
@@ -71,4 +104,4 @@ PluginManager.register(
     'XrpPayment',
     XrpPayment,
     '[data-xrp-payment-page]'
-);
+)

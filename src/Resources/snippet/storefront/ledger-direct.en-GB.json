@@ -15,7 +15,7 @@
       "destinationTagWarning": "It's important to include the given destination tag when sending XRP from your wallet.",
       "checkPaymentButton": "Check payment processing",
       "orderNumber": "Order No.",
-      "price": "Price",
+      "total": "Total",
       "exchangeRate": "Rate",
       "network": "Network",
       "backToCart": "Back to cart"
