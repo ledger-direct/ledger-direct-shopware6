@@ -163,6 +163,11 @@ img.ld-astronaut {
   text-decoration: underline;
 }
 
+.qr-code-img {
+  z-index: 10;
+  position: absolute;
+}
+
 .copy-toast {
   position: absolute;
   top: -30px;

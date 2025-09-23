@@ -66,7 +66,7 @@ class ConfigurationService
        return $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
    }
 
-    public function getTokenName(): string
+    public function getTokenName(): mixed
     {
         if ($this->isTest()) {
             return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_NAME);
@@ -75,7 +75,7 @@ class ConfigurationService
         return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_NAME);
     }
 
-   public function getIssuer(): string
+   public function getIssuer(): mixed
    {
        if ($this->isTest()) {
            return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_ISSUER);
@@ -84,7 +84,7 @@ class ConfigurationService
        return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_ISSUER);
    }
 
-    public function isRlusdEnabled()
+   /* public function isRlusdEnabled()
     {
         if ($this->isTest()) {
             return $this->get('xrplTestnetRlusdEnabled', false);
@@ -92,4 +92,5 @@ class ConfigurationService
 
         return $this->get('xrplMainnetRlusdEnabled', false);
     }
+   */
 }

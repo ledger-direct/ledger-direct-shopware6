@@ -19,7 +19,7 @@
 
                 <div class="ld-card-left">
                     {% if mode == 'xrp' %}
-                        <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%amount%": xrpAmount|round(2)})|raw }}</p>
+                        <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%amount%": amountRequested|round(2)})|raw }}</p>
                         <input id="xrp-amount"
                                type="text"
                                name="xrp-amount"
@@ -52,7 +52,6 @@
                         />
                     {% elseif mode == 'rlusd' %}
                         <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": amountRequested.value, "%tokenName%": 'RLUSD'})|raw}}</p>
-
                     {% endif %}
 
                     <div class="ld-payment-info">

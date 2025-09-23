@@ -52,6 +52,10 @@ class XrplPaymentController extends StorefrontController
         }
 
         $orderTransaction = $order->getTransactions()->first();
+        if (!$orderTransaction) {
+            $this->addFlash('danger', 'Die Bestellung wurde nicht gefunden.');
+            return $this->redirectToRoute('frontend.account.home.page');
+        }
 
         $returnUrl = $request->get('returnUrl');
         if (!$returnUrl) {

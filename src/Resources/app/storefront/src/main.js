@@ -3,6 +3,7 @@ const PluginManager = window.PluginManager
 import Plugin from 'src/plugin-system/plugin.class'
 import DomAccess from 'src/helper/dom-access.helper'
 import HttpClient from 'src/service/http-client.service'
+import kjua from './node_modules/kjua'
 
 import setupGemWallet from "./wallets/gemWallet"
 import setupCrossmark from "./wallets/crossmark"
@@ -28,10 +29,14 @@ class XrpPayment extends Plugin {
     }
 
     registerEvents() {
-        const daIcon = this.destinationAccount.nextElementSibling.firstElementChild
-        const dtIcon = this.destinationTag.nextElementSibling.firstElementChild
-        daIcon.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccount, daIcon))
-        dtIcon.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTag, dtIcon))
+        const daCopy = this.destinationAccount.nextElementSibling.firstElementChild
+        const daQrcode = this.destinationAccount.nextElementSibling.lastElementChild
+        const dtCopy = this.destinationTag.nextElementSibling.firstElementChild
+        const dtQrcode = this.destinationTag.nextElementSibling.lastElementChild
+        daCopy.addEventListener('click', this.copyToClipboard.bind(this, this.destinationAccount.getAttribute("data-value"), daCopy))
+        daQrcode.addEventListener('click', this.showQrCode.bind(this, this.destinationAccount.getAttribute("data-value"), daQrcode))
+        dtCopy.addEventListener('click', this.copyToClipboard.bind(this, this.destinationTag.getAttribute("data-value"), dtCopy))
+        dtQrcode.addEventListener('click', this.showQrCode.bind(this, this.destinationTag.getAttribute("data-value"), dtQrcode))
         this.checkPaymentButton.addEventListener('click', this.checkPayment.bind(this))
     }
 
@@ -57,7 +62,7 @@ class XrpPayment extends Plugin {
         }
     }
 
-    copyToClipboard(element, icon, event) {
+    copyToClipboard(content, icon, event) {
         if (typeof navigator.clipboard === 'undefined') {
             console.log('Clipboard API not supported - is this a secure context?');
 
@@ -65,8 +70,7 @@ class XrpPayment extends Plugin {
         }
 
         const message = 'copied!';
-        console.log("icon: " + icon.getAttribute('width'));
-        navigator.clipboard.writeText(element.getAttribute("data-value")).then(() => {
+        navigator.clipboard.writeText(content).then(() => {
             this.showCopyFeedback(message, icon);
         }).catch(err => {
             console.error('Failed to copy: ', err);
@@ -87,10 +91,25 @@ class XrpPayment extends Plugin {
 
         icon.parentElement.append(toast);
 
+
         setTimeout(() => {
             toast.classList.add('fade-out')
             setTimeout(() => toast.remove(), 300)
         }, 3000)
+    }
+
+    showQrCode(content, icon) {
+        // Vorher alle bestehenden QR-Codes entfernen
+        document.querySelectorAll('.qr-code-img').forEach(el => el.remove());
+        const qr = kjua({
+            text: content,
+            render: 'image',
+            size: 256,
+            className: 'qr-code-img',
+        })
+        qr.classList.add('qr-code-img');
+        qr.addEventListener('click', () => document.querySelectorAll('.qr-code-img').forEach(el => el.remove()))
+        icon.parentElement.append(qr);
     }
 
     log(value) {

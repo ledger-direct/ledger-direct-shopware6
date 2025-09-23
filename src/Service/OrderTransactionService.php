@@ -63,9 +63,9 @@ class OrderTransactionService
      *
      * @param string $orderId The ID of the order to retrieve
      * @param Context $context The Shopware context
-     * @return Entity The order entity with transactions
+     * @return Entity|null The order entity with transactions
      */
-    public function getOrderWithTransactions(string $orderId, Context $context): Entity
+    public function getOrderWithTransactions(string $orderId, Context $context): ?Entity
     {
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('currency');
