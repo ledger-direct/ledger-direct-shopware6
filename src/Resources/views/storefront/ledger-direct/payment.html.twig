@@ -6,14 +6,14 @@
 
     {% set basicConfig = config('core.basicInformation') %}
 
+    {% if paymentPageTitle %}
+        <div class="ld-header">
+            <h2>{{ paymentPageTitle }}</h2>
+        </div>
+    {% endif %}
+
     <div class="ld-container" data-xrp-payment-page="true">
         <div class="ld-content">
-
-            {% if paymentPageTitle %}
-                <div class="ld-header">
-                    <h2>{{ paymentPageTitle }}</h2>
-                </div>
-            {% endif %}
 
             <div class="ld-card">
 
@@ -125,7 +125,7 @@
                         <div class="ld-sum">{{ total|currency }}</div>
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ xrpAmount }} XRP</span><br/>
+                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ amountRequested }} XRP</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
                     {% elseif mode == 'token' %}

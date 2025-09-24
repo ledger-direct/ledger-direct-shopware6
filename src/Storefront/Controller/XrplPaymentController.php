@@ -114,6 +114,7 @@ class XrplPaymentController extends StorefrontController
             'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
+            'paymentPageTitle' => 'Pay with XRP on XRPL ' . $customFields['ledger_direct']['network']
         ]);
     }
 
@@ -178,6 +179,7 @@ class XrplPaymentController extends StorefrontController
             'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
+            'paymentPageTitle' => 'Pay with RLUSD on XRPL ' . $customFields['ledger_direct']['network'],
         ]);
     }
 }

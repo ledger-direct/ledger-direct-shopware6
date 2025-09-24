@@ -99,8 +99,6 @@ class XrpPayment extends Plugin {
     }
 
     showQrCode(content, icon) {
-        // Vorher alle bestehenden QR-Codes entfernen
-        document.querySelectorAll('.qr-code-img').forEach(el => el.remove());
         const qr = kjua({
             text: content,
             render: 'image',
