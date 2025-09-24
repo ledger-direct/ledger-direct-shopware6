@@ -20,7 +20,8 @@ class OrderTransactionServiceMock
         $orderTransactionRepository = Mockery::mock(EntityRepository::class); // EntityRepository
         $xrplSyncService = Mockery::mock(XrplTxService::class); // XrplTxService
         $currencyRepository = Mockery::mock(EntityRepository::class); // EntityRepository
-        $priceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
+        $xrpPriceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
+        $rlusdPriceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
 
         $currencyMock = Mockery::mock();
         $currencyMock->shouldReceive('getIsoCode')
@@ -33,9 +34,16 @@ class OrderTransactionServiceMock
         $currencyRepository->shouldReceive('search')
             ->andReturn($entitySearchResult);
 
-        $priceProvider->shouldReceive('getCurrentExchangeRate')
+        $xrpPriceProvider->shouldReceive('getCurrentExchangeRate')
             ->with('EUR')
-            ->andReturn(1.0);
+            ->andReturn(2.5);
+
+        $rlusdPriceProvider->shouldReceive('getCurrentExchangeRate')
+            ->with('EUR')
+            ->andReturn(1.18);
+        $rlusdPriceProvider->shouldReceive('getCurrentExchangeRate')
+            ->with('USD')
+            ->andReturn(1);
 
         return new OrderTransactionService(
             $configurationService,
@@ -43,7 +51,8 @@ class OrderTransactionServiceMock
             $orderTransactionRepository,
             $xrplSyncService,
             $currencyRepository,
-            $priceProvider
+            $xrpPriceProvider,
+            $rlusdPriceProvider
         );
     }
 

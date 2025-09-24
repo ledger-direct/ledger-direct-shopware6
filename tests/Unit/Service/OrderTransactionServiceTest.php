@@ -17,7 +17,7 @@ use Shopware\Core\System\Currency\CurrencyEntity;
 
 class OrderTransactionServiceTest extends TestCase
 {
-    public function testGetCurrentXrpPriceForOrder(): void
+    public function testGetCryptoPriceForOrder(): void
     {
         $orderTransactionService = OrderTransactionServiceMock::createInstance();
 
@@ -32,7 +32,7 @@ class OrderTransactionServiceTest extends TestCase
             versionId: 'random-string',
         );
 
-        $result = $orderTransactionService->getCurrentXrpPriceForOrder($order, $context);
+        $result = $orderTransactionService->getCryptoPriceForOrder($order, $context, 'XRP');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('pairing', $result);

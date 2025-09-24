@@ -4,6 +4,7 @@ namespace Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Integration\Service;
 
 use Doctrine\DBAL\Connection;
 use GuzzleHttp\Client;
+use Hardcastle\LedgerDirect\Provider\RlusdPriceProvider;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Service\XrplClientService;
 use Hardcastle\LedgerDirect\Service\XrplTxService;
@@ -47,7 +48,8 @@ class OrderTransactionServiceTest extends TestCase
             $this->getContainer()->get('order_transaction.repository'),
             $xrplTxService,
             $this->getContainer()->get('currency.repository'),
-            new XrpPriceProvider(new Client())
+            new XrpPriceProvider(new Client()),
+            new RlusdPriceProvider(new Client()),
         );
 
         $this->currencyRepository = $this->getContainer()->get('currency.repository');
@@ -57,7 +59,7 @@ class OrderTransactionServiceTest extends TestCase
     {
         $order = $this->createOrder();
 
-        $xrpPrice = $this->orderTransactionService->getCurrentXrpPriceForOrder($order, Context::createDefaultContext());
+        $xrpPrice = $this->orderTransactionService->getCryptoPriceForOrder($order, Context::createDefaultContext(), 'XRP');
 
         $this->assertIsArray($xrpPrice);
         $this->assertArrayHasKey('pairing', $xrpPrice);
