@@ -50,5 +50,4 @@ For more information about each service, see:
 - Kraken API: [Terms of Service](https://www.kraken.com/legal), [Privacy Policy](https://www.kraken.com/privacy)
 
 ## License
-
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
