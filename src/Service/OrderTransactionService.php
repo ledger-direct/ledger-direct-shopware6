@@ -6,8 +6,7 @@ use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
-use Hardcastle\XRPL_PHP\Core\Stablecoin;
-use Hardcastle\XRPL_PHP\Models\Common\Amount;
+use Hardcastle\LedgerDirect\Provider\StablecoinProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
@@ -15,7 +14,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use function Hardcastle\XRPL_PHP\Sugar\dropsToXrp;
 
 class OrderTransactionService
 {
@@ -39,6 +37,8 @@ class OrderTransactionService
 
     private CryptoPriceProviderInterface $rlusdPriceProvider;
 
+    private StablecoinProvider $stablecoinProvider;
+
     public function __construct(
         ConfigurationService $configurationService,
         EntityRepository $orderRepository,
@@ -46,7 +46,8 @@ class OrderTransactionService
         XrplTxService    $xrplSyncService,
         EntityRepository $currencyRepository,
         CryptoPriceProviderInterface $xrpPriceProvider,
-        CryptoPriceProviderInterface $rlusdPriceProvider
+        CryptoPriceProviderInterface $rlusdPriceProvider,
+        StablecoinProvider $stablecoinProvider
     )
     {
         $this->configurationService = $configurationService;
@@ -56,6 +57,7 @@ class OrderTransactionService
         $this->currencyRepository = $currencyRepository;
         $this->xrpPriceProvider = $xrpPriceProvider;
         $this->rlusdPriceProvider = $rlusdPriceProvider;
+        $this->stablecoinProvider = $stablecoinProvider;
     }
 
     /**
@@ -103,7 +105,7 @@ class OrderTransactionService
             $amountRequested = $currencyAmountTotal / $exchangeRate;
         } elseif ($cryptoCode === 'RLUSD') {
             $exchangeRate = $this->rlusdPriceProvider->getCurrentExchangeRate($currency->getIsoCode());
-            $amountRequested = Stablecoin::getRLUSDAmount(
+            $amountRequested = $this->stablecoinProvider->getRLUSDAmount(
                 $network,
                 (string) round($currencyAmountTotal / $exchangeRate, 2)
             );
@@ -269,7 +271,7 @@ class OrderTransactionService
                 if (is_array($txMeta['delivered_amount'])) {
                     $amount = $txMeta['delivered_amount'];
                 } else {
-                    $amount = dropsToXrp($txMeta['delivered_amount']);
+                    $amount = $this->dropsToXrp($txMeta['delivered_amount']);
                 }
 
                 $this->addCustomFieldsToTransaction($orderTransaction, [
@@ -307,5 +309,36 @@ class OrderTransactionService
                 'customFields' => $mergedCustomFields,
             ],
         ], $context);
+    }
+    /**
+     * Convert drops (string or int) to XRP decimal string.
+     *
+     * @param string|int $drops
+     * @return string
+     */
+    private function dropsToXrp(string|int $drops): string
+    {
+        // Ensure string for bcmath-like formatting without extension
+        $dropsStr = (string)$drops;
+        // Left pad with zeros to at least 7 digits to safely insert decimal point for 6 fractional places
+        $dropsStr = ltrim($dropsStr, '+');
+        $isNegative = str_starts_with($dropsStr, '-');
+        if ($isNegative) {
+            $dropsStr = substr($dropsStr, 1);
+        }
+        $dropsStr = ltrim($dropsStr, '0');
+        if ($dropsStr === '') {
+            return '0';
+        }
+        if (strlen($dropsStr) <= 6) {
+            $xrp = '0.' . str_pad($dropsStr, 6, '0', STR_PAD_LEFT);
+        } else {
+            $intPart = substr($dropsStr, 0, -6);
+            $fracPart = substr($dropsStr, -6);
+            // Trim trailing zeros in fractional part
+            $fracPart = rtrim($fracPart, '0');
+            $xrp = $fracPart === '' ? $intPart : $intPart . '.' . $fracPart;
+        }
+        return $isNegative ? '-' . $xrp : $xrp;
     }
 }

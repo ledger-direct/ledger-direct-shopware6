@@ -2,25 +2,25 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
-use Hardcastle\XRPL_PHP\Core\Networks;
-use Hardcastle\XRPL_PHP\Models\Account\AccountTxRequest;
 
 class XrplClientService
 {
     private ConfigurationService $configurationService;
 
-    private JsonRpcClient $client;
+    private ClientInterface $httpClient;
 
-    public function __construct(ConfigurationService $configurationService) {
+    public function __construct(
+        ConfigurationService $configurationService,
+        ClientInterface $httpClient
+    ) {
         $this->configurationService = $configurationService;
-
-        $this->_initClient();
+        $this->httpClient = $httpClient;
     }
 
     /**
-     * Fetches account transactions for a given address from the XRPL network.
+     * Fetches account transactions for a given address from the XRPL network using JSON-RPC.
      *
      * @param string $address
      * @param int|null $lastLedgerIndex
@@ -29,44 +29,65 @@ class XrplClientService
      */
     public function fetchAccountTransactions(string $address, ?int $lastLedgerIndex): array
     {
-        $req = new AccountTxRequest($address, $lastLedgerIndex);
-        $res = $this->client->syncRequest($req);
+        $body = [
+            'jsonrpc' => '2.0',
+            'method' => 'account_tx',
+            'params' => [[
+                'account' => $address,
+                // fetch forward=false (default) newest-first; use ledger_index_min to paginate if provided
+                'ledger_index_min' => $lastLedgerIndex ? $lastLedgerIndex + 1 : -1,
+                'limit' => 200,
+            ]],
+            'id' => 1,
+        ];
 
-        if ($res->getStatus() === 'error') {
-            // LedgerDirect::log('Error fetching account transactions: ' . $res->getError(), 'error');
-            return []; // Return an empty array on error
-        }
-
-        return $res->getResult()['transactions'];
-    }
-
-    public function getNetwork(): array
-    {
-        if(!$this->configurationService->isTest()) {
-            return Networks::getNetwork('mainnet');
-        }
-
-        return Networks::getNetwork('testnet');
-    }
-
-    /*
-     public function getTransaction(string $transactionId): array
-    {
-        $body = $this->createRequestBody('tx', [
-            'transaction' => $transactionId,
-            'binary' => false
+        $response = $this->httpClient->request('POST', $this->getNetwork()['jsonRpcUrl'], [
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+            'body' => json_encode($body),
+            'http_errors' => false,
+            'timeout' => 15,
         ]);
 
-        //TODO: Async
-        $res = $this->client->request('POST', $this->endpoint, $body);
+        $status = $response->getStatusCode();
+        if ($status < 200 || $status >= 300) {
+            return [];
+        }
 
-        return json_decode((string)$res->getBody(), true);
+        $payload = json_decode((string) $response->getBody(), true);
+        if (!is_array($payload)) {
+            return [];
+        }
+
+        // XRPL JSON-RPC may either return {result: {...}} or top-level 'error'
+        if (isset($payload['error']) || (isset($payload['result']['status']) && $payload['result']['status'] === 'error')) {
+            return [];
+        }
+
+        return $payload['result']['transactions'] ?? [];
     }
-     */
 
-    private function _initClient(): void
+    /**
+     * Returns network configuration including jsonRpcUrl.
+     *
+     * @return array{network: string, jsonRpcUrl: string}
+     */
+    public function getNetwork(): array
     {
-        $jsonRpcUrl = $this->getNetwork()['jsonRpcUrl'];
-        $this->client = new JsonRpcClient($jsonRpcUrl);
+        $isTest = $this->configurationService->isTest();
+        if ($isTest) {
+            return [
+                'network' => 'testnet',
+                // Public XRPL Testnet JSON-RPC endpoint
+                'jsonRpcUrl' => 'https://s.altnet.rippletest.net:51234/',
+            ];
+        }
+
+        return [
+            'network' => 'mainnet',
+            // Public XRPL Mainnet JSON-RPC endpoint (cluster)
+            'jsonRpcUrl' => 'https://xrplcluster.com/',
+        ];
     }
 }

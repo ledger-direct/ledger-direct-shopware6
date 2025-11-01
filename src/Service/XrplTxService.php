@@ -3,12 +3,11 @@
 namespace Hardcastle\LedgerDirect\Service;
 
 use DateTime;
+use Exception;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Exception as DriverException;
 use PDO;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
-use Hardcastle\XRPL_PHP\Models\Account\AccountTxRequest;
-use Hardcastle\LedgerDirect\Entity\XrplTxEntity;
 
 class XrplTxService
 {
@@ -28,11 +27,14 @@ class XrplTxService
         $this->connection = $connection;
     }
 
+    /**
+     * Generate a unique destination tag
+     *
+     * @return int
+     * @throws Exception|DriverException
+     */
     public function generateDestinationTag(): int
     {
-        // https://xrpl.org/source-and-destination-tags.html
-        // https://xrpl.org/require-destination-tags.html
-
         while (true) {
             $destinationTag = random_int(self::DESTINATION_TAG_RANGE_MIN, self::DESTINATION_TAG_RANGE_MAX);
 
@@ -51,6 +53,16 @@ class XrplTxService
         }
     }
 
+    /**
+     * Finds a XRPL transaction based on the given destination address and destination tag.
+     *
+     * @param string $destination The destination address to search for.
+     * @param int $destinationTag The destination tag associated with the transaction.
+     *
+     * @return array|null Returns the matching transaction as an associative array if found, or null if no match is found.
+     * @throws DriverException
+     * @throws \Doctrine\DBAL\Exception
+     */
     public function findTransaction(string $destination, int $destinationTag): ?array
     {
         $statement = $this->connection->executeQuery(
@@ -64,7 +76,7 @@ class XrplTxService
             return $matches[0];
         }
 
-        // TODO: If for whatever reason there are more than one matches, throw error
+        // TODO: If for whatever reason there are more than one matches, add them up.
 
         return null;
     }

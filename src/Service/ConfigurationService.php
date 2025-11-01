@@ -2,7 +2,6 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
-use Hardcastle\XRPL_PHP\Core\Networks;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
