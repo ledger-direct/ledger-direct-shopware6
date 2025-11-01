@@ -3,7 +3,6 @@
 namespace Hardcastle\LedgerDirect\Installer;
 
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
-use Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\LedgerDirect;
 use Shopware\Core\Framework\Context;
@@ -27,6 +26,7 @@ class PaymentMethodInstaller
             'id' => self::XRP_PAYMENT_ID,
             'handlerIdentifier' => XrpPaymentHandler::class,
             'name' => 'XRP',
+            'technicalName' => 'ledgerdirect_xrpl_xrp',
             'translations' => [
                 'de-DE' => [
                     'name' => 'XRP',
@@ -38,25 +38,26 @@ class PaymentMethodInstaller
                 ],
             ],
         ],
-        [
-            'id' => self::TOKEN_PAYMENT_ID,
-            'handlerIdentifier' => TokenPaymentHandler::class,
-            'name' => 'Token',
-            'translations' => [
-                'de-DE' => [
-                    'name' => 'Token',
-                    'description' => 'Mit Token bezahlen',
-                ],
-                'en-GB' => [
-                    'name' => 'Token',
-                    'description' => 'Pay with Token',
-                ],
-            ],
-        ],
+//        [
+//            'id' => self::TOKEN_PAYMENT_ID,
+//            'handlerIdentifier' => TokenPaymentHandler::class,
+//            'name' => 'Token',
+//            'translations' => [
+//                'de-DE' => [
+//                    'name' => 'Token',
+//                    'description' => 'Mit Token bezahlen',
+//                ],
+//                'en-GB' => [
+//                    'name' => 'Token',
+//                    'description' => 'Pay with Token',
+//                ],
+//            ],
+//        ],
         [
             'id' => self::RLUSD_PAYMENT_ID,
             'handlerIdentifier' => RlusdPaymentHandler::class,
             'name' => 'RLUSD',
+            'technicalName' => 'ledgerdirect_xrpl_rlusd',
             'translations' => [
                 'de-DE' => [
                     'name' => 'RLUSD',
