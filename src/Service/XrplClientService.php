@@ -27,17 +27,27 @@ class XrplClientService
      * @return array
      * @throws GuzzleException
      */
-    public function fetchAccountTransactions(string $address, ?int $lastLedgerIndex): array
+    public function fetchAccountTransactions(string $address, ?int $lastLedgerIndex, $marker = null): array
     {
+        $params = [
+            'account' => $address,
+            'limit' => 200,
+            'forward' => true,
+        ];
+
+        if ($lastLedgerIndex !== null) {
+            $params['ledger_index_min'] = $lastLedgerIndex + 1;
+        }
+
+        if ($marker !== null) {
+            // Marker can be string or object; pass back as-is
+            $params['marker'] = $marker;
+        }
+
         $body = [
             'jsonrpc' => '2.0',
             'method' => 'account_tx',
-            'params' => [[
-                'account' => $address,
-                // fetch forward=false (default) newest-first; use ledger_index_min to paginate if provided
-                'ledger_index_min' => $lastLedgerIndex ? $lastLedgerIndex + 1 : -1,
-                'limit' => 200,
-            ]],
+            'params' => [$params],
             'id' => 1,
         ];
 
@@ -52,20 +62,25 @@ class XrplClientService
 
         $status = $response->getStatusCode();
         if ($status < 200 || $status >= 300) {
-            return [];
+            return ['transactions' => [], 'marker' => null];
         }
 
         $payload = json_decode((string) $response->getBody(), true);
         if (!is_array($payload)) {
-            return [];
+            return ['transactions' => [], 'marker' => null];
         }
 
         // XRPL JSON-RPC may either return {result: {...}} or top-level 'error'
         if (isset($payload['error']) || (isset($payload['result']['status']) && $payload['result']['status'] === 'error')) {
-            return [];
+            return ['transactions' => [], 'marker' => null];
         }
 
-        return $payload['result']['transactions'] ?? [];
+        $result = $payload['result'] ?? [];
+
+        return [
+            'transactions' => $result['transactions'] ?? [],
+            'marker' => $result['marker'] ?? null,
+        ];
     }
 
     /**
