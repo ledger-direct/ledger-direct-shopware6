@@ -2,13 +2,11 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
-use DateTime;
+use Exception;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Exception as DriverException;
 use PDO;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
-use Hardcastle\XRPL_PHP\Models\Account\AccountTxRequest;
-use Hardcastle\LedgerDirect\Entity\XrplTxEntity;
 
 class XrplTxService
 {
@@ -28,11 +26,14 @@ class XrplTxService
         $this->connection = $connection;
     }
 
+    /**
+     * Generate a unique destination tag
+     *
+     * @return int
+     * @throws Exception|DriverException
+     */
     public function generateDestinationTag(): int
     {
-        // https://xrpl.org/source-and-destination-tags.html
-        // https://xrpl.org/require-destination-tags.html
-
         while (true) {
             $destinationTag = random_int(self::DESTINATION_TAG_RANGE_MIN, self::DESTINATION_TAG_RANGE_MAX);
 
@@ -51,6 +52,16 @@ class XrplTxService
         }
     }
 
+    /**
+     * Finds a XRPL transaction based on the given destination address and destination tag.
+     *
+     * @param string $destination The destination address to search for.
+     * @param int $destinationTag The destination tag associated with the transaction.
+     *
+     * @return array|null Returns the matching transaction as an associative array if found, or null if no match is found.
+     * @throws DriverException
+     * @throws \Doctrine\DBAL\Exception
+     */
     public function findTransaction(string $destination, int $destinationTag): ?array
     {
         $statement = $this->connection->executeQuery(
@@ -64,11 +75,17 @@ class XrplTxService
             return $matches[0];
         }
 
-        // TODO: If for whatever reason there are more than one matches, throw error
+        // TODO: If for whatever reason there are more than one matches, add them up.
 
         return null;
     }
 
+    /**
+     * Syncs transactions for a given XRPL address and stores them in the database.
+     *
+     * @param string $address The XRPL address to sync transactions for.
+     * @throws Exception|\GuzzleHttp\Exception\GuzzleException
+     */
     public function syncTransactions(string $address): void
     {
         $lastLedgerIndex = (int) $this->connection->fetchOne('SELECT MAX(ledger_index) FROM xrpl_tx');
@@ -77,20 +94,40 @@ class XrplTxService
             $lastLedgerIndex = null;
         }
 
-        $transactions = $this->clientService->fetchAccountTransactions($address, $lastLedgerIndex);
+        $marker = null;
+        $pages = 0;
+        $maxPages = 1000; // safety guard
 
-        if (count($transactions)) {
-            $this->txToDb($transactions, $address);
-        }
+        do {
+            $response = $this->clientService->fetchAccountTransactions($address, $lastLedgerIndex, $marker);
+            $transactions = $response['transactions'] ?? [];
 
-        // TODO: If marker is present, loop
+            if (!empty($transactions)) {
+                $this->txToDb($transactions, $address);
+            }
+
+            $marker = $response['marker'] ?? null;
+            $pages++;
+        } while ($marker !== null && $pages < $maxPages);
     }
 
+    /**
+     * Resets the XRPL transactions database table by truncating it.
+     *
+     * @throws \Doctrine\DBAL\Exception
+     */
     public function resetDatabase(): void
     {
         $this->connection->executeStatement('TRUNCATE TABLE xrpl_tx');
     }
 
+    /**
+     * Processes and stores XRPL transactions in the database.
+     *
+     * @param array $transactions The array of XRPL transactions to process.
+     * @param string $address The XRPL address to filter incoming transactions for.
+     * @throws \Doctrine\DBAL\Exception
+     */
     public function txToDb(array $transactions, string $address): void
     {
         $transactions = $this->filterIncomingTransactions($transactions, $address);
@@ -104,6 +141,13 @@ class XrplTxService
     }
 
 
+    /**
+     * Filters incoming transactions, keeping only those where the destination address matches the given address.
+     *
+     * @param array $transactions The list of transactions to filter.
+     * @param string $ownAddress The address to match as the destination in the transactions.
+     * @return array The filtered list of transactions.
+     */
     private function filterIncomingTransactions(array $transactions, string $ownAddress): array
     {
         foreach ($transactions as $key => $transaction) {
@@ -115,6 +159,13 @@ class XrplTxService
         return $transactions;
     }
 
+    /**
+     * Filters an array of transactions to remove those that already exist in the database.
+     *
+     * @param array $transactions An array of transactions to be filtered.
+     * @return array A filtered array containing only new transactions absent from the database.
+     * @throws Exception If the database query fails.
+     */
     private function filterNewTransactions(array $transactions): array
     {
         $reducerFn = function ($hashes, $transaction) {
@@ -145,22 +196,23 @@ class XrplTxService
         return $transactions;
     }
 
+    /**
+     * Hydrates transaction data into a structured array of rows ready for database insertion.
+     *
+     * @param array $transactions An array of transaction data to process and format.
+     * @return array An array of formatted rows containing transaction details.
+     * @throws \InvalidArgumentException If the transactions data is improperly formatted or missing required fields.
+     */
     private function hydrateRows(array $transactions): array
     {
         $rows = [];
 
         foreach ($transactions as $key => $transaction) {
-
-            $ledgerIndex = (int) $transaction['tx']['ledger_index'];
-            $transactionIndex = (int) $transaction['meta']['TransactionIndex'];
-            // https://xrpl.org/connect-your-rippled-to-the-xrp-test-net.html#1-configure-your-server-to-connect-to-the-right-hub
-            $networkId = 1; // TODO: Get a proper one
-
             $rows[] = [
                 'id' => hex2bin(Uuid::randomHex()),
                 'ledger_index' => $transaction['tx']['ledger_index'],
                 'hash' => $transaction['tx']['hash'],
-                'ctid' => $this->generateCtid($ledgerIndex, $transactionIndex, $networkId),
+                'ctid' => $transaction['tx']['ctid'],
                 'account' => $transaction['tx']['Account'],
                 'destination' => $transaction['tx']['Destination'],
                 'destination_tag' => $transaction['tx']['DestinationTag'] ?? null,
@@ -168,20 +220,8 @@ class XrplTxService
                 'meta' => json_encode($transaction['meta']),
                 'tx' => json_encode($transaction['tx'])
             ];
-
-            //TODO: Check ctid adoption, see XLS-37d
         }
 
         return $rows;
     }
-
-    private function generateCtid(int $ledgerIndex, int $transactionIndex, int $networkId): string
-    {
-        // TODO: Build a proper function in XRPL_PHP, currently it's cargo-culting
-        // https://github.com/XRPLF/XRPL-Standards/discussions/91
-        $num = ((0xc0000000 + $ledgerIndex) << 32) + ($transactionIndex << 16) + $networkId;
-
-        return strtoupper(dechex($num));
-    }
-
 }
