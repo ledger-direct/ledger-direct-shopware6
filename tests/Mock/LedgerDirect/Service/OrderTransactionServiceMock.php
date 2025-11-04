@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service;
 
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
+use Hardcastle\LedgerDirect\Provider\StablecoinProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 
 use Hardcastle\LedgerDirect\Service\XrplTxService;
@@ -22,6 +23,9 @@ class OrderTransactionServiceMock
         $currencyRepository = Mockery::mock(EntityRepository::class); // EntityRepository
         $xrpPriceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
         $rlusdPriceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
+        $usdcPriceProvider = Mockery::mock(CryptoPriceProviderInterface::class); // CryptoPriceProviderInterface
+
+        $stablecoinProvider = new StablecoinProvider($configurationService);
 
         $currencyMock = Mockery::mock();
         $currencyMock->shouldReceive('getIsoCode')
@@ -45,6 +49,13 @@ class OrderTransactionServiceMock
             ->with('USD')
             ->andReturn(1);
 
+        $usdcPriceProvider->shouldReceive('getCurrentExchangeRate')
+            ->with('EUR')
+            ->andReturn(1.0);
+        $usdcPriceProvider->shouldReceive('getCurrentExchangeRate')
+            ->with('USD')
+            ->andReturn(1);
+
         return new OrderTransactionService(
             $configurationService,
             $orderRepository,
@@ -52,7 +63,9 @@ class OrderTransactionServiceMock
             $xrplSyncService,
             $currencyRepository,
             $xrpPriceProvider,
-            $rlusdPriceProvider
+            $rlusdPriceProvider,
+            $usdcPriceProvider,
+            $stablecoinProvider
         );
     }
 

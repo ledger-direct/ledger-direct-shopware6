@@ -27,31 +27,9 @@
                                readonly
                                style="display: none;"
                         />
-                    {% elseif mode == 'token' %}
-                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": tokenAmount|round(2), "%tokenName%": currencyCode})|raw}}</p>
-                        <input id="token-amount"
-                               type="text"
-                               name="token-amount"
-                               value="{{ tokenAmount }}"
-                               readonly
-                               style="display: none;"
-                        />
-                        <input id="issuer"
-                               type="text"
-                               name="token-amount"
-                               value="{{ issuer }}"
-                               readonly
-                               style="display: none;"
-                        />
-                        <input id="currency"
-                               type="text"
-                               name="currency"
-                               value="{{ currencyCode }}"
-                               readonly
-                               style="display: none;"
-                        />
-                    {% elseif mode == 'rlusd' %}
-                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": amountRequested.value, "%tokenName%": 'RLUSD'})|raw}}</p>
+                    {% elseif mode == 'rlusd' || mode == 'usdc' %}
+                        {% set type = mode|upper %}
+                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": amountRequested.value, "%tokenName%": type})|raw}}</p>
                     {% endif %}
 
                     <div class="ld-payment-info">
@@ -128,12 +106,7 @@
                         <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ amountRequested }} XRP</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRate }} XRP / {{ currencyCode }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
-                    {% elseif mode == 'token' %}
-                        <div class="ld-sum">{{ total|currency }}</div>
-                        <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>
-                        <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
-                    {% elseif mode == 'rlusd' %}
+                    {% elseif mode == 'rlusd' || mode == 'usdc' %}
                         <div class="ld-sum">{{ total|currency }}</div>
                         <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
                         <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ total }} {{ currencyCode }}</span><br/>

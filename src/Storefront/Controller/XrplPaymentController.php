@@ -69,8 +69,8 @@ class XrplPaymentController extends StorefrontController
 
         return match ($orderTransaction->getPaymentMethodId()) {
             PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
-            PaymentMethodInstaller::TOKEN_PAYMENT_ID => $this->renderTokenPaymentPage($order, $orderTransaction, $returnUrl),
-            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderRlusdPaymentPage($order, $orderTransaction, $returnUrl),
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl),
+            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl),
         };
     }
 
@@ -118,44 +118,17 @@ class XrplPaymentController extends StorefrontController
         ]);
     }
 
-
-    private function renderTokenPaymentPage(
-        OrderEntity $order,
-        OrderTransactionEntity $orderTransaction,
-        string $returnUrl,
-    ): Response
-    {
-        $customFields = $orderTransaction->getCustomFields();
-
-        if (!isset($customFields['ledger_direct'])) {
-            // TODO: Throw new Exception, this TA cannot be paid in XRP
-        }
-
-        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
-            'mode' => 'token',
-            'orderId' => $order->getId(),
-            'orderNumber' => $order->getOrderNumber(),
-            'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => $order->getCurrency()->getIsoCode(),
-            'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
-            'returnUrl' => $returnUrl,
-            'showNoTransactionFoundError' => true,
-        ]);
-    }
-
     /**
      * @param OrderEntity $order
      * @param OrderTransactionEntity $orderTransaction
+     * @param string $type
      * @param string $returnUrl
      * @return Response
      */
-    private function renderRlusdPaymentPage(
+    private function renderStablecoinPaymentPage(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
+        string $type,
         string $returnUrl,
     ): Response
     {
@@ -166,7 +139,7 @@ class XrplPaymentController extends StorefrontController
         }
 
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
-            'mode' => 'rlusd',
+            'mode' => $type,
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
@@ -179,7 +152,7 @@ class XrplPaymentController extends StorefrontController
             'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
-            'paymentPageTitle' => 'Pay with RLUSD on XRPL ' . $customFields['ledger_direct']['network'],
+            'paymentPageTitle' => 'Pay with ' . strtoupper($type) . ' on XRPL ' . $customFields['ledger_direct']['network'],
         ]);
     }
 }
