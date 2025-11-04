@@ -37,6 +37,8 @@ class OrderTransactionService
 
     private CryptoPriceProviderInterface $rlusdPriceProvider;
 
+    private CryptoPriceProviderInterface $usdcPriceProvider;
+
     private StablecoinProvider $stablecoinProvider;
 
     public function __construct(
@@ -47,6 +49,7 @@ class OrderTransactionService
         EntityRepository $currencyRepository,
         CryptoPriceProviderInterface $xrpPriceProvider,
         CryptoPriceProviderInterface $rlusdPriceProvider,
+        CryptoPriceProviderInterface $usdcPriceProvider,
         StablecoinProvider $stablecoinProvider
     )
     {
@@ -57,6 +60,7 @@ class OrderTransactionService
         $this->currencyRepository = $currencyRepository;
         $this->xrpPriceProvider = $xrpPriceProvider;
         $this->rlusdPriceProvider = $rlusdPriceProvider;
+        $this->usdcPriceProvider = $usdcPriceProvider;
         $this->stablecoinProvider = $stablecoinProvider;
     }
 
@@ -109,6 +113,12 @@ class OrderTransactionService
                 $network,
                 (string) round($currencyAmountTotal / $exchangeRate, 2)
             );
+        } elseif ($cryptoCode === 'USDC') {
+            $exchangeRate = $this->usdcPriceProvider->getCurrentExchangeRate($currency->getIsoCode());
+            $amountRequested = $this->stablecoinProvider->getUSDCAmount(
+                $network,
+                (string) round($currencyAmountTotal / $exchangeRate, 2)
+            );
         } else {
             throw new Exception('Unsupported crypto code: ' . $cryptoCode);
         }
@@ -155,11 +165,11 @@ class OrderTransactionService
         match ($paymentMethod->getId()) {
             PaymentMethodInstaller::XRP_PAYMENT_ID => $this->prepareXrpPayment($order, $orderTransaction, $context, $network),
             PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->prepareRlusdPayment($order, $orderTransaction, $context, $network),
+            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->prepareUsdcPayment($order, $orderTransaction, $context, $network),
             default => throw new Exception('Unsupported payment method: ' . $paymentMethod->getId())
 
         };
     }
-
 
     /**
      * Prepare XRP payment for OrderTransaction
@@ -188,32 +198,6 @@ class OrderTransactionService
     }
 
     /**
-     * Prepare Token payment for OrderTransaction
-     *
-     * @param OrderEntity $order
-     * @param OrderTransactionEntity $orderTransaction
-     * @param Context $context
-     * @throws Exception
-     */
-    private function prepareTokenPayment(
-        OrderEntity $order,
-        OrderTransactionEntity $orderTransaction,
-        Context $context): void
-    {
-        $issuer = $this->configurationService->getIssuer();
-        $tokenName = $order->getCurrency()->getIsoCode();
-        $tokenAmountCustomFields = [
-            'ledger_direct' => [
-                'type' => 'token',
-                'issuer' => $issuer,
-                'currency' => $tokenName
-            ]
-        ];
-
-        $this->addCustomFieldsToTransaction($orderTransaction, $tokenAmountCustomFields, $context);
-    }
-
-    /**
      * Prepare RLUSD payment for OrderTransaction
      *
      * @param OrderEntity $order
@@ -229,8 +213,7 @@ class OrderTransactionService
         string $network = 'Testnet'
     ): void
     {
-        // Can be done via Shopware configuration
-        // if (!$this->configurationService->isRlusdEnabled()) {
+        //if (!$this->configurationService->isRlusdEnabled()) {
         //    throw new Exception('RLUSD payments are not enabled in the configuration.');
         //}
 
@@ -238,9 +221,34 @@ class OrderTransactionService
             'ledger_direct' => $this->getCryptoPriceForOrder($order, $context, 'RLUSD', $network)
         ];
         $rlusdPriceCustomFields['ledger_direct']['network'] = $network;
-        $rlusdPriceCustomFields['ledger_direct']['ledger_direct'] = 'rlusd-payment';
+        $rlusdPriceCustomFields['ledger_direct']['type'] = 'rlusd-payment';
 
         $this->addCustomFieldsToTransaction($orderTransaction, $rlusdPriceCustomFields, $context);
+    }
+
+    /**
+     * Prepare USDC payment for OrderTransaction
+     *
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @param string $network
+     * @throws Exception
+     */
+    private function prepareUsdcPayment(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        Context $context,
+        string $network = 'Testnet'
+    ): void
+    {
+        $usdcPriceCustomFields = [
+            'ledger_direct' => $this->getCryptoPriceForOrder($order, $context, 'USDC', $network)
+        ];
+        $usdcPriceCustomFields['ledger_direct']['network'] = $network;
+        $usdcPriceCustomFields['ledger_direct']['type'] = 'usdc-payment';
+
+        $this->addCustomFieldsToTransaction($orderTransaction, $usdcPriceCustomFields, $context);
     }
 
     /**
@@ -310,6 +318,7 @@ class OrderTransactionService
             ],
         ], $context);
     }
+
     /**
      * Convert drops (string or int) to XRP decimal string.
      *

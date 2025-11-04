@@ -11,15 +11,11 @@ class ConfigurationService
 
     private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetAccount';
 
-    private const CONFIG_KEY_MAINNET_TOKEN_NAME = 'xrplMainnetCustomTokenName';
-
-    private const CONFIG_KEY_MAINNET_TOKEN_ISSUER = 'xrplMainnetCustomTokenIssuer';
-
     private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetAccount';
 
-    private const CONFIG_KEY_TESTNET_TOKEN_NAME = 'xrplTestnetCustomTokenName';
-
-    private const CONFIG_KEY_TESTNET_TOKEN_ISSUER = 'xrplTestnetCustomTokenIssuer';
+    // USDC issuers per network
+    private const CONFIG_KEY_MAINNET_USDC_ISSUER = 'xrplMainnetUsdcIssuer';
+    private const CONFIG_KEY_TESTNET_USDC_ISSUER = 'xrplTestnetUsdcIssuer';
 
     private SystemConfigService $systemConfigService;
 
@@ -65,31 +61,12 @@ class ConfigurationService
        return $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
    }
 
-    public function getTokenName(): mixed
+   public function isRlusdEnabled()
     {
         if ($this->isTest()) {
-            return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_NAME);
+            return $this->get('xrplRlusdEnabled', false);
         }
 
-        return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_NAME);
+        return $this->get('xrplRlusdEnabled', false);
     }
-
-   public function getIssuer(): mixed
-   {
-       if ($this->isTest()) {
-           return $this->get(self::CONFIG_KEY_TESTNET_TOKEN_ISSUER);
-       }
-
-       return $this->get(self::CONFIG_KEY_MAINNET_TOKEN_ISSUER);
-   }
-
-   /* public function isRlusdEnabled()
-    {
-        if ($this->isTest()) {
-            return $this->get('xrplTestnetRlusdEnabled', false);
-        }
-
-        return $this->get('xrplMainnetRlusdEnabled', false);
-    }
-   */
 }

@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Installer;
 
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\LedgerDirect;
 use Shopware\Core\Framework\Context;
@@ -20,6 +21,7 @@ class PaymentMethodInstaller
     public const XRP_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bb';
     public const TOKEN_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bc';
     public const RLUSD_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55bd';
+    public const USDC_PAYMENT_ID = '7ca60321a9d2dac0fe3622a5110f55be';
 
     private const PAYMENT_METHODS = [
         [
@@ -29,30 +31,15 @@ class PaymentMethodInstaller
             'technicalName' => 'ledgerdirect_xrpl_xrp',
             'translations' => [
                 'de-DE' => [
-                    'name' => 'XRP',
+                    'name' => 'XRP (XRPL)',
                     'description' => 'Mit XRP bezahlen',
                 ],
                 'en-GB' => [
-                    'name' => 'XRP',
+                    'name' => 'XRP on XRPL',
                     'description' => 'Pay with XRP',
                 ],
             ],
         ],
-//        [
-//            'id' => self::TOKEN_PAYMENT_ID,
-//            'handlerIdentifier' => TokenPaymentHandler::class,
-//            'name' => 'Token',
-//            'translations' => [
-//                'de-DE' => [
-//                    'name' => 'Token',
-//                    'description' => 'Mit Token bezahlen',
-//                ],
-//                'en-GB' => [
-//                    'name' => 'Token',
-//                    'description' => 'Pay with Token',
-//                ],
-//            ],
-//        ],
         [
             'id' => self::RLUSD_PAYMENT_ID,
             'handlerIdentifier' => RlusdPaymentHandler::class,
@@ -60,17 +47,32 @@ class PaymentMethodInstaller
             'technicalName' => 'ledgerdirect_xrpl_rlusd',
             'translations' => [
                 'de-DE' => [
-                    'name' => 'RLUSD',
-                    'description' => 'Mit RLUSD bezahlen',
+                    'name' => 'RLUSD (XRPL)',
+                    'description' => 'Mit RLUSD (XRPL) bezahlen',
                 ],
                 'en-GB' => [
-                    'name' => 'RLUSD',
-                    'description' => 'Pay with RLUSD',
+                    'name' => 'RLUSD on XRPL',
+                    'description' => 'Pay with RLUSD  (XRPL) ',
+                ],
+            ],
+        ],
+        [
+            'id' => self::USDC_PAYMENT_ID,
+            'handlerIdentifier' => UsdcPaymentHandler::class,
+            'name' => 'USDC',
+            'technicalName' => 'ledgerdirect_xrpl_usdc',
+            'translations' => [
+                'de-DE' => [
+                    'name' => 'USDC (XRPL)',
+                    'description' => 'Mit USDC (XRPL) bezahlen',
+                ],
+                'en-GB' => [
+                    'name' => 'USDC on XRPL',
+                    'description' => 'Pay with USDC (XRPL)',
                 ],
             ],
         ],
     ];
-
 
     private EntityRepository $paymentMethodRepository;
 

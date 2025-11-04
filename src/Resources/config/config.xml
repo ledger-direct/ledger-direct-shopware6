@@ -3,77 +3,41 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
+        <title>LedgerDirect - XRPL Settings</title>
+        <title lang="de-DE">LedgerDirect - XRPL Einstellungen</title>
+
         <input-field type="bool">
-            <name>useTestnet</name>
+            <name>useXrplTestnet</name>
             <label>Use Testnet</label>
             <label lang="de-DE">Testnet verwenden</label>
             <defaultValue>true</defaultValue>
         </input-field>
-    </card>
-
-
-    <card>
-        <title>LedgerDirect - XRPL Testnet Account Settings</title>
-        <title lang="de-DE">LedgerDirect - XRPL Testnet Account Einstellungen</title>
-
-        <input-field type="bool">
-            <name>xrplTestnetRlusdEnabled</name>
-            <label>Enable RLUSD Payments</label>
-            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
-            <defaultValue>false</defaultValue>
-        </input-field>
 
         <input-field type="text">
-            <name>xrplTestnetAccount</name>
-            <label>Merchant Wallet Address (Testnet)</label>
-            <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
-        </input-field>
-
-        <!-- Disabled -Custom token settings for XRPL Testnet -->
-        <!--
-        <input-field type="text">
-            <name>xrplTestnetCustomTokenName</name>
-            <label>Token (Testnet)</label>
-            <label lang="de-DE">Token (Testnet)</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>xrplTestnetCustomTokenIssuer</name>
-            <label>Issuer (Testnet)</label>
-            <label lang="de-DE">Issuer (Testnet)</label>
-        </input-field>
-        -->
-    </card>
-
-    <card>
-        <title>LedgerDirect - XRPL Mainnet Account Settings</title>
-        <title lang="de-DE">LedgerDirect - XRPL Mainnet Account Einstellungen</title>
-
-        <input-field type="bool">
-            <name>xrplMainnetRlusdEnabled</name>
-            <label>Enable RLUSD Payments</label>
-            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
-            <defaultValue>false</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>xrplMainnetAccount</name>
+            <name>xrplMainnetDestinationAccount</name>
             <label>Merchant Wallet Address (Mainnet)</label>
             <label lang="de-DE">Addresse des Händler-Wallets (Mainnet)</label>
         </input-field>
 
-        <!-- Disabled -Custom token settings for XRPL Testnet -->
-        <!--
         <input-field type="text">
-            <name>xrplMainnetCustomTokenName</name>
-            <label>Token (Mainnet)</label>
-            <label lang="de-DE">Token (Mainnet)</label>
+            <name>xrplTestnetDestinationAccount</name>
+            <label>XRPL Merchant Wallet Address (Testnet)</label>
+            <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
         </input-field>
 
-        <input-field type="text">
-            <name>xrplMainnetCustomTokenIssuer</name>
-            <label>Issuer (Mainnet)</label>
-            <label lang="de-DE">Issuer (Mainnet)</label>
+        <!--
+        <input-field type="bool">
+            <name>xrplIsRlusdEnabled</name>
+            <label>Enable RLUSD Payments</label>
+            <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>xrplIsUsdcEnabled</name>
+            <label>Enable USDC Payments</label>
+            <label lang="de-DE">Zahlungen mit USDC aktivieren</label>
+            <defaultValue>false</defaultValue>
         </input-field>
         -->
     </card>
