@@ -14,15 +14,17 @@ class XrplTransactionLookupCommand extends Command
 
     protected XrplTxService $txService;
 
-    public function __construct(
-        XrplTxService $txService
-    ) {
-        parent::__construct();
-
+    public function __construct(XrplTxService $txService) {
+        parent::__construct(self::$defaultName);
         $this->txService = $txService;
     }
 
-    public function configure()
+    /**
+     * Configure the command options and description.
+     *
+     * @return void
+     */
+    public function configure(): void
     {
         parent::configure();
 
@@ -33,6 +35,21 @@ class XrplTransactionLookupCommand extends Command
         $this->addOption('write', null, InputOption::VALUE_OPTIONAL, 'Write result to file system');
     }
 
+    /**
+     * Executes the command logic.
+     *
+     * Retrieves the 'hash' and 'ctid' options from the input. Ensures that
+     * exactly one of these options is provided. Based on the provided 'source'
+     * option, it processes the input against the specified source ('XRPL', 'DB', or 'BOTH').
+     * Returns a success code if the operation completes, or an error code with
+     * a message if neither 'hash' nor 'ctid' is provided.
+     *
+     * @param InputInterface $input The input interface containing command options.
+     * @param OutputInterface $output The output interface for writing command result.
+     *
+     * @return int Returns Command::SUCCESS on successful execution,
+     *             or Command::FAILURE if the required options are not provided.
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $hash = $input->getOption('hash');

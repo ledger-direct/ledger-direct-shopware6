@@ -16,12 +16,16 @@ class XrpPriceLookupCommand extends Command
 
     public function __construct(CryptoPriceProviderInterface $priceFinder)
     {
-        parent::__construct();
-
+        parent::__construct(self::$defaultName);
         $this->priceFinder = $priceFinder;
     }
 
-    public function configure()
+    /**
+     * Configure the command options and description.
+     *
+     * @return void
+     */
+    public function configure(): void
     {
         parent::configure();
 
@@ -30,6 +34,13 @@ class XrpPriceLookupCommand extends Command
         $this->addOption('provider', null, InputOption::VALUE_OPTIONAL, 'define providers to be queried for price');
     }
 
+    /**
+     * Performs the price query for XRP and outputs the result in the console.
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $iso = $input->getOption('iso');
