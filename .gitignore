@@ -1,8 +1,11 @@
 # Package Managers
+**/vendor
+**/composer.lock
 **/node_modules
 **/package-lock.json
 
 # Test and Caches
+phpunit.xml.*
 .phpunit.result.cache
 .phpunit.cache
 
