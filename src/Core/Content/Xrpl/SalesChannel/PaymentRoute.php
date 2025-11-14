@@ -8,26 +8,24 @@ use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * @Route(defaults={"_routeScope"={"store-api"}})
- */
+#[Route(defaults: ['_routeScope' => ['store-api']])]
 class PaymentRoute
 {
     private OrderTransactionService $orderTransactionService;
 
-    /**
-     * @param OrderTransactionService $orderTransactionService
-     */
     public function __construct(OrderTransactionService $orderTransactionService)
     {
         $this->orderTransactionService = $orderTransactionService;
     }
 
-    /**
-     * @Route("/store-api/ledger-direct/payment/check/{orderId}", name="store-api.ledger-direct.payment.check", methods={"GET", "POST"}, defaults={"_loginRequired"=true})
-     */
+    #[Route(
+        path: '/store-api/ledger-direct/payment/check/{orderId}',
+        name: 'store-api.ledger-direct.payment.check',
+        methods: ['GET', 'POST'],
+        defaults: ['_loginRequired' => true]
+    )]
     public function check(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
@@ -54,9 +52,11 @@ class PaymentRoute
         return new PaymentRouteResponse($response);
     }
 
-    /**
-     * @Route("/store-api/ledger-direct/payment/price/{orderId}", name="store-api.ledger-direct.payment.price", methods={"GET", "POST"})
-     */
+    #[Route(
+        path: '/store-api/ledger-direct/payment/price/{orderId}',
+        name: 'store-api.ledger-direct.payment.price',
+        methods: ['GET', 'POST']
+    )]
     public function price(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
         $customer = $context->getCustomer();
@@ -71,9 +71,11 @@ class PaymentRoute
         return new PaymentRouteResponse(new ArrayStruct(['todo' => 'implement']));
     }
 
-    /**
-     * @Route("/store-api/ledger-direct/payment/quote/{orderId}", name="store-api.ledger-direct.payment.quote", methods={"GET", "POST"})
-     */
+    #[Route(
+        path: '/store-api/ledger-direct/payment/quote/{orderId}',
+        name: 'store-api.ledger-direct.payment.quote',
+        methods: ['GET', 'POST']
+    )]
     public function quote(string $orderId, SalesChannelContext $context): PaymentRouteResponse
     {
         $customer = $context->getCustomer();
