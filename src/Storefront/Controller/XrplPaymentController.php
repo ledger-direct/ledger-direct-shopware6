@@ -16,9 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 
 
-/**
- * @Route(defaults={"_routeScope"={"storefront"}})
- */
+#[Route(defaults: ['_routeScope' => ['storefront']])]
 class XrplPaymentController extends StorefrontController
 {
     private OrderTransactionService $orderTransactionService;
@@ -37,9 +35,7 @@ class XrplPaymentController extends StorefrontController
         $this->router = $router;
     }
 
-    /**
-     * @Route("/ledger-direct/payment/{orderId}", name="frontend.checkout.ledger-direct.payment", methods={"GET", "POST"}, defaults={"_loginRequired"=true}, options={"seo"="false"})
-     */
+    #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
     public function payment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
         //TODO: Check if orderTransaction ist still valid
@@ -74,9 +70,7 @@ class XrplPaymentController extends StorefrontController
         };
     }
 
-    /**
-     * @Route("/ledger-direct/payment/check/{orderId}", name="frontend.checkout.ledger-direct.check-payment", methods={"GET", "POST"}, defaults={"XmlHttpRequest"=true, "_loginRequired"=true})
-     */
+    #[Route(path: '/ledger-direct/payment/check/{orderId}', name: 'frontend.checkout.ledger-direct.check-payment', methods: ['GET', 'POST'], defaults: ['XmlHttpRequest' => true, '_loginRequired' => true])]
     public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
     {
         return $this->paymentRoute->check($orderId, $context);
