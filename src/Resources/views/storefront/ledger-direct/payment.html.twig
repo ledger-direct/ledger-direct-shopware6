@@ -2,6 +2,13 @@
 
 {% block base_body_classes %}{{ parent() }} ld-body{% endblock %}
 
+{# Load our self-contained JS after the core scripts #}
+{% block base_javascript %}
+    {{ parent() }}
+    <script defer src="https://cdn.jsdelivr.net/npm/kjua@0.10.0/dist/kjua.min.js"></script>
+    <script defer src="{{ asset('bundles/ledgerdirect/storefront/js/ledger-direct.bundle.js') }}"></script>
+{% endblock %}
+
 {% block base_body_inner %}
 
     {% set basicConfig = config('core.basicInformation') %}

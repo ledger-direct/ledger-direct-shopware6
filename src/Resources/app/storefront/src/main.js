@@ -3,7 +3,7 @@ const PluginManager = window.PluginManager
 import Plugin from 'src/plugin-system/plugin.class'
 import DomAccess from 'src/helper/dom-access.helper'
 import HttpClient from 'src/service/http-client.service'
-import kjua from './node_modules/kjua'
+import kjua from 'kjua'
 
 import setupGemWallet from "./wallets/gemWallet"
 import setupCrossmark from "./wallets/crossmark"
