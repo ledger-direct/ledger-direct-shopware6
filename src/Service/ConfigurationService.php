@@ -9,13 +9,9 @@ class ConfigurationService
 {
     private const CONFIG_DOMAIN = 'LedgerDirect';
 
-    private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetAccount';
+    private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetDestinationAccount';
 
-    private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetAccount';
-
-    // USDC issuers per network
-    private const CONFIG_KEY_MAINNET_USDC_ISSUER = 'xrplMainnetUsdcIssuer';
-    private const CONFIG_KEY_TESTNET_USDC_ISSUER = 'xrplTestnetUsdcIssuer';
+    private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetDestinationAccount';
 
     private SystemConfigService $systemConfigService;
 
