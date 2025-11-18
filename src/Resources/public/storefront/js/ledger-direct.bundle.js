@@ -63,7 +63,7 @@
     const qr = window.kjua({
       text: content,
       render: 'image',
-      size: 512,
+      size: 256,
       className: 'qr-code-img'
     });
     qr.classList.add('qr-code-img');
