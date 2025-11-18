@@ -4,6 +4,8 @@
 **/node_modules
 **/package-lock.json
 
+!src/Resources/public/vendor/
+
 # Test and Caches
 phpunit.xml.*
 .phpunit.result.cache
