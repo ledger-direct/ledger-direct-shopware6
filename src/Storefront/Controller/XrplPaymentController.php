@@ -94,7 +94,7 @@ class XrplPaymentController extends StorefrontController
 
         }
 
-        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
+        return $this->renderStorefront('@LedgerDirect/storefront/ledger-direct/payment.html.twig', [
             'mode' => 'xrp',
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
@@ -132,7 +132,7 @@ class XrplPaymentController extends StorefrontController
 
         }
 
-        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
+        return $this->renderStorefront('@LedgerDirect/storefront/ledger-direct/payment.html.twig', [
             'mode' => $type,
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),

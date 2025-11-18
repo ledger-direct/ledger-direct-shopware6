@@ -3,13 +3,13 @@ const PluginManager = window.PluginManager
 import Plugin from 'src/plugin-system/plugin.class'
 import DomAccess from 'src/helper/dom-access.helper'
 import HttpClient from 'src/service/http-client.service'
-import kjua from 'kjua'
 
 import setupGemWallet from "./wallets/gemWallet"
 import setupCrossmark from "./wallets/crossmark"
 
 class XrpPayment extends Plugin {
     init() {
+        console.log('source');
         this.debug = true;
 
         this.client = new HttpClient();
@@ -99,7 +99,7 @@ class XrpPayment extends Plugin {
     }
 
     showQrCode(content, icon) {
-        const qr = kjua({
+        const qr = window.kjua({
             text: content,
             render: 'image',
             size: 256,
