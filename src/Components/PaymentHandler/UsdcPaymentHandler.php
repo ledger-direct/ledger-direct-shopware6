@@ -2,18 +2,18 @@
 
 namespace Hardcastle\LedgerDirect\Components\PaymentHandler;
 
-use Exception;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Struct\Struct;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
-class UsdcPaymentHandler implements AsynchronousPaymentHandlerInterface
+class UsdcPaymentHandler extends AbstractPaymentHandler
 {
     private RouterInterface $router;
 
@@ -32,41 +32,50 @@ class UsdcPaymentHandler implements AsynchronousPaymentHandlerInterface
         $this->transactionService = $transactionService;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function pay(AsyncPaymentTransactionStruct $transaction, RequestDataBag $dataBag, SalesChannelContext $salesChannelContext): RedirectResponse
+    public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
     {
-        $this->transactionService->prepareOrderTransactionForXrpl(
-            $transaction->getOrder(),
-            $transaction->getOrderTransaction(),
-            $salesChannelContext->getContext()
-        );
+        return false;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function pay(Request $request, PaymentTransactionStruct $transaction, Context $context, ?Struct $validateStruct): ?RedirectResponse
+    {
+        $orderTransaction = $this->transactionService->getOrderTransactionById($transaction->getOrderTransactionId(), $context);
+        $order = $orderTransaction?->getOrder();
+
+        if ($orderTransaction === null || $order === null) {
+            throw new \RuntimeException('LedgerDirect: order transaction not found for ' . $transaction->getOrderTransactionId());
+        }
+
+        $this->transactionService->prepareOrderTransactionForXrpl($order, $orderTransaction, $context);
 
         $redirectUrl = $this->router->generate('frontend.checkout.ledger-direct.payment', [
-            'orderId' => $transaction->getOrder()->getId(),
+            'orderId' => $order->getId(),
             'returnUrl' => $transaction->getReturnUrl()
         ]);
 
         return new RedirectResponse($redirectUrl);
     }
 
-    public function finalize(AsyncPaymentTransactionStruct $transaction, Request $request, SalesChannelContext $salesChannelContext): void
+    public function finalize(Request $request, PaymentTransactionStruct $transaction, Context $context): void
     {
-        $orderTransaction = $transaction->getOrderTransaction();
-        $customFields = $orderTransaction->getCustomFields();
+        $orderTransactionId = $transaction->getOrderTransactionId();
+        $orderTransaction = $this->transactionService->getOrderTransactionById($orderTransactionId, $context);
+        $customFields = $orderTransaction?->getCustomFields() ?? [];
 
         if (isset($customFields['ledger_direct']['hash']) && isset($customFields['ledger_direct']['ctid'])) {
             $requestedTokenAmount = $customFields['ledger_direct']['amount_requested'];
             $paidTokenAmount = $customFields['ledger_direct']['delivered_amount'];
             if ($requestedTokenAmount === $paidTokenAmount) {
-                $this->transactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
+                $this->transactionStateHandler->paid($orderTransactionId, $context);
                 return;
             } else {
-                $this->transactionStateHandler->payPartially($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
+                $this->transactionStateHandler->payPartially($orderTransactionId, $context);
             }
         } else {
-            $this->transactionStateHandler->reopen($transaction->getOrderTransaction()->getId(), $salesChannelContext->getContext());
+            $this->transactionStateHandler->reopen($orderTransactionId, $context);
         }
     }
 }

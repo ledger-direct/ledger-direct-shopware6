@@ -4,7 +4,6 @@ namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
-use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Hardcastle\LedgerDirect\Provider\StablecoinProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -17,7 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class OrderTransactionService
 {
-    public const METADATA_VERSION = 1.0;
+    public const METADATA_VERSION = 1.1;
 
     public const DEFAULT_EXPIRY = 60 * 15; // 15 minutes
 
@@ -62,6 +61,27 @@ class OrderTransactionService
         $this->rlusdPriceProvider = $rlusdPriceProvider;
         $this->usdcPriceProvider = $usdcPriceProvider;
         $this->stablecoinProvider = $stablecoinProvider;
+    }
+
+    /**
+     * Retrieves an OrderTransaction (incl. its order and payment method) by ID.
+     *
+     * Needed since Shopware 6.7: the AbstractPaymentHandler receives only the
+     * orderTransactionId via PaymentTransactionStruct, not the loaded entities.
+     *
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @return OrderTransactionEntity|null
+     */
+    public function getOrderTransactionById(string $orderTransactionId, Context $context): ?OrderTransactionEntity
+    {
+        $criteria = new Criteria([$orderTransactionId]);
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('paymentMethod');
+
+        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+
+        return $orderTransaction instanceof OrderTransactionEntity ? $orderTransaction : null;
     }
 
     /**
@@ -124,7 +144,9 @@ class OrderTransactionService
         }
 
         return [
-            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
+            'base_asset' => $cryptoCode,
+            'quote_currency' => $currency->getIsoCode(),
+            'pairing' => $cryptoCode . '/' . $currency->getIsoCode(),
             'exchange_rate' => $exchangeRate,
             'amount_requested' => $amountRequested
         ];

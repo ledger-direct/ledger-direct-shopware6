@@ -40,9 +40,6 @@
             <call method="setContainer">
                 <argument type="service" id="service_container" />
             </call>
-            <call method="setTwig">
-                <argument type="service" id="twig"/>
-            </call>
         </service>
 
         <!-- Payment Handlers -->
@@ -51,15 +48,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
-        </service>
-
-        <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler">
-            <argument type="service" id="router"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
-
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler">
@@ -67,7 +56,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler">
@@ -75,7 +64,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <!-- Providers -->

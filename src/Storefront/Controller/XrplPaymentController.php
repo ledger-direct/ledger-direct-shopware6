@@ -99,7 +99,7 @@ class XrplPaymentController extends StorefrontController
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => str_replace('XRP/','', $customFields['ledger_direct']['pairing']),
+            'currencyCode' => $customFields['ledger_direct']['quote_currency'] ?? (explode('/', (string) $customFields['ledger_direct']['pairing'])[1] ?? $order->getCurrency()->getIsoCode()),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'network' => $customFields['ledger_direct']['network'],
             'destinationAccount' => $customFields['ledger_direct']['destination_account'],
