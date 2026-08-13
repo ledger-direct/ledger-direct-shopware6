@@ -14,14 +14,22 @@ function setupGemWallet() {
 
 function performPayment() {
     const paymentPayload = preparePaymentPayload.bind(this)();
+    console.log('GemWallet payload:', paymentPayload);
 
     sendPayment(paymentPayload).then((response) => {
-        this.log(response.result?.hash)
-        this.checkPayment()
+        console.log('GemWallet response:', response);
+        const hash = response && response.result && response.result.hash;
+        if (hash) {
+            this.log('Payment hash: ' + hash);
+            this.checkPayment();
+        } else {
+            console.warn('No hash returned from GemWallet', response);
+        }
     }, (reason) => {
-        this.log(reason)
+        console.error('GemWallet payment failed (reason)', reason);
+        this.log(reason);
     }).catch(error => {
-
+        console.error('GemWallet payment failed (error)', error);
     })
 }
 
@@ -37,7 +45,7 @@ function preparePaymentPayload() {
         }
 
         return {
-            amount: xrpToDrops(xrpPaymentData.amount), // converted to drops
+            amount: typeof xrpPaymentData.amount === 'string' ? xrpToDrops(xrpPaymentData.amount) : xrpPaymentData.amount, // converted to drops
             destination: xrpPaymentData.destination,
             destinationTag: xrpPaymentData.destinationTag
         }

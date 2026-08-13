@@ -15,7 +15,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 
-
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class XrplPaymentController extends StorefrontController
 {
@@ -25,14 +24,18 @@ class XrplPaymentController extends StorefrontController
 
     private RouterInterface $router;
 
+    private string $kernelSecret;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
-        RouterInterface $router
+        RouterInterface $router,
+        string $kernelSecret
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
         $this->router = $router;
+        $this->kernelSecret = $kernelSecret;
     }
 
     #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
@@ -55,12 +58,12 @@ class XrplPaymentController extends StorefrontController
 
         $returnUrl = $request->get('returnUrl');
         if (!$returnUrl) {
-            $returnUrl = $orderTransaction->getReturnUrl();
+            $returnUrl = $this->router->generate('frontend.checkout.finish.page', ['orderId' => $orderId]);
         }
 
         $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
         if ($tx) {
-            return new RedirectResponse($request->get('returnUrl'));
+            return new RedirectResponse($returnUrl);
         }
 
         return match ($orderTransaction->getPaymentMethodId()) {
@@ -74,6 +77,82 @@ class XrplPaymentController extends StorefrontController
     public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
     {
         return $this->paymentRoute->check($orderId, $context);
+    }
+
+    #[Route(path: '/ledger-direct/payment/xrpl-intent/{orderId}', name: 'frontend.checkout.ledger-direct.xrpl-intent', methods: ['GET'], defaults: ['XmlHttpRequest' => true, '_loginRequired' => true])]
+    public function xrplIntent(SalesChannelContext $context, string $orderId, Request $request): Response
+    {
+        $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+
+        if (!$order) {
+            return $this->json(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        /** @var OrderTransactionEntity|null $orderTransaction */
+        $orderTransaction = $order->getTransactions()->first();
+        if (!$orderTransaction) {
+            return $this->json(['error' => 'Transaction not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $customFields = $orderTransaction->getCustomFields() ?? [];
+        if (!$customFields['ledger_direct'] ) {
+            return $this->json(['error' => 'Payment data unavailable'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $intent = $customFields['ledger_direct'];
+
+        // Build canonical intent payload (server is source of truth)
+        $payload = [
+            'intentVersion'     => '1',
+            'orderId'           => $order->getId(),
+            'network'           => $intent['network'],
+            'destination'       => $intent['destination_account'],
+            'destinationTag'    => $intent['destination_tag'],
+            'amount_requested'  => $intent['amount_requested'],
+            'decimals'          => 6,
+            'memo'              => sprintf('Order %s', $order->getOrderNumber()),
+            'nonce'             => bin2hex(random_bytes(8)),
+            'expiresAt'         => time() + 10 * 60, // 10 minutes
+        ];
+
+        // Add server-side signature to help the client detect tampering when passing data around.
+        // The backend remains the final verifier before marking an order as paid.
+        $payload['signature'] = $this->signIntent($payload);
+
+        return $this->json($payload);
+    }
+
+    /**
+     * Computes an HMAC signature for the intent over a stable set of fields.
+     * This is optional integrity metadata for the client; the server should still
+     * verify the on-chain transaction against authoritative values.
+     */
+    private function signIntent(array $intent): string
+    {
+        // Select critical fields in a deterministic order
+        $data = [
+            'intentVersion'  => $intent['intentVersion'] ?? '1',
+            'orderId'        => $intent['orderId'] ?? '',
+            'network'        => $intent['network'] ?? '',
+            'destination'    => $intent['destination'] ?? '',
+            'destinationTag' => (string)($intent['destinationTag'] ?? ''),
+            'amount'         => (string)($intent['amount'] ?? ''),
+            'currency'       => $intent['currency'] ?? '',
+            'issuer'         => (string)($intent['issuer'] ?? ''),
+            'decimals'       => (string)($intent['decimals'] ?? ''),
+            'memo'           => (string)($intent['memo'] ?? ''),
+            'nonce'          => (string)($intent['nonce'] ?? ''),
+            'expiresAt'      => (string)($intent['expiresAt'] ?? ''),
+        ];
+
+        $secret = $this->kernelSecret ?: 'ledgerdirect-fallback-secret';
+        $message = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($message === false) {
+            // Fallback: serialize to a simple key=value list if JSON encoding ever fails
+            $message = implode('&', array_map(static function ($k, $v) { return $k . '=' . $v; }, array_keys($data), array_values($data)));
+        }
+
+        return hash_hmac('sha256', $message, $secret);
     }
 
     /**
@@ -91,24 +170,25 @@ class XrplPaymentController extends StorefrontController
             // Redirect to the checkout page with an error message stating that this message cannot be paid in XRP
             $this->addFlash('danger', 'This order cannot be paid with XRP. Please contact support.');
             return $this->redirectToRoute('frontend.checkout.cart.page');
-
         }
+
+        $intent = $customFields['ledger_direct'];
 
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
             'mode' => 'xrp',
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => str_replace('XRP/','', $customFields['ledger_direct']['pairing']),
+            'currencyCode' => str_replace('XRP/','', $intent['pairing']),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
-            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
+            'network' => $intent['network'],
+            'destinationAccount' => $intent['destination_account'],
+            'destinationTag' => $intent['destination_tag'],
+            'amountRequested' => $intent['amount_requested'],
+            'exchangeRate' => $intent['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
-            'paymentPageTitle' => 'Pay with XRP on XRPL ' . $customFields['ledger_direct']['network']
+            'paymentPageTitle' => 'Pay with XRP on XRPL ' . $intent['network']
         ]);
     }
 
@@ -132,6 +212,8 @@ class XrplPaymentController extends StorefrontController
 
         }
 
+        $intent = $customFields['ledger_direct'];
+
         return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
             'mode' => $type,
             'orderId' => $order->getId(),
@@ -139,14 +221,14 @@ class XrplPaymentController extends StorefrontController
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
             'currencyCode' => $order->getCurrency()->getIsoCode(),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
-            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
+            'network' => $intent ['network'],
+            'destinationAccount' => $intent ['destination_account'],
+            'destinationTag' => $intent ['destination_tag'],
+            'amountRequested' => $intent ['amount_requested'],
+            'exchangeRate' => $intent ['exchange_rate'],
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
-            'paymentPageTitle' => 'Pay with ' . strtoupper($type) . ' on XRPL ' . $customFields['ledger_direct']['network'],
+            'paymentPageTitle' => 'Pay with ' . strtoupper($type) . ' on XRPL ' . $intent ['network'],
         ]);
     }
 }

@@ -85,11 +85,14 @@
                     </div>
 
                     <div class="ld-sync">
-                        <!--
-                        <button id="gem-wallet-button" class="wallet-disabled">G</button>
-                        <button id="crossmark-wallet-button" class="wallet-disabled">C</button>
-                        <button id="xumm-wallet-button" class="wallet-disabled">X</button>
-                        -->
+                        <div class="ld-wallet-buttons">
+                            <!--
+                           <button id="gem-wallet-button" class="wallet-disabled" title="Pay with GemWallet">GemWallet</button>
+                           <button id="crossmark-wallet-button" class="wallet-disabled" title="Pay with Crossmark">Crossmark</button>
+
+                           <button id="xumm-wallet-button" class="wallet-disabled" title="Pay with XUMM/Xaman">XUMM</button>
+                           -->
+                        </div>
                         <button id="check-payment-button" data-order-id="{{ orderId }}">
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none"></span>
                             {{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}
@@ -128,4 +131,13 @@
         </div>
     </div>
 
+{% endblock %}
+
+{# Inject scripts at the end of body so they are available on this page #}
+{% block base_body_script %}
+    {{ parent() }}
+    <script defer src="{{ asset('bundles/ledgerdirect/third-party/kjua.min.js') }}"></script>
+    <script defer src="{{ asset('bundles/ledgerdirect/third-party/gemwallet-api.min.js') }}"></script>
+    <script defer src="{{ asset('bundles/ledgerdirect/storefront/js/ledger-direct.bundle.js') }}"></script>
+    <script defer src="{{ asset('bundles/ledgerdirect/storefront/js/ledger-direct-wallets.bundle.js') }}"></script>
 {% endblock %}

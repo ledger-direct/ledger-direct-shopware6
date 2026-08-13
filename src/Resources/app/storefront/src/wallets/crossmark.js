@@ -62,7 +62,7 @@ function preparePaymentPayload(account) {
             Account: account,
             Destination: xrpPaymentData.destination,
             DestinationTag: xrpPaymentData.destinationTag,
-            Amount: xrpToDrops(xrpPaymentData.amount), // converted to drops
+            Amount: typeof xrpPaymentData.amount === 'string' ? xrpToDrops(xrpPaymentData.amount) : xrpPaymentData.amount, // converted to drops
         }
     } catch (error) {
         this.log(error)
