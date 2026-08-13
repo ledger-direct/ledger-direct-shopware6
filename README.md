@@ -5,9 +5,13 @@ intermediary wallets, extra servers or external payment providers. Maximum contr
 
 Project Website: https://www.ledger-direct.com
 
-GitHub: https://github.com/ledger-direct/ledger-direct-shopware
+GitHub: https://github.com/ledger-direct/ledger-direct-shopware6
 
 ![Payment Page](payment_page.png)
+
+## Requirements
+- Shopware 6.6 or 6.7
+- PHP 8.2 or higher
 
 ## Installation
 
@@ -21,12 +25,13 @@ GitHub: https://github.com/ledger-direct/ledger-direct-shopware
 
 ### Configuration
 1. Configure the basic settings like receiving wallet address in the Shopware admin under "Settings" > "Extensions" > "My Extensions" > "LedgerDirect".
-2. Enable LedgerDirect XRP / RLUSD payment methods in "Settings" > "Shop" > "Payment Methods".
+2. Enable LedgerDirect XRP / RLUSD / USDC payment methods in "Settings" > "Shop" > "Payment Methods".
 3. Set the LedgerDirect payment methods as available for your sales channels.
 
 ## Available currencies:
 - XRP (XRP Ledger)
 - RLUSD (XRP Ledger)
+- USDC (XRP Ledger)
 
 To receive stablecoin payments, ensure you have the corresponding currencies (RLUSD, USDC etc.) enabled in the plugin settings.
 The merchant wallet address needs to have the corresponding trust lines set up for the stablecoins you want to accept.
