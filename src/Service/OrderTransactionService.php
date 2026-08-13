@@ -8,8 +8,8 @@ use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Hardcastle\LedgerDirect\Provider\StablecoinProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -79,7 +79,7 @@ class OrderTransactionService
         $criteria->addAssociation('order');
         $criteria->addAssociation('paymentMethod');
 
-        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->getEntities()->first();
 
         return $orderTransaction instanceof OrderTransactionEntity ? $orderTransaction : null;
     }
@@ -89,19 +89,19 @@ class OrderTransactionService
      *
      * @param string $orderId The ID of the order to retrieve
      * @param Context $context The Shopware context
-     * @return Entity|null The order entity with transactions
+     * @return OrderEntity|null The order entity with transactions
      */
-    public function getOrderWithTransactions(string $orderId, Context $context): ?Entity
+    public function getOrderWithTransactions(string $orderId, Context $context): ?OrderEntity
     {
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('currency');
+        $criteria->addAssociation('orderCustomer');
         $criteria->addAssociation('transactions');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
-        return $this->orderRepository->search(
-            $criteria,
-            $context
-        )->first();
+        $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
+
+        return $order instanceof OrderEntity ? $order : null;
     }
 
     /**
@@ -121,7 +121,10 @@ class OrderTransactionService
         ?string $network = null
     ): array
     {
-        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
+        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->getEntities()->first();
+        if (!$currency instanceof CurrencyEntity) {
+            throw new Exception('Currency not found for order ' . $order->getId());
+        }
         $currencyAmountTotal = $order->getAmountTotal();
 
         if ($cryptoCode === 'XRP'){

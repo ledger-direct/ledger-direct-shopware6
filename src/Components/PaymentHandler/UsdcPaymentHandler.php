@@ -72,7 +72,7 @@ class UsdcPaymentHandler extends AbstractPaymentHandler
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 return;
             } else {
-                $this->transactionStateHandler->payPartially($orderTransactionId, $context);
+                $this->transactionStateHandler->paidPartially($orderTransactionId, $context);
             }
         } else {
             $this->transactionStateHandler->reopen($orderTransactionId, $context);

@@ -76,7 +76,7 @@ class RlusdPaymentHandler extends AbstractPaymentHandler
                 return;
             } else {
                 // Payment partially completed, mark as such
-                $this->transactionStateHandler->payPartially($orderTransactionId, $context);
+                $this->transactionStateHandler->paidPartially($orderTransactionId, $context);
             }
         } else {
             // Payment not completed, set transaction status to "open"

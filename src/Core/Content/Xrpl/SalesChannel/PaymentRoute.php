@@ -34,17 +34,20 @@ class PaymentRoute
 
         if ($order) {
             $orderTransaction = $order->getTransactions()->first();
-            $customFields = $orderTransaction->getCustomFields();
 
-            if (isset($customFields['ledger_direct'])) {
-                $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
+            if ($orderTransaction !== null) {
+                $customFields = $orderTransaction->getCustomFields();
 
-                if ($tx) {
-                    $response = new ArrayStruct([
-                        'success' => true,
-                        'hash' => $tx['hash'],
-                        'ctid' => $tx['ctid']
-                    ]);
+                if (isset($customFields['ledger_direct'])) {
+                    $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
+
+                    if ($tx) {
+                        $response = new ArrayStruct([
+                            'success' => true,
+                            'hash' => $tx['hash'],
+                            'ctid' => $tx['ctid']
+                        ]);
+                    }
                 }
             }
         }
@@ -62,9 +65,8 @@ class PaymentRoute
         $customer = $context->getCustomer();
 
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
-        $orderTransaction = $order->getTransactions()->first();
 
-        if (!$customer || $customer->getId() !== $order->getOrderCustomer()->getCustomerId()) {
+        if (!$order || !$customer || $customer->getId() !== $order->getOrderCustomer()?->getCustomerId()) {
             throw CartException::customerNotLoggedIn();
         }
 
@@ -86,7 +88,7 @@ class PaymentRoute
 
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
 
-        if ($customer->getId() !== $order->getOrderCustomer()->getCustomerId()) {
+        if (!$order || $customer->getId() !== $order->getOrderCustomer()?->getCustomerId()) {
             throw CartException::insufficientPermission();
         }
 

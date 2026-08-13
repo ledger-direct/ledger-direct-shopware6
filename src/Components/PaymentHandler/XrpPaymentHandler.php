@@ -79,7 +79,7 @@ class XrpPaymentHandler extends AbstractPaymentHandler
                 return;
             }
             // Payment partially completed, mark as such
-            $this->transactionStateHandler->payPartially($orderTransactionId, $context);
+            $this->transactionStateHandler->paidPartially($orderTransactionId, $context);
         } else {
             // Payment not completed, set transaction status to "open"
             $this->transactionStateHandler->reopen($orderTransactionId, $context);

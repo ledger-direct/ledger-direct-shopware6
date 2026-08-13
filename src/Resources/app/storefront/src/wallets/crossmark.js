@@ -26,22 +26,22 @@ function performPayment() {
 }
 
 async function pay() {
-    console.log('pay')
+    console.warn('pay')
     const account = sdk.getAddress()
     const paymentPayload = preparePaymentPayload.bind(this)(account)
-    console.log(paymentPayload)
+    console.warn(paymentPayload)
     this.crossmarkBlocked = true
     return await sdk.signAndSubmitAndWait(paymentPayload).then((response) => {
         this.crossmarkBlocked = false
-        console.log(response)
+        console.warn(response)
         this.checkPayment()
     }, (reason) => {
         this.crossmarkBlocked = false
-        console.log(reason)
+        console.warn(reason)
     }).catch(error => {
-        console.log(error)
+        console.warn(error)
     }).finally(() => {
-        console.log('finally');
+        console.warn('finally');
     })
 
 }

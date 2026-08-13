@@ -6,8 +6,6 @@ use GuzzleHttp\Client;
 
 class RippleOracle implements OracleInterface
 {
-    private Client $client;
-
     /**
      * Get the current price for a currency pair from Ripple. It seems this is no longer supported as of 2025.
      *
@@ -30,8 +28,6 @@ class RippleOracle implements OracleInterface
      */
     public function prepare(Client $client): OracleInterface
     {
-        $this->client = $client;
-
         return $this;
     }
 }
