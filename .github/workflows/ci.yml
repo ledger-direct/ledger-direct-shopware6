@@ -36,8 +36,9 @@ jobs:
     name: PHPUnit (Shopware 6.7)
     runs-on: ubuntu-latest
     container:
-      # NOTE: pin to an existing dev tag (see https://hub.docker.com/r/dockware/dev/tags)
-      image: dockware/dev:6.7.2.1
+      # Pinned to the exact Shopware patch the plugin was verified against (ships PHPUnit 11).
+      # Fallback if this tag is unavailable: dockware/shopware:6.7-latest
+      image: dockware/shopware:6.7.13.0
       options: --user root
     env:
       COMPOSER_ALLOW_SUPERUSER: "1"
@@ -55,9 +56,9 @@ jobs:
           rm -rf /var/www/html/custom/plugins/LedgerDirect
           cp -r "$GITHUB_WORKSPACE/LedgerDirect" /var/www/html/custom/plugins/LedgerDirect
 
-      - name: Install dev dependencies (PHPUnit + Mockery) in the Shopware root
+      - name: Install dev dependency (Mockery) in the Shopware root
         working-directory: /var/www/html
-        run: composer require --dev --no-interaction "phpunit/phpunit:^11.5" "mockery/mockery"
+        run: composer require --dev --no-interaction "mockery/mockery"
 
       - name: Refresh & activate plugin
         working-directory: /var/www/html
