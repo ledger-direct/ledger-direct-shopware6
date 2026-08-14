@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static validation: store readiness, coding standards, deprecations, lint.
+  # This mirrors what we ran locally with `shopware-cli extension validate`.
+  # Reliable and fast — this is the primary gate.
+  # ---------------------------------------------------------------------------
+  validate:
+    name: shopware-cli validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # NOTE: verify the action reference against https://sw-cli.fos.gg/
+      - name: Setup shopware-cli
+        uses: shopware/shopware-cli-action@v1
+
+      - name: Validate extension (basic + store compliance)
+        run: |
+          shopware-cli extension validate .
+          shopware-cli extension validate --store-compliance .
+
+      # Full static analysis (PHPStan/ESLint/Stylelint). Currently reports
+      # 3 forward-looking 6.8 deprecations, so we don't fail the build on it yet.
+      - name: Full validation (non-blocking)
+        continue-on-error: true
+        run: shopware-cli extension validate --full .
+
+  # ---------------------------------------------------------------------------
+  # PHPUnit against a real Shopware 6.7 (dockware provides SW + DB + PHPUnit 11).
+  # CI-with-DB usually needs a tweak or two on the first runs — expect that.
+  # ---------------------------------------------------------------------------
+  phpunit:
+    name: PHPUnit (Shopware 6.7)
+    runs-on: ubuntu-latest
+    container:
+      # NOTE: pin to an existing dev tag (see https://hub.docker.com/r/dockware/dev/tags)
+      image: dockware/dev:6.7.2.1
+      options: --user root
+    env:
+      COMPOSER_ALLOW_SUPERUSER: "1"
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: LedgerDirect
+
+      - name: Start MySQL
+        run: service mysql start
+
+      - name: Place plugin into Shopware
+        run: |
+          rm -rf /var/www/html/custom/plugins/LedgerDirect
+          cp -r "$GITHUB_WORKSPACE/LedgerDirect" /var/www/html/custom/plugins/LedgerDirect
+
+      - name: Install dev dependency (Mockery) in the Shopware root
+        working-directory: /var/www/html
+        run: composer require --dev --no-interaction mockery/mockery
+
+      - name: Refresh & activate plugin
+        working-directory: /var/www/html
+        run: |
+          php bin/console plugin:refresh
+          php bin/console plugin:install --activate LedgerDirect
+          php bin/console cache:clear
+
+      - name: Run PHPUnit (Unit)
+        working-directory: /var/www/html/custom/plugins/LedgerDirect
+        run: ../../../vendor/bin/phpunit --testsuite Unit
+
+      - name: Run PHPUnit (Integration)
+        working-directory: /var/www/html/custom/plugins/LedgerDirect
+        run: ../../../vendor/bin/phpunit --testsuite Integration

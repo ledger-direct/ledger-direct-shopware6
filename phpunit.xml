@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
         bootstrap="tests/TestBootstrap.php"
         cacheResult="false"
         cacheDirectory=".phpunit.cache"
@@ -18,13 +18,16 @@
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="weak"/>
   </php>
   <testsuites>
-    <testsuite name="LedgerDirect - Shopware6 Plugin Tests">
-      <directory>tests/</directory>
+    <testsuite name="Unit">
+      <directory>tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory>tests/Integration</directory>
     </testsuite>
   </testsuites>
   <source>
     <include>
-      <directory suffix=".php">./</directory>
+      <directory suffix=".php">src</directory>
     </include>
   </source>
 </phpunit>

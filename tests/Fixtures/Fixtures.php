@@ -8,7 +8,7 @@ class Fixtures
     {
         return [
             'LedgerDirect.config.useTestnet' => true,
-            'LedgerDirect.config.xrplTestnetAccount' => getenv('LEDGER_DIRECT_TEST_XRPL_ADDRESS'),
+            'LedgerDirect.config.xrplTestnetDestinationAccount' => getenv('LEDGER_DIRECT_TEST_XRPL_ADDRESS'),
             'LedgerDirect.config.xrplTestnetCustomTokenName' => 'EUR',
             'LedgerDirect.config.xrplTestnetCustomTokenIssuer' => 'rUFqxm6cfRQTvxgAqJny1dGMprrXQXhTLb',
         ];
@@ -18,7 +18,7 @@ class Fixtures
     {
         return [
             'LedgerDirect.config.useTestnet' => true,
-            'LedgerDirect.config.xrplTestnetAccount' => 'rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr',
+            'LedgerDirect.config.xrplTestnetDestinationAccount' => 'rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr',
             'LedgerDirect.config.xrplTestnetCustomTokenName' => 'EUR',
             'LedgerDirect.config.xrplTestnetCustomTokenIssuer' => 'rUFqxm6cfRQTvxgAqJny1dGMprrXQXhTLb',
         ];
