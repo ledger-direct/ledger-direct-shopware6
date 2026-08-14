@@ -36,8 +36,9 @@ class XrplClientServiceTest extends TestCase
 
     public function testFetchAccountTransactions(): void
     {
-        $transactions = $this->xrplClientService->fetchAccountTransactions('rTest', null);
-        $this->assertCount(1, $transactions);
+        $result = $this->xrplClientService->fetchAccountTransactions('rTest', null);
+        $this->assertArrayHasKey('transactions', $result);
+        $this->assertCount(1, $result['transactions']);
     }
 
     public function testGetNetwork(): void

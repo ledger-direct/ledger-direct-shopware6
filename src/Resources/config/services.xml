@@ -35,13 +35,9 @@
         <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrplPaymentController" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
-            <argument type="service" id="router"/>
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
-            </call>
-            <call method="setTwig">
-                <argument type="service" id="twig"/>
             </call>
         </service>
 
@@ -51,15 +47,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
-        </service>
-
-        <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\TokenPaymentHandler">
-            <argument type="service" id="router"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
-
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler">
@@ -67,7 +55,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler">
@@ -75,7 +63,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
 
-            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method"/>
         </service>
 
         <!-- Providers -->
@@ -126,10 +114,6 @@
         <service id="Hardcastle\LedgerDirect\Service\XrplTxService">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplClientService"/>
             <argument type="service" id="Doctrine\DBAL\Connection" />
-        </service>
-
-        <service id="Hardcastle\LedgerDirect\Service\XrplTransactionFileService">
-            <argument>%kernel.project_dir%/files</argument>
         </service>
 
         

@@ -9,8 +9,10 @@ use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\XrplTxService;
 use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Mockery;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\System\Currency\CurrencyEntity;
 
 class OrderTransactionServiceMock
 {
@@ -27,13 +29,17 @@ class OrderTransactionServiceMock
 
         $stablecoinProvider = new StablecoinProvider($configurationService);
 
-        $currencyMock = Mockery::mock();
+        $currencyMock = Mockery::mock(CurrencyEntity::class);
         $currencyMock->shouldReceive('getIsoCode')
             ->andReturn('EUR');
 
-        $entitySearchResult = Mockery::mock(EntitySearchResult::class);
-        $entitySearchResult->shouldReceive('first')
+        $currencyCollection = Mockery::mock(EntityCollection::class);
+        $currencyCollection->shouldReceive('first')
             ->andReturn($currencyMock);
+
+        $entitySearchResult = Mockery::mock(EntitySearchResult::class);
+        $entitySearchResult->shouldReceive('getEntities')
+            ->andReturn($currencyCollection);
 
         $currencyRepository->shouldReceive('search')
             ->andReturn($entitySearchResult);

@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\RouterInterface;
 
 
 #[Route(defaults: ['_routeScope' => ['storefront']])]
@@ -23,16 +22,12 @@ class XrplPaymentController extends StorefrontController
 
     private PaymentRoute $paymentRoute;
 
-    private RouterInterface $router;
-
     public function __construct(
         OrderTransactionService $orderTransactionService,
-        PaymentRoute $paymentRoute,
-        RouterInterface $router
+        PaymentRoute $paymentRoute
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
-        $this->router = $router;
     }
 
     #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
@@ -53,10 +48,7 @@ class XrplPaymentController extends StorefrontController
             return $this->redirectToRoute('frontend.account.home.page');
         }
 
-        $returnUrl = $request->get('returnUrl');
-        if (!$returnUrl) {
-            $returnUrl = $orderTransaction->getReturnUrl();
-        }
+        $returnUrl = (string) $request->get('returnUrl');
 
         $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
         if ($tx) {
@@ -67,6 +59,7 @@ class XrplPaymentController extends StorefrontController
             PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
             PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl),
             PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl),
+            default => $this->redirectToRoute('frontend.checkout.cart.page'),
         };
     }
 
@@ -99,7 +92,7 @@ class XrplPaymentController extends StorefrontController
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => str_replace('XRP/','', $customFields['ledger_direct']['pairing']),
+            'currencyCode' => $customFields['ledger_direct']['quote_currency'] ?? (explode('/', (string) $customFields['ledger_direct']['pairing'])[1] ?? $order->getCurrency()->getIsoCode()),
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'network' => $customFields['ledger_direct']['network'],
             'destinationAccount' => $customFields['ledger_direct']['destination_account'],

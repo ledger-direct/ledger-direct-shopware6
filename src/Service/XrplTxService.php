@@ -3,9 +3,10 @@
 namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Exception as DriverException;
-use PDO;
+use Doctrine\DBAL\ParameterType;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 class XrplTxService
@@ -40,7 +41,7 @@ class XrplTxService
             $statement = $this->connection->executeQuery(
                 'SELECT destination_tag FROM xrpl_destination_tag WHERE destination_tag = :destination_tag',
                 ['destination_tag' => $destinationTag],
-                ['destination_tag' => PDO::PARAM_INT]
+                ['destination_tag' => ParameterType::INTEGER]
             );
             $matches = $statement->fetchAllAssociative();
 
@@ -67,7 +68,7 @@ class XrplTxService
         $statement = $this->connection->executeQuery(
             'SELECT * FROM xrpl_tx WHERE destination = :destination AND destination_tag = :destination_tag',
             ['destination' => $destination, 'destination_tag' => $destinationTag],
-            ['destination' => PDO::PARAM_STR, 'destination_tag' => PDO::PARAM_INT]
+            ['destination' => ParameterType::STRING, 'destination_tag' => ParameterType::INTEGER]
         );
         $matches = $statement->fetchAllAssociative();
 
@@ -178,9 +179,9 @@ class XrplTxService
         $statement = $this->connection->executeQuery(
             'SELECT hash FROM xrpl_tx WHERE hash IN (:hashes)',
             ['hashes' => $hashes],
-            ['hashes' => Connection::PARAM_STR_ARRAY]
+            ['hashes' => ArrayParameterType::STRING]
         );
-        $matches = $statement->fetchAll();
+        $matches = $statement->fetchAllAssociative();
 
         $lookup = [];
         foreach ($matches as $match) {

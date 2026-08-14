@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static validation: store readiness, coding standards, deprecations, lint.
+  # Mirrors `shopware-cli extension validate` from local. Primary gate.
+  # ---------------------------------------------------------------------------
+  validate:
+    name: shopware-cli validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # NOTE: verify the action reference against https://sw-cli.fos.gg/
+      - name: Setup shopware-cli
+        uses: shopware/shopware-cli-action@v1
+
+      - name: Validate extension (basic + store compliance)
+        run: |
+          shopware-cli extension validate .
+          shopware-cli extension validate --store-compliance .
+
+      # Full static analysis (PHPStan/ESLint/Stylelint). Currently only reports
+      # 3 forward-looking 6.8 deprecations, so it must not fail the build.
+      - name: Full validation (non-blocking)
+        continue-on-error: true
+        run: shopware-cli extension validate --full .
+
+  # ---------------------------------------------------------------------------
+  # PHPUnit against a real Shopware 6.7. dockware is started as a normal
+  # container (via its own entrypoint), which extracts Shopware, starts MySQL
+  # and becomes "healthy" — exactly like the local dev container. Then we
+  # docker-exec into it. (Using dockware as a GitHub `container:` does NOT work,
+  # because Actions overrides the entrypoint and Shopware stays as a .tar.zst.)
+  # ---------------------------------------------------------------------------
+  phpunit:
+    name: PHPUnit (Shopware 6.7)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: LedgerDirect
+
+      - name: Start dockware (Shopware 6.7 + DB)
+        run: |
+          # If this exact tag is unavailable, use dockware/shopware:6.7.13.0
+          docker run -d --name shopware dockware/shopware:6.7-latest
+          echo "Waiting for Shopware to become healthy..."
+          for i in $(seq 1 60); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' shopware 2>/dev/null || echo starting)"
+            echo "health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker exec shopware test -f /var/www/html/bin/console
+
+      - name: Copy plugin into the container
+        run: |
+          docker exec shopware mkdir -p /var/www/html/custom/plugins
+          docker cp LedgerDirect shopware:/var/www/html/custom/plugins/LedgerDirect
+
+      - name: Install Mockery and activate the plugin
+        run: |
+          docker exec shopware bash -lc 'cd /var/www/html && COMPOSER_ALLOW_SUPERUSER=1 composer require --dev --no-interaction mockery/mockery'
+          docker exec shopware bash -lc 'cd /var/www/html && php bin/console plugin:refresh && php bin/console plugin:install --activate LedgerDirect && php bin/console cache:clear'
+
+      - name: PHPUnit — Unit
+        run: docker exec shopware bash -lc 'cd /var/www/html/custom/plugins/LedgerDirect && /var/www/html/vendor/bin/phpunit --testsuite Unit'
+
+      - name: PHPUnit — Integration
+        run: docker exec shopware bash -lc 'cd /var/www/html/custom/plugins/LedgerDirect && /var/www/html/vendor/bin/phpunit --testsuite Integration'

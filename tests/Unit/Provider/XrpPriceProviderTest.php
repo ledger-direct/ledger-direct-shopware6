@@ -3,33 +3,33 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Provider;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Mockery;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
 
 class XrpPriceProviderTest extends TestCase
 {
     private XrpPriceProvider $xrpPriceProvider;
 
-    private Client $client;
-
     protected function setUp(): void
     {
-        $response = Mockery::mock(ResponseInterface::class);
-        $response->shouldReceive('getBody')
-            ->andReturn('{"price": 0.5}');
+        // Binance-style response ({"price":"..."}); the other oracles ignore this shape and are skipped.
+        $client = Mockery::mock(Client::class);
+        $client->shouldReceive('get')->andReturn(new Response(200, [], '{"price":"0.5"}'));
 
-        $this->client = Mockery::mock(Client::class);
-        $this->client->shouldReceive('get')
-            ->andReturn($response);
-
-        $this->xrpPriceProvider = new XrpPriceProvider($this->client);
+        $this->xrpPriceProvider = new XrpPriceProvider($client);
     }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
+
     public function testGetCurrentExchangeRate(): void
     {
-        $this->assertEquals(0.5, $this->xrpPriceProvider->getCurrentExchangeRate('USD'));
-        $this->assertEquals(0.5, $this->xrpPriceProvider->getCurrentExchangeRate('EUR'));
+        $this->assertSame(0.5, $this->xrpPriceProvider->getCurrentExchangeRate('USD'));
+        $this->assertSame(0.5, $this->xrpPriceProvider->getCurrentExchangeRate('EUR'));
     }
 
     public function testCheckPricePlausibility(): void

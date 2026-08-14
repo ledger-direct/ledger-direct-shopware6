@@ -1,12 +1,12 @@
 const PluginManager = window.PluginManager
 
-import Plugin from 'src/plugin-system/plugin.class'
+const Plugin = window.PluginBaseClass
 import DomAccess from 'src/helper/dom-access.helper'
 import HttpClient from 'src/service/http-client.service'
-import kjua from './node_modules/kjua'
+import kjua from 'kjua'
 
-import setupGemWallet from "./wallets/gemWallet"
-import setupCrossmark from "./wallets/crossmark"
+// import setupGemWallet from "./wallets/gemWallet"
+// import setupCrossmark from "./wallets/crossmark"
 
 class XrpPayment extends Plugin {
     init() {
@@ -64,7 +64,7 @@ class XrpPayment extends Plugin {
 
     copyToClipboard(content, icon, event) {
         if (typeof navigator.clipboard === 'undefined') {
-            console.log('Clipboard API not supported - is this a secure context?');
+            console.warn('Clipboard API not supported - is this a secure context?');
 
             return;
         }
@@ -112,7 +112,7 @@ class XrpPayment extends Plugin {
 
     log(value) {
         if (this.debug) {
-            console.log(value)
+            console.warn(value)
         }
     }
 }

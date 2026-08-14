@@ -4,20 +4,19 @@ namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
-use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Hardcastle\LedgerDirect\Provider\StablecoinProvider;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class OrderTransactionService
 {
-    public const METADATA_VERSION = 1.0;
+    public const METADATA_VERSION = 1.1;
 
     public const DEFAULT_EXPIRY = 60 * 15; // 15 minutes
 
@@ -65,23 +64,44 @@ class OrderTransactionService
     }
 
     /**
+     * Retrieves an OrderTransaction (incl. its order and payment method) by ID.
+     *
+     * Needed since Shopware 6.7: the AbstractPaymentHandler receives only the
+     * orderTransactionId via PaymentTransactionStruct, not the loaded entities.
+     *
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @return OrderTransactionEntity|null
+     */
+    public function getOrderTransactionById(string $orderTransactionId, Context $context): ?OrderTransactionEntity
+    {
+        $criteria = new Criteria([$orderTransactionId]);
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('paymentMethod');
+
+        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->getEntities()->first();
+
+        return $orderTransaction instanceof OrderTransactionEntity ? $orderTransaction : null;
+    }
+
+    /**
      * Retrieves an order with its associated transactions and currency information
      *
      * @param string $orderId The ID of the order to retrieve
      * @param Context $context The Shopware context
-     * @return Entity|null The order entity with transactions
+     * @return OrderEntity|null The order entity with transactions
      */
-    public function getOrderWithTransactions(string $orderId, Context $context): ?Entity
+    public function getOrderWithTransactions(string $orderId, Context $context): ?OrderEntity
     {
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('currency');
+        $criteria->addAssociation('orderCustomer');
         $criteria->addAssociation('transactions');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
-        return $this->orderRepository->search(
-            $criteria,
-            $context
-        )->first();
+        $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
+
+        return $order instanceof OrderEntity ? $order : null;
     }
 
     /**
@@ -101,7 +121,10 @@ class OrderTransactionService
         ?string $network = null
     ): array
     {
-        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->first();
+        $currency = $this->currencyRepository->search(new Criteria([$order->getCurrencyId()]), $context)->getEntities()->first();
+        if (!$currency instanceof CurrencyEntity) {
+            throw new Exception('Currency not found for order ' . $order->getId());
+        }
         $currencyAmountTotal = $order->getAmountTotal();
 
         if ($cryptoCode === 'XRP'){
@@ -124,7 +147,9 @@ class OrderTransactionService
         }
 
         return [
-            'pairing' => XrpPriceProvider::CRYPTO_CODE . '/' . $currency->getIsoCode(),
+            'base_asset' => $cryptoCode,
+            'quote_currency' => $currency->getIsoCode(),
+            'pairing' => $cryptoCode . '/' . $currency->getIsoCode(),
             'exchange_rate' => $exchangeRate,
             'amount_requested' => $amountRequested
         ];

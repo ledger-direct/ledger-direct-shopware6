@@ -25,6 +25,13 @@ class ConfigurationService
         $this->logger = $logger;
     }
 
+    /**
+     * Reads a LedgerDirect plugin configuration value.
+     *
+     * @param string $configName Config key without the "LedgerDirect.config." prefix.
+     * @param mixed $defaultValue Returned when the stored value is empty.
+     * @return mixed The stored value, or the default when empty.
+     */
     public function get(string $configName, mixed $defaultValue = null): mixed
     {
         $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName);
@@ -38,16 +45,25 @@ class ConfigurationService
         return $value;
     }
 
+    /**
+     * Whether the plugin operates against the XRPL testnet (true) or mainnet (false).
+     */
     public function isTest(): bool
     {
         return $this->get('useTestnet', true);
     }
 
+    /**
+     * Returns the active XRPL network identifier: "testnet" or "mainnet".
+     */
     public function getNetwork(): string
     {
         return $this->isTest() ? 'testnet' : 'mainnet';
     }
 
+    /**
+     * Returns the configured merchant receiving wallet address for the active network.
+     */
    public function getDestinationAccount(): string
    {
        if ($this->isTest()) {
@@ -57,6 +73,9 @@ class ConfigurationService
        return $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
    }
 
+    /**
+     * Whether RLUSD payments are enabled in the plugin configuration.
+     */
    public function isRlusdEnabled()
     {
         if ($this->isTest()) {

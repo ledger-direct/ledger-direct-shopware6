@@ -61,7 +61,7 @@ function preparePaymentPayload() {
             destinationTag: parseInt(this.destinationTag.dataset.value)
         }
     } catch (error) {
-        console.log(error)
+        console.warn(error)
     }
 
     throw new Error('Could not generate payload for GemWallet')
