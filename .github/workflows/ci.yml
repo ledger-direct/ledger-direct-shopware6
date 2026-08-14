@@ -66,6 +66,12 @@ jobs:
       - name: Refresh & activate plugin
         working-directory: /var/www/html
         run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          if [ ! -f bin/console ]; then
+            echo "bin/console not here — searching for the Shopware root:"
+            find / -maxdepth 6 -path '*/bin/console' -type f 2>/dev/null | head
+          fi
           php bin/console plugin:refresh
           php bin/console plugin:install --activate LedgerDirect
           php bin/console cache:clear
