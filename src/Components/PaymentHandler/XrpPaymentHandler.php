@@ -13,6 +13,14 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
+/**
+ * Payment handler for XRP payments on the XRP Ledger.
+ *
+ * pay() prepares the order transaction (destination tag, requested amount, exchange rate)
+ * and redirects to the LedgerDirect payment page; finalize() marks the transaction as
+ * paid / partially paid (within a small slippage tolerance) / open, based on the
+ * settlement found on-chain.
+ */
 // https://developer.shopware.com/docs/guides/plugins/plugins/checkout/payment/add-payment-plugin
 class XrpPaymentHandler extends AbstractPaymentHandler
 {

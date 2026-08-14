@@ -13,6 +13,13 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
+/**
+ * Payment handler for RLUSD stablecoin payments on the XRP Ledger.
+ *
+ * pay() prepares the order transaction and redirects to the LedgerDirect payment page;
+ * finalize() marks the transaction as paid when the delivered amount matches the requested
+ * amount, partially paid otherwise, or open while no settlement is found.
+ */
 // https://developer.shopware.com/docs/guides/plugins/plugins/checkout/payment/add-payment-plugin
 class RlusdPaymentHandler extends AbstractPaymentHandler
 {

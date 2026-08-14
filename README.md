@@ -1,5 +1,10 @@
 # LedgerDirect Payment plugin for Shopware
 
+[![CI](https://github.com/ledger-direct/ledger-direct-shopware6/actions/workflows/ci.yml/badge.svg)](https://github.com/ledger-direct/ledger-direct-shopware6/actions/workflows/ci.yml)
+![Shopware](https://img.shields.io/badge/Shopware-6.6%20%7C%206.7-189eff)
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 LedgerDirect is a payment plugin for Shopware. Receive crypto and stablecoin payments directly – without middlemen,
 intermediary wallets, extra servers or external payment providers. Maximum control, minimal detours!
 
