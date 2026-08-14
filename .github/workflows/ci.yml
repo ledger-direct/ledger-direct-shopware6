@@ -7,8 +7,6 @@ on:
 jobs:
   # ---------------------------------------------------------------------------
   # Static validation: store readiness, coding standards, deprecations, lint.
-  # This mirrors what we ran locally with `shopware-cli extension validate`.
-  # Reliable and fast — this is the primary gate.
   # ---------------------------------------------------------------------------
   validate:
     name: shopware-cli validate
@@ -26,14 +24,13 @@ jobs:
           shopware-cli extension validate --store-compliance .
 
       # Full static analysis (PHPStan/ESLint/Stylelint). Currently reports
-      # 3 forward-looking 6.8 deprecations, so we don't fail the build on it yet.
+      # 3 forward-looking 6.8 deprecations, continue-on-error enabled for now.
       - name: Full validation (non-blocking)
         continue-on-error: true
         run: shopware-cli extension validate --full .
 
   # ---------------------------------------------------------------------------
   # PHPUnit against a real Shopware 6.7 (dockware provides SW + DB + PHPUnit 11).
-  # CI-with-DB usually needs a tweak or two on the first runs — expect that.
   # ---------------------------------------------------------------------------
   phpunit:
     name: PHPUnit (Shopware 6.7)
@@ -53,14 +50,14 @@ jobs:
       - name: Start MySQL
         run: service mysql start
 
-      - name: Place plugin into Shopware
+      - name: Install plugin in  Shopware
         run: |
           rm -rf /var/www/html/custom/plugins/LedgerDirect
           cp -r "$GITHUB_WORKSPACE/LedgerDirect" /var/www/html/custom/plugins/LedgerDirect
 
-      - name: Install dev dependency (Mockery) in the Shopware root
+      - name: Install dev dependencies (PHPUnit + Mockery) in the Shopware root
         working-directory: /var/www/html
-        run: composer require --dev --no-interaction mockery/mockery
+        run: composer require --dev --no-interaction "phpunit/phpunit:^11.5" "mockery/mockery"
 
       - name: Refresh & activate plugin
         working-directory: /var/www/html
@@ -69,10 +66,16 @@ jobs:
           php bin/console plugin:install --activate LedgerDirect
           php bin/console cache:clear
 
+      - name: Locate PHPUnit
+        run: |
+          ls -la /var/www/html/vendor/bin/ | grep -i phpunit \
+            || (echo "phpunit not in vendor/bin — searching:" && find /var/www/html -maxdepth 4 -name phpunit -type f)
+          /var/www/html/vendor/bin/phpunit --version
+
       - name: Run PHPUnit (Unit)
         working-directory: /var/www/html/custom/plugins/LedgerDirect
-        run: ../../../vendor/bin/phpunit --testsuite Unit
+        run: /var/www/html/vendor/bin/phpunit --testsuite Unit
 
       - name: Run PHPUnit (Integration)
         working-directory: /var/www/html/custom/plugins/LedgerDirect
-        run: ../../../vendor/bin/phpunit --testsuite Integration
+        run: /var/www/html/vendor/bin/phpunit --testsuite Integration
