@@ -51,10 +51,13 @@ jobs:
       - name: Start MySQL
         run: service mysql start
 
-      - name: Install plugin in  Shopware
+      - name: Install plugin in Shopware
         run: |
+          ls -la /var/www/html
+          mkdir -p /var/www/html/custom/plugins
           rm -rf /var/www/html/custom/plugins/LedgerDirect
           cp -r "$GITHUB_WORKSPACE/LedgerDirect" /var/www/html/custom/plugins/LedgerDirect
+          ls -la /var/www/html/custom/plugins/
 
       - name: Install dev dependency (Mockery) in the Shopware root
         working-directory: /var/www/html
