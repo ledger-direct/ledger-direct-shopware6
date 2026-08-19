@@ -25,9 +25,12 @@ class KrakenOracle implements OracleInterface
         $response = $this->client->get($url);
         $data = json_decode((string) $response->getBody(), true);
 
-        // Kraken uses a specific format for the pair, e.g., 'XXRPZUSD'
-        if (isset($data['result']['XXRPZUSD']['c'])) {
-            return (float) $data['result']['XXRPZUSD']['c'][0];
+        // Kraken names pairs inconsistently (e.g. 'XXRPZUSD', 'XXRPZEUR', 'USDCUSD');
+        // a single-pair query returns exactly one entry under 'result'.
+        $result = $data['result'] ?? [];
+        $ticker = is_array($result) ? reset($result) : false;
+        if (is_array($ticker) && isset($ticker['c'][0])) {
+            return (float) $ticker['c'][0];
         }
 
         return 0.0;

@@ -32,7 +32,7 @@ class XrplTxServiceTest extends TestCase
         $destinationTag = $this->xrplTxService->generateDestinationTag();
 
         $matches = $this->connection->executeQuery(
-            'SELECT destination_tag FROM xrpl_destination_tag WHERE destination_tag = :destination_tag',
+            'SELECT destination_tag FROM ledger_direct_xrpl_destination_tag WHERE destination_tag = :destination_tag',
             ['destination_tag' => $destinationTag],
             ['destination_tag' => ParameterType::INTEGER]
         )->fetchAllAssociative();

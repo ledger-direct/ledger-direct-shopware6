@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use Hardcastle\LedgerDirect\Provider\Oracle\BinanceOracle;
 use Hardcastle\LedgerDirect\Provider\Oracle\CoingeckoOracle;
 use Hardcastle\LedgerDirect\Provider\Oracle\KrakenOracle;
+use Psr\Log\LoggerInterface;
 
 class RlusdPriceProvider implements CryptoPriceProviderInterface
 {
@@ -18,9 +19,12 @@ class RlusdPriceProvider implements CryptoPriceProviderInterface
 
     private Client $client;
 
-    public function __construct(Client $client)
+    private LoggerInterface $logger;
+
+    public function __construct(Client $client, LoggerInterface $logger)
     {
         $this->client = $client;
+        $this->logger = $logger;
     }
 
     /**
@@ -53,7 +57,12 @@ class RlusdPriceProvider implements CryptoPriceProviderInterface
                     $oracleResults[] = $price;
                 }
             } catch (Exception $exception) {
-                // TODO: Log error
+                $this->logger->warning('LedgerDirect: price oracle failed', [
+                    'oracle' => $oracle::class,
+                    'base' => self::CRYPTO_CODE,
+                    'quote' => $code,
+                    'exception' => $exception->getMessage(),
+                ]);
             }
         }
 
