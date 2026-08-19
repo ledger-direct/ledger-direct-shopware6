@@ -39,14 +39,14 @@ class XrplTxService
             $destinationTag = random_int(self::DESTINATION_TAG_RANGE_MIN, self::DESTINATION_TAG_RANGE_MAX);
 
             $statement = $this->connection->executeQuery(
-                'SELECT destination_tag FROM xrpl_destination_tag WHERE destination_tag = :destination_tag',
+                'SELECT destination_tag FROM ledger_direct_xrpl_destination_tag WHERE destination_tag = :destination_tag',
                 ['destination_tag' => $destinationTag],
                 ['destination_tag' => ParameterType::INTEGER]
             );
             $matches = $statement->fetchAllAssociative();
 
             if (empty($matches)) {
-                $this->connection->insert('xrpl_destination_tag', ['destination_tag' => $destinationTag]);
+                $this->connection->insert('ledger_direct_xrpl_destination_tag', ['destination_tag' => $destinationTag]);
 
                 return $destinationTag;
             }
@@ -66,7 +66,7 @@ class XrplTxService
     public function findTransaction(string $destination, int $destinationTag): ?array
     {
         $statement = $this->connection->executeQuery(
-            'SELECT * FROM xrpl_tx WHERE destination = :destination AND destination_tag = :destination_tag',
+            'SELECT * FROM ledger_direct_xrpl_tx WHERE destination = :destination AND destination_tag = :destination_tag',
             ['destination' => $destination, 'destination_tag' => $destinationTag],
             ['destination' => ParameterType::STRING, 'destination_tag' => ParameterType::INTEGER]
         );
@@ -89,7 +89,7 @@ class XrplTxService
      */
     public function syncTransactions(string $address): void
     {
-        $lastLedgerIndex = (int) $this->connection->fetchOne('SELECT MAX(ledger_index) FROM xrpl_tx');
+        $lastLedgerIndex = (int) $this->connection->fetchOne('SELECT MAX(ledger_index) FROM ledger_direct_xrpl_tx');
 
         if (!$lastLedgerIndex) {
             $lastLedgerIndex = null;
@@ -119,7 +119,7 @@ class XrplTxService
      */
     public function resetDatabase(): void
     {
-        $this->connection->executeStatement('TRUNCATE TABLE xrpl_tx');
+        $this->connection->executeStatement('TRUNCATE TABLE ledger_direct_xrpl_tx');
     }
 
     /**
@@ -137,7 +137,7 @@ class XrplTxService
         $rows = $this->hydrateRows($transactions);
 
         foreach ($rows as $row) {
-            $this->connection->insert('xrpl_tx', $row);
+            $this->connection->insert('ledger_direct_xrpl_tx', $row);
         }
     }
 
@@ -177,7 +177,7 @@ class XrplTxService
         $hashes = array_reduce($transactions, $reducerFn, []);
 
         $statement = $this->connection->executeQuery(
-            'SELECT hash FROM xrpl_tx WHERE hash IN (:hashes)',
+            'SELECT hash FROM ledger_direct_xrpl_tx WHERE hash IN (:hashes)',
             ['hashes' => $hashes],
             ['hashes' => ArrayParameterType::STRING]
         );
