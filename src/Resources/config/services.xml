@@ -69,14 +69,17 @@
         <!-- Providers -->
         <service id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Provider\RlusdPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Provider\UsdcPriceProvider">
             <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Provider\StablecoinProvider">

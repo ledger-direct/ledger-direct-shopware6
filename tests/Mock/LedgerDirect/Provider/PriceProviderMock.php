@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use Hardcastle\LedgerDirect\Provider\CryptoPriceProviderInterface;
 use Hardcastle\LedgerDirect\Provider\XrpPriceProvider;
 use Mockery;
+use Psr\Log\NullLogger;
 
 class PriceProviderMock
 {
@@ -17,7 +18,7 @@ class PriceProviderMock
     {
         $client = new Client();
 
-        return new XrpPriceProvider($client);
+        return new XrpPriceProvider($client, new NullLogger());
     }
 
     public static function createMock(): CryptoPriceProviderInterface
