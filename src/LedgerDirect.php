@@ -13,6 +13,20 @@ use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 
 class LedgerDirect extends Plugin
 {
+    /**
+     * Lets Shopware resolve this plugin's composer requirements — notably
+     * hardcastle/ledger-direct-core, which holds the pricing, XRPL and
+     * destination-tag logic — when the plugin is installed.
+     *
+     * Shopware only registers a plugin's own PSR-4 namespaces; it never loads
+     * a vendor directory shipped inside a plugin. Without this, the core would
+     * have to be installed into the shop by hand before the plugin could run.
+     */
+    public function executeComposerCommands(): bool
+    {
+        return true;
+    }
+
     public function install(InstallContext $installContext): void
     {
         /** @var EntityRepository $paymentMethodRepository */
