@@ -18,6 +18,9 @@
   konfigurierbar
 - Testnet-/Mainnet-Umschalter korrigiert: er las einen Konfigurationsschlüssel, der nie
   gespeichert wurde, und blieb dadurch immer im Testnet
+- Ob eine Ledger-Zahlung eine Bestellung begleicht, entscheidet jetzt die `SettlementPolicy` des Cores
+  (XRP mit 0,15 % Toleranz, Token exakt vom quotierten Issuer); ein gleichnamiger Token eines anderen
+  Issuers gilt nicht mehr als bezahlt. Benötigt `hardcastle/ledger-direct-core` 0.2
 
 # 1.0.0
 - Erstveröffentlichung: XRP-, RLUSD- und USDC-Zahlungen direkt über das XRP Ledger annehmen

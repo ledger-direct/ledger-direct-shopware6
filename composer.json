@@ -33,7 +33,7 @@
     },
     "require": {
         "php": "^8.2",
-        "hardcastle/ledger-direct-core": "^0.1.0",
+        "hardcastle/ledger-direct-core": "^0.2.0",
         "shopware/core": "~6.6.5 || ~6.7.0",
         "shopware/storefront": "~6.6.5 || ~6.7.0"
     },
