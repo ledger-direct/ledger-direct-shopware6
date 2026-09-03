@@ -50,7 +50,7 @@ class RlusdPaymentHandlerTest extends TestCase
     {
         $this->givenLedgerDirectCustomFields([
             'hash' => 'HASH', 'ctid' => 'CTID',
-            'amount_requested' => '1.16', 'delivered_amount' => '1.16',
+            'amount_requested' => '1.16', 'amount_paid' => '1.16',
         ]);
         $this->stateHandler->shouldReceive('paid')->once()->with(self::TX_ID, $this->context);
 
@@ -61,7 +61,7 @@ class RlusdPaymentHandlerTest extends TestCase
     {
         $this->givenLedgerDirectCustomFields([
             'hash' => 'HASH', 'ctid' => 'CTID',
-            'amount_requested' => '1.16', 'delivered_amount' => '1.10',
+            'amount_requested' => '1.16', 'amount_paid' => '1.10',
         ]);
         $this->stateHandler->shouldReceive('paidPartially')->once()->with(self::TX_ID, $this->context);
 

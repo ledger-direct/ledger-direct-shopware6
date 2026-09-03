@@ -50,7 +50,7 @@ class XrpPaymentHandlerTest extends TestCase
     {
         $this->givenLedgerDirectCustomFields([
             'hash' => 'HASH', 'ctid' => 'CTID',
-            'amount_requested' => 100.0, 'delivered_amount' => 100.0,
+            'amount_requested' => 100.0, 'amount_paid' => 100.0,
         ]);
         $this->stateHandler->shouldReceive('paid')->once()->with(self::TX_ID, $this->context);
 
@@ -61,7 +61,7 @@ class XrpPaymentHandlerTest extends TestCase
     {
         $this->givenLedgerDirectCustomFields([
             'hash' => 'HASH', 'ctid' => 'CTID',
-            'amount_requested' => 100.0, 'delivered_amount' => 90.0,
+            'amount_requested' => 100.0, 'amount_paid' => 90.0,
         ]);
         $this->stateHandler->shouldReceive('paidPartially')->once()->with(self::TX_ID, $this->context);
 

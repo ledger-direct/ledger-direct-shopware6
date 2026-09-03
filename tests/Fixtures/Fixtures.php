@@ -7,20 +7,23 @@ class Fixtures
     public static function getIntegrationTestConfiguration(): array
     {
         return [
-            'LedgerDirect.config.useTestnet' => true,
+            'LedgerDirect.config.useXrplTestnet' => true,
             'LedgerDirect.config.xrplTestnetDestinationAccount' => getenv('LEDGER_DIRECT_TEST_XRPL_ADDRESS'),
-            'LedgerDirect.config.xrplTestnetCustomTokenName' => 'EUR',
-            'LedgerDirect.config.xrplTestnetCustomTokenIssuer' => 'rUFqxm6cfRQTvxgAqJny1dGMprrXQXhTLb',
+            'LedgerDirect.config.xrplIsRlusdEnabled' => true,
+            'LedgerDirect.config.xrplIsUsdcEnabled' => true,
+            'LedgerDirect.config.xrplQuoteExpiry' => 300,
         ];
     }
 
     public static function getStaticConfiguration(): array
     {
         return [
-            'LedgerDirect.config.useTestnet' => true,
+            'LedgerDirect.config.useXrplTestnet' => true,
             'LedgerDirect.config.xrplTestnetDestinationAccount' => 'rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr',
-            'LedgerDirect.config.xrplTestnetCustomTokenName' => 'EUR',
-            'LedgerDirect.config.xrplTestnetCustomTokenIssuer' => 'rUFqxm6cfRQTvxgAqJny1dGMprrXQXhTLb',
+            'LedgerDirect.config.xrplMainnetDestinationAccount' => 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+            'LedgerDirect.config.xrplIsRlusdEnabled' => true,
+            'LedgerDirect.config.xrplIsUsdcEnabled' => false,
+            'LedgerDirect.config.xrplQuoteExpiry' => 600,
         ];
     }
 
