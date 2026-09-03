@@ -16,6 +16,9 @@
 - New settings: RLUSD/USDC can be switched off, and the validity of a price quote is configurable
 - Fixed the testnet/mainnet switch, which read a setting key that was never stored and therefore
   always stayed on testnet
+- Whether a ledger payment settles an order is now decided by the core's `SettlementPolicy` (XRP within
+  0.15 %, tokens exactly from the quoted issuer); a same-named token from another issuer no longer counts
+  as paid. Requires `hardcastle/ledger-direct-core` 0.2
 
 # 1.0.0
 - Initial release: accept XRP, RLUSD and USDC payments directly on the XRP Ledger
