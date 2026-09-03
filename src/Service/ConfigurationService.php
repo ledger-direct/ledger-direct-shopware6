@@ -9,9 +9,19 @@ class ConfigurationService
 {
     private const CONFIG_DOMAIN = 'LedgerDirect';
 
+    private const CONFIG_KEY_USE_TESTNET = 'useXrplTestnet';
+
     private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetDestinationAccount';
 
     private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetDestinationAccount';
+
+    private const CONFIG_KEY_RLUSD_ENABLED = 'xrplIsRlusdEnabled';
+
+    private const CONFIG_KEY_USDC_ENABLED = 'xrplIsUsdcEnabled';
+
+    private const CONFIG_KEY_QUOTE_EXPIRY = 'xrplQuoteExpiry';
+
+    public const DEFAULT_QUOTE_EXPIRY_SECONDS = 300;
 
     private SystemConfigService $systemConfigService;
 
@@ -46,11 +56,37 @@ class ConfigurationService
     }
 
     /**
+     * Reads a boolean setting.
+     *
+     * Deliberately not routed through get(): that treats an empty value as
+     * "unset" and hands back the default, which for a bool would make a
+     * merchant's explicit "off" indistinguishable from "never configured" —
+     * the toggle could then never be switched off. Only null means unset here.
+     */
+    public function getBool(string $configName, bool $defaultValue): bool
+    {
+        $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName);
+
+        return $value === null ? $defaultValue : (bool) $value;
+    }
+
+    /**
+     * Reads an integer setting, falling back to the default when unset or
+     * not a usable number.
+     */
+    public function getInt(string $configName, int $defaultValue): int
+    {
+        $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName);
+
+        return is_numeric($value) ? (int) $value : $defaultValue;
+    }
+
+    /**
      * Whether the plugin operates against the XRPL testnet (true) or mainnet (false).
      */
     public function isTest(): bool
     {
-        return $this->get('useTestnet', true);
+        return $this->getBool(self::CONFIG_KEY_USE_TESTNET, true);
     }
 
     /**
@@ -64,24 +100,36 @@ class ConfigurationService
     /**
      * Returns the configured merchant receiving wallet address for the active network.
      */
-   public function getDestinationAccount(): string
-   {
-       if ($this->isTest()) {
-           return $this->get(self::CONFIG_KEY_TESTNET_ACCOUNT);
-       }
+    public function getDestinationAccount(): string
+    {
+        if ($this->isTest()) {
+            return (string) $this->get(self::CONFIG_KEY_TESTNET_ACCOUNT);
+        }
 
-       return $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
-   }
+        return (string) $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
+    }
 
     /**
      * Whether RLUSD payments are enabled in the plugin configuration.
      */
-   public function isRlusdEnabled()
+    public function isRlusdEnabled(): bool
     {
-        if ($this->isTest()) {
-            return $this->get('xrplRlusdEnabled', false);
-        }
+        return $this->getBool(self::CONFIG_KEY_RLUSD_ENABLED, true);
+    }
 
-        return $this->get('xrplRlusdEnabled', false);
+    /**
+     * Whether USDC payments are enabled in the plugin configuration.
+     */
+    public function isUsdcEnabled(): bool
+    {
+        return $this->getBool(self::CONFIG_KEY_USDC_ENABLED, true);
+    }
+
+    /**
+     * How long a price quote handed to the customer stays valid, in seconds.
+     */
+    public function getQuoteExpirySeconds(): int
+    {
+        return $this->getInt(self::CONFIG_KEY_QUOTE_EXPIRY, self::DEFAULT_QUOTE_EXPIRY_SECONDS);
     }
 }
