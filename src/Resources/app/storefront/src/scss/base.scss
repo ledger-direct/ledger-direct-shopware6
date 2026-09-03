@@ -4,7 +4,7 @@ body.ld-body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 18px;
   outline: 0!important;
-  background-color: #e62355;
+  background-color: #f8f9fa;
 }
 
 .ld-container {
@@ -25,13 +25,13 @@ body.ld-body {
 }
 
 .ld-header h2 {
-  color: white;
+  color: #3a3a3a;
 }
 
 .ld-footer {
   margin-top: 1rem;
   text-align: center;
-  color: white;
+  color: #3a3a3a;
 }
 
 .ld-card {
@@ -54,14 +54,6 @@ body.ld-body {
   background-color: #1daae6;
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-}
-
-img.ld-astronaut {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 128px;
-  height: 128px;
 }
 
 .ld-payment-info {
@@ -155,7 +147,7 @@ img.ld-astronaut {
 }
 
 .ld-back-to-cart {
-  color: #ffffff;
+  color: #3a3a3a;
   text-decoration: underline;
 }
 
@@ -186,7 +178,7 @@ img.ld-astronaut {
 @media only screen and (max-width: 768px) {
   body.ld-body {
     font-size: 14px;
-    background-color: white;
+    background-color: #ffffff;
   }
 
   .ld-header{
@@ -207,11 +199,6 @@ img.ld-astronaut {
     width: 100%;
     padding: 16px;
     border-radius: 0;
-  }
-
-  img.ld-astronaut {
-    width: 128px;
-    height: 128px;
   }
 
   .ld-payment-info-text {
