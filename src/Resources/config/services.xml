@@ -8,19 +8,23 @@
 
         <!-- Commands -->
         <service id="Hardcastle\LedgerDirect\Command\XrplTransactionLookupCommand">
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\XrplClient"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\ShopwareConfigProvider"/>
 
             <tag name="console.command"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Command\XrpPriceLookupCommand">
-            <argument type="service" id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Price\PriceService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\ShopwareConfigProvider"/>
 
             <tag name="console.command"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Command\XrplTransactionSyncCommand">
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\SyncService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\ShopwareConfigProvider"/>
 
             <tag name="console.command"/>
         </service>
@@ -34,7 +38,7 @@
 
         <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrplPaymentController" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" />
+            <argument type="service" id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" />
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
@@ -66,28 +70,63 @@
             <tag name="shopware.payment.method"/>
         </service>
 
-        <!-- Providers -->
-        <service id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider">
-            <argument type="service" id="shopware.app_system.guzzle"/>
-            <argument type="service" id="logger"/>
+        <!-- Ports: the platform side of the core's interfaces -->
+        <service id="Hardcastle\LedgerDirect\Port\ShopwareConfigProvider">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService"/>
         </service>
 
-        <service id="Hardcastle\LedgerDirect\Provider\RlusdPriceProvider">
-            <argument type="service" id="shopware.app_system.guzzle"/>
-            <argument type="service" id="logger"/>
+        <service id="Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
 
-        <service id="Hardcastle\LedgerDirect\Provider\UsdcPriceProvider">
-            <argument type="service" id="shopware.app_system.guzzle"/>
-            <argument type="service" id="logger"/>
+        <!--
+            Guzzle 7 already is a PSR-18 client and GuzzleHttp\Psr7\HttpFactory the
+            matching PSR-17 request/stream factory, so the core's HTTP dependencies
+            are satisfied without an adapter package.
+        -->
+        <service id="GuzzleHttp\Psr7\HttpFactory"/>
+
+        <!--
+            A PSR-16 view of Shopware's object cache pool. The core caches only the
+            exchange rate, and only to survive a brief oracle outage mid-checkout;
+            it runs without a cache just as well.
+        -->
+        <service id="ledger_direct.rate_cache" class="Symfony\Component\Cache\Psr16Cache">
+            <argument type="service" id="cache.object"/>
         </service>
 
-        <service id="Hardcastle\LedgerDirect\Provider\StablecoinProvider">
+        <!-- Core services -->
+        <service id="Hardcastle\LedgerDirect\Core\Price\PriceService">
+            <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="GuzzleHttp\Psr7\HttpFactory"/>
+            <argument type="service" id="logger"/>
+            <argument type="service" id="ledger_direct.rate_cache"/>
+        </service>
 
+        <service id="Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Price\PriceService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\ShopwareConfigProvider"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Core\Xrpl\XrplClient">
+            <argument type="service" id="shopware.app_system.guzzle"/>
+            <argument type="service" id="GuzzleHttp\Psr7\HttpFactory"/>
+            <argument type="service" id="GuzzleHttp\Psr7\HttpFactory"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Core\Xrpl\SyncService">
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\XrplClient"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <!-- Routes -->
-        <service id="Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute" public="true">
+        <service id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
         </service>
 
@@ -98,27 +137,12 @@
         </service>
 
         <service id="Hardcastle\LedgerDirect\Service\OrderTransactionService">
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService" />
             <argument type="service" id="order.repository" />
             <argument type="service" id="order_transaction.repository" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplTxService"/>
             <argument type="service" id="currency.repository" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Provider\XrpPriceProvider" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Provider\RlusdPriceProvider" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Provider\UsdcPriceProvider" />
-            <argument type="service" id="Hardcastle\LedgerDirect\Provider\StablecoinProvider" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\SyncService"/>
         </service>
 
-        <service id="Hardcastle\LedgerDirect\Service\XrplClientService">
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService" />
-            <argument type="service" id="shopware.app_system.guzzle" />
-        </service>
-
-        <service id="Hardcastle\LedgerDirect\Service\XrplTxService">
-            <argument type="service" id="Hardcastle\LedgerDirect\Service\XrplClientService"/>
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-        </service>
-
-        
     </services>
 </container>

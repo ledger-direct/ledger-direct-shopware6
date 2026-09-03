@@ -2,7 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Command;
 
-use Hardcastle\LedgerDirect\Service\XrplTxService;
+use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
+use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -12,17 +13,19 @@ class XrplTransactionLookupCommand extends Command
 {
     protected static $defaultName = 'ledger-direct:xrpl-transaction:lookup';
 
-    protected XrplTxService $txService;
+    private XrplClient $xrplClient;
 
-    public function __construct(XrplTxService $txService) {
+    private ShopwareConfigProvider $configProvider;
+
+    public function __construct(XrplClient $xrplClient, ShopwareConfigProvider $configProvider)
+    {
         parent::__construct(self::$defaultName);
-        $this->txService = $txService;
+        $this->xrplClient = $xrplClient;
+        $this->configProvider = $configProvider;
     }
 
     /**
      * Configure the command options and description.
-     *
-     * @return void
      */
     public function configure(): void
     {
@@ -31,47 +34,36 @@ class XrplTransactionLookupCommand extends Command
         $this->setDescription('XRPL transaction lookup');
         $this->addOption('hash', null, InputOption::VALUE_OPTIONAL, 'Hash identifying a tx');
         $this->addOption('ctid', null, InputOption::VALUE_OPTIONAL, 'CTID identifying a validated tx');
-        $this->addOption('source', null, InputOption::VALUE_OPTIONAL, 'Tx source - XRPL, DB or BOTH');
-        $this->addOption('write', null, InputOption::VALUE_OPTIONAL, 'Write result to file system');
     }
 
     /**
-     * Executes the command logic.
-     *
-     * Retrieves the 'hash' and 'ctid' options from the input. Ensures that
-     * exactly one of these options is provided. Based on the provided 'source'
-     * option, it processes the input against the specified source ('XRPL', 'DB', or 'BOTH').
-     * Returns a success code if the operation completes, or an error code with
-     * a message if neither 'hash' nor 'ctid' is provided.
-     *
-     * @param InputInterface $input The input interface containing command options.
-     * @param OutputInterface $output The output interface for writing command result.
-     *
-     * @return int Returns Command::SUCCESS on successful execution,
-     *             or Command::FAILURE if the required options are not provided.
+     * Looks a single transaction up on the ledger. Exactly one of --hash or
+     * --ctid identifies it; the XRPL `tx` method accepts either.
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $hash = $input->getOption('hash');
-        $ctid  = $input->getOption('ctid');
+        $ctid = $input->getOption('ctid');
 
-        if ($hash xor $ctid) {
+        if (!($hash xor $ctid)) {
+            $output->writeln('Either a --hash or a --ctid is required as a parameter');
 
-            $source = $input->getOption('source');
-
-            if ($source === 'XRPL' or $source === 'BOTH') {
-
-            }
-
-            if ($source === 'DB' or $source === 'BOTH') {
-
-            }
-
-            return Command::SUCCESS;
+            return Command::FAILURE;
         }
 
-        $output->writeln('Either a --hash or a --ctid is required as a parameter');
+        $transaction = $this->xrplClient->tx(
+            (string) ($hash ?: $ctid),
+            $this->configProvider->getNetwork(ShopwareConfigProvider::CHAIN)
+        );
 
-        return Command::FAILURE;
+        if ($transaction === null) {
+            $output->writeln('Transaction not found on the ledger.');
+
+            return Command::FAILURE;
+        }
+
+        $output->writeln(json_encode($transaction, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+        return Command::SUCCESS;
     }
 }

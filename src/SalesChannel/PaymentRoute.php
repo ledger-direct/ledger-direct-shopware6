@@ -1,9 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel;
+namespace Hardcastle\LedgerDirect\SalesChannel;
 
-use DateTimeImmutable;
+use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use RuntimeException;
 use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
@@ -36,18 +37,17 @@ class PaymentRoute
             $orderTransaction = $order->getTransactions()->first();
 
             if ($orderTransaction !== null) {
-                $customFields = $orderTransaction->getCustomFields();
+                $intent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
+                    $orderTransaction,
+                    $context->getContext()
+                );
 
-                if (isset($customFields['ledger_direct'])) {
-                    $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
-
-                    if ($tx) {
-                        $response = new ArrayStruct([
-                            'success' => true,
-                            'hash' => $tx['hash'],
-                            'ctid' => $tx['ctid']
-                        ]);
-                    }
+                if ($intent !== null) {
+                    $response = new ArrayStruct([
+                        'success' => true,
+                        'hash' => $intent->hash,
+                        'ctid' => $intent->ctid,
+                    ]);
                 }
             }
         }
@@ -95,28 +95,34 @@ class PaymentRoute
         /** @var OrderTransactionEntity $orderTransaction */
         $orderTransaction = $order->getTransactions()->first();
 
-        $tsOrder = $orderTransaction->getCreatedAt()->getTimestamp();
-        $tsNow = (new DateTimeImmutable('now'))->getTimestamp();
-        if ($tsNow - $tsOrder > 3600) {
-            //throw new TransactionLifetimeException('This transaction is not valid anymore');
+        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
+
+        if ($intent === null) {
+            throw new RuntimeException('LedgerDirect: order ' . $orderId . ' has no XRPL payment attached.');
         }
 
-        $customFields = $orderTransaction->getCustomFields();
-         if (!isset($customFields['ledger_direct'])) {
-            // TODO: Throw Exception, this TA cannot be paid in XRP
+        /*
+         * Now that the core writes a real expiry (it is derived from the
+         * configured quote validity), the lifetime check that used to sit
+         * here commented out can finally do its job: past the expiry the
+         * quoted exchange rate is stale and the amount must not be handed
+         * out again as if it were current.
+         */
+        if ($intent->expiry !== null && $intent->expiry < time()) {
+            throw new TransactionLifetimeException('This transaction is not valid anymore');
         }
 
         return new PaymentRouteResponse(new ArrayStruct([
             'orderId' => $orderId,
             'orderNumber' => $order->getOrderNumber(),
-            'currencyCode' => $customFields['ledger_direct']['quote_currency'] ?? (explode('/', (string) $customFields['ledger_direct']['pairing'])[1] ?? $order->getCurrency()->getIsoCode()),
+            'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'price' => $orderTransaction->getAmount()->getTotalPrice(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'xrpAmount' => $customFields['ledger_direct']['amount_requested'],
-            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
+            'network' => $intent->network,
+            'destinationAccount' => $intent->destinationAccount,
+            'destinationTag' => $intent->destinationTag,
+            'xrpAmount' => $intent->amountRequested,
+            'exchangeRate' => $intent->exchangeRate,
             'showNoTransactionFoundError' => true,
         ]));
     }

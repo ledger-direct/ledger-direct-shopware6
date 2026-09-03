@@ -2,8 +2,9 @@
 
 namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
-use Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -33,8 +34,6 @@ class XrplPaymentController extends StorefrontController
     #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
     public function payment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
-        //TODO: Check if orderTransaction ist still valid
-
         $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
 
         if (!$order) {
@@ -50,8 +49,11 @@ class XrplPaymentController extends StorefrontController
 
         $returnUrl = (string) $request->get('returnUrl');
 
-        $tx = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context->getContext());
-        if ($tx) {
+        $fulfilledIntent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
+            $orderTransaction,
+            $context->getContext()
+        );
+        if ($fulfilledIntent !== null) {
             return new RedirectResponse($request->get('returnUrl'));
         }
 
@@ -78,40 +80,20 @@ class XrplPaymentController extends StorefrontController
         string $returnUrl,
     ): Response
     {
-        $customFields = $orderTransaction->getCustomFields();
+        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
-        if (!isset($customFields['ledger_direct'])) {
+        if ($intent === null) {
             // Redirect to the checkout page with an error message stating that this message cannot be paid in XRP
             $this->addFlash('danger', 'This order cannot be paid with XRP. Please contact support.');
             return $this->redirectToRoute('frontend.checkout.cart.page');
-
         }
 
-        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
-            'mode' => 'xrp',
-            'orderId' => $order->getId(),
-            'orderNumber' => $order->getOrderNumber(),
-            'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => $customFields['ledger_direct']['quote_currency'] ?? (explode('/', (string) $customFields['ledger_direct']['pairing'])[1] ?? $order->getCurrency()->getIsoCode()),
-            'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
-            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
-            'returnUrl' => $returnUrl,
-            'showNoTransactionFoundError' => true,
-            'paymentPageTitle' => 'Pay with XRP on XRPL ' . $customFields['ledger_direct']['network']
-        ]);
+        return $this->renderStorefront(
+            '@Storefront/storefront/ledger-direct/payment.html.twig',
+            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl)
+        );
     }
 
-    /**
-     * @param OrderEntity $order
-     * @param OrderTransactionEntity $orderTransaction
-     * @param string $type
-     * @param string $returnUrl
-     * @return Response
-     */
     private function renderStablecoinPaymentPage(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
@@ -119,27 +101,47 @@ class XrplPaymentController extends StorefrontController
         string $returnUrl,
     ): Response
     {
-        $customFields = $orderTransaction->getCustomFields();
+        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
-        if (!isset($customFields['ledger_direct'])) {
-
+        if ($intent === null) {
+            $this->addFlash('danger', 'This order cannot be paid with ' . strtoupper($type) . '. Please contact support.');
+            return $this->redirectToRoute('frontend.checkout.cart.page');
         }
 
-        return $this->renderStorefront('@Storefront/storefront/ledger-direct/payment.html.twig', [
-            'mode' => $type,
+        return $this->renderStorefront(
+            '@Storefront/storefront/ledger-direct/payment.html.twig',
+            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl)
+        );
+    }
+
+    /**
+     * The template variables are unchanged; they are just read off the
+     * PaymentIntent now instead of the raw customFields array.
+     *
+     * @return array<string, mixed>
+     */
+    private function paymentPageParameters(
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
+        PaymentIntent $intent,
+        string $mode,
+        string $returnUrl,
+    ): array {
+        return [
+            'mode' => $mode,
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
-            'currencyCode' => $order->getCurrency()->getIsoCode(),
+            'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()->getSymbol(),
-            'network' => $customFields['ledger_direct']['network'],
-            'destinationAccount' => $customFields['ledger_direct']['destination_account'],
-            'destinationTag' => $customFields['ledger_direct']['destination_tag'],
-            'amountRequested' => $customFields['ledger_direct']['amount_requested'],
-            'exchangeRate' => $customFields['ledger_direct']['exchange_rate'],
+            'network' => $intent->network,
+            'destinationAccount' => $intent->destinationAccount,
+            'destinationTag' => $intent->destinationTag,
+            'amountRequested' => $intent->amountRequested,
+            'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,
             'showNoTransactionFoundError' => true,
-            'paymentPageTitle' => 'Pay with ' . strtoupper($type) . ' on XRPL ' . $customFields['ledger_direct']['network'],
-        ]);
+            'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
+        ];
     }
 }

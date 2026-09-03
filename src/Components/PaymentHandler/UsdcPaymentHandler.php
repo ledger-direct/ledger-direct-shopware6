@@ -74,7 +74,7 @@ class UsdcPaymentHandler extends AbstractPaymentHandler
 
         if (isset($customFields['ledger_direct']['hash']) && isset($customFields['ledger_direct']['ctid'])) {
             $requestedTokenAmount = $customFields['ledger_direct']['amount_requested'];
-            $paidTokenAmount = $customFields['ledger_direct']['delivered_amount'];
+            $paidTokenAmount = $customFields['ledger_direct']['amount_paid'];
             if ($requestedTokenAmount === $paidTokenAmount) {
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 return;

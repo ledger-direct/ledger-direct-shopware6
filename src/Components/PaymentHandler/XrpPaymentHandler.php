@@ -78,7 +78,7 @@ class XrpPaymentHandler extends AbstractPaymentHandler
         if (isset($customFields['ledger_direct']['hash']) && isset($customFields['ledger_direct']['ctid'])) {
             // Payment is settled, let's check wether the paid amount is enough
             $requestedXrpAmount = (float) $customFields['ledger_direct']['amount_requested'];
-            $paidXrpAmount = (float) $customFields['ledger_direct']['delivered_amount'];
+            $paidXrpAmount = (float) $customFields['ledger_direct']['amount_paid'];
             $slippage = 0.0015; // TODO: Make this configurable
             $slipped = 1.0 - $paidXrpAmount / $requestedXrpAmount;
             if($slipped < $slippage) {
