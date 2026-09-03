@@ -20,6 +20,14 @@ class ConfigurationServiceMock
                 ->andReturn($value);
         }
 
+        /*
+         * Catch-all for keys the fixture does not define — declared last, so
+         * the specific expectations above still win. Without it, reading an
+         * unconfigured setting would fail the test instead of exercising the
+         * service's own default handling.
+         */
+        $systemConfigServiceMock->shouldReceive('get')->andReturn(null);
+
         $loggerMock = Mockery::mock(LoggerInterface::class);
 
         return new ConfigurationService($systemConfigServiceMock, $loggerMock);

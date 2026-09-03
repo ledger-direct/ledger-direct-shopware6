@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Hardcastle\LedgerDirect\Core\Content\Xrpl\SalesChannel;
+namespace Hardcastle\LedgerDirect\SalesChannel;
 
 use Shopware\Core\System\SalesChannel\StoreApiResponse;
 

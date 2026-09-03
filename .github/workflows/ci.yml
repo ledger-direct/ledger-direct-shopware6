@@ -64,6 +64,9 @@ jobs:
           docker exec shopware mkdir -p /var/www/html/custom/plugins
           docker cp LedgerDirect shopware:/var/www/html/custom/plugins/LedgerDirect
 
+      # plugin:install pulls hardcastle/ledger-direct-core from Packagist on its
+      # own: the plugin declares it as a composer requirement and opts into
+      # Shopware running composer at install time.
       - name: Install Mockery and activate the plugin
         run: |
           docker exec shopware bash -lc 'cd /var/www/html && COMPOSER_ALLOW_SUPERUSER=1 composer require --dev --no-interaction mockery/mockery'

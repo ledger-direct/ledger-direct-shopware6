@@ -15,8 +15,11 @@ GitHub: https://github.com/ledger-direct/ledger-direct-shopware6
 ![Payment Page](payment_page.png)
 
 ## Requirements
-- Shopware 6.6 or 6.7
+- Shopware 6.6.5 or 6.7
 - PHP 8.2 or higher
+- [`hardcastle/ledger-direct-core`](https://packagist.org/packages/hardcastle/ledger-direct-core) — the
+  platform-agnostic XRPL and pricing logic shared by all LedgerDirect plugins. Shopware installs it automatically
+  along with the plugin.
 
 ## Installation
 
@@ -27,6 +30,9 @@ GitHub: https://github.com/ledger-direct/ledger-direct-shopware6
 3. Refresh Shopware plugin list: `bin/console plugin:refresh`
 4. Install and activate the plugin: `bin/console plugin:install LedgerDirect --activate`
 5. Clear the cache: `bin/console cache:clear`
+
+Installing the plugin also installs its dependency `hardcastle/ledger-direct-core` from Packagist, so the shop needs
+composer to be able to reach the network during step 4.
 
 ### Configuration
 1. Configure the basic settings like receiving wallet address in the Shopware admin under "Settings" > "Extensions" > "My Extensions" > "LedgerDirect".
@@ -49,15 +55,26 @@ To test the plugin, you can configure it to use the XRP Ledger Testnet. This all
 4. You can create test accounts from https://xrpl.org/xrp-testnet-faucet.html for XRP or https://tryrlusd.com/ for RLUSD.
 
 ## External Services
-LedgerDirect uses public APIs from Coinbase, Coingecko, Binance, and Kraken to retrieve current cryptocurrency exchange rates. These rates are needed to correctly calculate and display payments.
+LedgerDirect uses public APIs from Coingecko, Binance, and Kraken to retrieve current cryptocurrency exchange rates. These rates are needed to correctly calculate and display payments.
 
 No personal or payment data is sent to these services. Only requests for current rates are made when a payment is processed or displayed.
 
 For more information about each service, see:
-- Coinbase API: [Terms of Service](https://www.coinbase.com/legal/user_agreement), [Privacy Policy](https://www.coinbase.com/legal/privacy)
 - Coingecko API: [Terms of Service](https://www.coingecko.com/en/terms), [Privacy Policy](https://www.coingecko.com/en/privacy)
 - Binance API: [Terms of Use](https://www.binance.com/en/terms), [Privacy Policy](https://www.binance.com/en/privacy)
 - Kraken API: [Terms of Service](https://www.kraken.com/legal), [Privacy Policy](https://www.kraken.com/privacy)
+
+## Development
+
+The core library is developed alongside the plugins. To work against a local core checkout instead of the released
+version, add a path repository to the *shop's* `composer.json` and require the branch:
+
+```
+composer config repositories.ledger-direct-core path ../LedgerDirectCorePHP/ledger-direct-core-php
+composer require hardcastle/ledger-direct-core:dev-master
+```
+
+Keep the plugin's own constraint on the released version; the shop-level override is a local concern.
 
 ## License
 The MIT License (MIT). Please see [License File](LICENSE) for more information.

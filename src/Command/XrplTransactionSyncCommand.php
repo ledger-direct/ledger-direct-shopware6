@@ -2,9 +2,9 @@
 
 namespace Hardcastle\LedgerDirect\Command;
 
-use Doctrine\DBAL\Exception;
-use GuzzleHttp\Exception\GuzzleException;
-use Hardcastle\LedgerDirect\Service\XrplTxService;
+use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
+use Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository;
+use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -14,18 +14,25 @@ class XrplTransactionSyncCommand extends Command
 {
     protected static $defaultName = 'ledger-direct:xrpl-transaction:sync';
 
-    protected XrplTxService $txService;
+    private SyncService $syncService;
 
-    public function __construct(XrplTxService $txService)
-    {
+    private DbalXrplTransactionRepository $transactionRepository;
+
+    private ShopwareConfigProvider $configProvider;
+
+    public function __construct(
+        SyncService $syncService,
+        DbalXrplTransactionRepository $transactionRepository,
+        ShopwareConfigProvider $configProvider
+    ) {
         parent::__construct(self::$defaultName);
-        $this->txService = $txService;
+        $this->syncService = $syncService;
+        $this->transactionRepository = $transactionRepository;
+        $this->configProvider = $configProvider;
     }
 
     /**
      * Configure the command options and description.
-     *
-     * @return void
      */
     public function configure(): void
     {
@@ -33,31 +40,29 @@ class XrplTransactionSyncCommand extends Command
 
         $this->setDescription('XRPL tx sync');
         $this->addOption('address', null, InputOption::VALUE_REQUIRED, 'XRPL Address to check for incoming transactions');
-        $this->addOption('force', null, InputOption::VALUE_OPTIONAL, 'Truncate table upfront');
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Truncate the synced transaction table upfront');
     }
 
     /**
-     * Executes the command to synchronize transactions for the specified address.
-     *
-     * Retrieves the 'address' option provided by the user. If the 'force' option is enabled,
-     * it resets the database before proceeding with the synchronization process.
-     *
-     * @param InputInterface $input The input instance containing command options and arguments.
-     * @param OutputInterface $output The output instance to provide feedback during execution.
-     *
-     * @return int Returns the command exit status, indicating success.
-     * @throws Exception
-     * @throws GuzzleException
+     * Synchronizes incoming transactions for the given address.
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $address = $input->getOption('address');
+        $address = (string) $input->getOption('address');
 
-        if ($input->hasOption('force')) {
-            $this->txService->resetDatabase();
+        /*
+         * hasOption() only asks whether the option is *defined*, so the old
+         * check was always true and every run truncated the table. getOption()
+         * is what actually reports whether the flag was passed.
+         */
+        if ($input->getOption('force')) {
+            $this->transactionRepository->truncate();
         }
 
-        $this->txService->syncTransactions($address);
+        $this->syncService->syncTransactions(
+            $address,
+            $this->configProvider->getNetwork(ShopwareConfigProvider::CHAIN)
+        );
 
         return Command::SUCCESS;
     }

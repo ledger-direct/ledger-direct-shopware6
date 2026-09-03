@@ -25,21 +25,30 @@
             <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
         </input-field>
 
-        <!--
         <input-field type="bool">
             <name>xrplIsRlusdEnabled</name>
             <label>Enable RLUSD Payments</label>
             <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
-            <defaultValue>false</defaultValue>
+            <defaultValue>true</defaultValue>
         </input-field>
 
         <input-field type="bool">
             <name>xrplIsUsdcEnabled</name>
             <label>Enable USDC Payments</label>
             <label lang="de-DE">Zahlungen mit USDC aktivieren</label>
-            <defaultValue>false</defaultValue>
+            <defaultValue>true</defaultValue>
         </input-field>
-        -->
+
+        <input-field type="int">
+            <name>xrplQuoteExpiry</name>
+            <label>Quote validity in seconds</label>
+            <label lang="de-DE">Gültigkeit eines Kursangebots in Sekunden</label>
+            <helpText>How long the exchange rate quoted at checkout stays valid.</helpText>
+            <helpText lang="de-DE">Wie lange der beim Checkout ermittelte Wechselkurs gültig bleibt.</helpText>
+            <defaultValue>300</defaultValue>
+            <min>60</min>
+            <max>3600</max>
+        </input-field>
     </card>
 
 </config>
