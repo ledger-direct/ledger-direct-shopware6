@@ -8,6 +8,10 @@
   testnet reset instead of failing every sync until the table is cleared by hand
 - The payment page now explains a payment that arrived but does not settle the order — a token from
   the wrong issuer, or an amount that falls short — including how much is still outstanding
+- Fixed the XRP amount on the payment page: the call to action rounded the quote to two decimals
+  while it is quoted with five, so paying exactly what the page asked for could leave the order
+  unsettled — most reliably on small orders
+- Fixed the German payment page, which printed the placeholder instead of the amount
 - Requires hardcastle/ledger-direct-core 0.4
 
 # 1.1.0
