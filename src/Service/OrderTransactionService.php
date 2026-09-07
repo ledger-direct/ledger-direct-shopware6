@@ -129,12 +129,18 @@ class OrderTransactionService
     }
 
     /**
-     * Syncs the merchant's incoming XRPL transactions and, when one matches
-     * this order's destination tag, records the settlement on the intent.
+     * Syncs the merchant's incoming XRPL transactions and, when one of them
+     * pays this order, records the settlement on the intent.
      *
-     * @return PaymentIntent|null the fulfilled intent, or null while the
-     *     payment has not arrived (or arrived as something that delivered
-     *     nothing measurable, e.g. an EscrowCreate to the same account).
+     * Which candidate on the tag that is — a tag can carry a stray payment,
+     * a non-payment, or two attempts — is decided by the core, by asset
+     * class and newest first.
+     *
+     * @return PaymentIntent|null the fulfilled intent, or null while nothing
+     *     payable has arrived: no transaction on the tag yet, only ones that
+     *     delivered nothing measurable (an EscrowCreate lands in the same
+     *     table), or only ones in the other asset class — the core logs and
+     *     skips those.
      * @throws Exception
      */
     public function syncOrderTransactionWithXrpl(
@@ -149,19 +155,23 @@ class OrderTransactionService
 
         $this->syncService->syncTransactions($intent->destinationAccount, $intent->network);
 
-        $transaction = $this->syncService->findTransaction($intent->destinationAccount, $intent->destinationTag);
+        $transaction = $this->syncService->findTransactionFor($intent);
 
         if ($transaction === null) {
             return null;
         }
 
-        $amountPaid = $transaction->getDeliveredAmount();
-
-        if ($amountPaid === null) {
-            return null;
-        }
-
-        $fulfilledIntent = $intent->withFulfillment($transaction->hash, $amountPaid, $transaction->ctid);
+        /*
+         * No null check on the delivered amount here any more: the core only
+         * returns a candidate it has already decoded successfully and whose
+         * asset class matches the quote, so this cannot be null and cannot
+         * be the shape withFulfillment() rejects.
+         */
+        $fulfilledIntent = $intent->withFulfillment(
+            $transaction->hash,
+            $transaction->getDeliveredAmount(),
+            $transaction->ctid
+        );
 
         $this->persistPaymentIntent($orderTransaction, $fulfilledIntent, $context);
 

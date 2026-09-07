@@ -38,17 +38,30 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
      * round trip — it both stores and returns the new counter value, per
      * connection, so the value read back is this caller's own.
      *
-     * The counter is 1-based (a fresh row starts at 1) while the port
-     * contract is 0-based, hence the -1.
+     * A fresh counter starts at a random offset rather than at zero, as the
+     * port requires: the core derives the tag from this sequence with public
+     * constants, so two installations counting from the same start on one
+     * receiving account hand out the same tags — and one shop's payment then
+     * settles the other shop's order. The upper bound leaves at least ~2.1
+     * billion sequences before the core's exhaustion guard trips. See
+     * {@see XrplTransactionRepositoryInterface::nextDestinationTagSequence()}
+     * for the full reasoning.
+     *
+     * The counter is 1-based (a fresh row starts at its random draw) while
+     * the port contract is 0-based, hence the -1 — and hence the draw runs
+     * to 2^31 rather than 2^31-1.
      */
     public function nextDestinationTagSequence(string $destinationAccount): int
     {
         $this->connection->executeStatement(
             'INSERT INTO `' . self::TAG_TABLE . '` (`destination_account`, `sequence`)
-             VALUES (:destination_account, LAST_INSERT_ID(1))
+             VALUES (:destination_account, LAST_INSERT_ID(:start))
              ON DUPLICATE KEY UPDATE `sequence` = LAST_INSERT_ID(`sequence` + 1)',
-            ['destination_account' => $destinationAccount],
-            ['destination_account' => ParameterType::STRING]
+            [
+                'destination_account' => $destinationAccount,
+                'start' => random_int(1, 2147483648),
+            ],
+            ['destination_account' => ParameterType::STRING, 'start' => ParameterType::INTEGER]
         );
 
         return ((int) $this->connection->fetchOne('SELECT LAST_INSERT_ID()')) - 1;
@@ -82,6 +95,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
             try {
                 $this->connection->insert(self::TX_TABLE, [
                     'id' => Uuid::randomBytes(),
+                    'network' => $transaction->network,
                     'ledger_index' => $transaction->ledgerIndex,
                     'hash' => $transaction->hash,
                     'ctid' => $transaction->ctid,
@@ -102,22 +116,42 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
         }
     }
 
-    public function findTransaction(string $destination, int $destinationTag): ?XrplTransaction
+    /**
+     * Everything stored on this account/tag pair, newest first — the whole
+     * candidate set, filtered by nothing else. Which of them actually pays a
+     * given order is the core's decision, not storage's.
+     *
+     * `id` is a random UUID, so as a tie-breaker it only makes the order
+     * total, not chronological; the chronology comes from `ledger_index`.
+     *
+     * @return XrplTransaction[]
+     */
+    public function findTransactions(string $destination, int $destinationTag): array
     {
-        $row = $this->connection->fetchAssociative(
+        $rows = $this->connection->fetchAllAssociative(
             'SELECT * FROM `' . self::TX_TABLE . '`
-             WHERE `destination` = :destination AND `destination_tag` = :destination_tag',
+             WHERE `destination` = :destination AND `destination_tag` = :destination_tag
+             ORDER BY `ledger_index` DESC, `id` DESC',
             ['destination' => $destination, 'destination_tag' => $destinationTag],
             ['destination' => ParameterType::STRING, 'destination_tag' => ParameterType::INTEGER]
         );
 
-        return $row === false ? null : self::hydrate($row);
+        return array_map([self::class, 'hydrate'], $rows);
     }
 
-    public function getLastSyncedLedgerIndex(): ?string
+    /**
+     * Scoped to the account *and* the network, both load-bearing: a ledger
+     * index only means something within one network, so a single mainnet row
+     * would otherwise pin the testnet cursor above every testnet ledger and
+     * the testnet sync would silently return nothing forever.
+     */
+    public function getLastSyncedLedgerIndex(string $destinationAccount, string $network): ?string
     {
         $lastSyncedLedgerIndex = $this->connection->fetchOne(
-            'SELECT MAX(`ledger_index`) FROM `' . self::TX_TABLE . '`'
+            'SELECT MAX(`ledger_index`) FROM `' . self::TX_TABLE . '`
+             WHERE `destination` = :destination AND `network` = :network',
+            ['destination' => $destinationAccount, 'network' => $network],
+            ['destination' => ParameterType::STRING, 'network' => ParameterType::STRING]
         );
 
         return $lastSyncedLedgerIndex === null || $lastSyncedLedgerIndex === false
@@ -136,6 +170,8 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     private static function hydrate(array $row): XrplTransaction
     {
         return new XrplTransaction(
+            // The fallback covers rows between the ALTER and the backfill.
+            network: (string) ($row['network'] ?? ''),
             ledgerIndex: (string) $row['ledger_index'],
             hash: (string) $row['hash'],
             ctid: (string) $row['ctid'],
