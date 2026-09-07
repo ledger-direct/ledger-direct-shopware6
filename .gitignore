@@ -12,3 +12,6 @@ phpunit.xml.*
 # Project specific
 TODO.md
 NOTES.md
+# Handover documents: working input for coding sessions, not part of the plugin
+/LedgerDirect-*.md
+/CLAUDE.md

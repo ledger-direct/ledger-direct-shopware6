@@ -40,7 +40,13 @@ class XrplTransactionSyncCommand extends Command
 
         $this->setDescription('XRPL tx sync');
         $this->addOption('address', null, InputOption::VALUE_REQUIRED, 'XRPL Address to check for incoming transactions');
-        $this->addOption('force', null, InputOption::VALUE_NONE, 'Truncate the synced transaction table upfront');
+        $this->addOption(
+            'force',
+            null,
+            InputOption::VALUE_NONE,
+            'Truncate the synced transaction table upfront. No longer needed after an XRPL testnet '
+                . 'reset — the sync recovers from a stranded cursor by itself.'
+        );
     }
 
     /**

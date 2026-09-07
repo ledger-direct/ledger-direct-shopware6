@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
+use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -23,12 +24,16 @@ class XrplPaymentController extends StorefrontController
 
     private PaymentRoute $paymentRoute;
 
+    private SettlementPolicy $settlementPolicy;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
-        PaymentRoute $paymentRoute
+        PaymentRoute $paymentRoute,
+        SettlementPolicy $settlementPolicy
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
+        $this->settlementPolicy = $settlementPolicy;
     }
 
     #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
@@ -53,7 +58,16 @@ class XrplPaymentController extends StorefrontController
             $orderTransaction,
             $context->getContext()
         );
-        if ($fulfilledIntent !== null) {
+
+        /*
+         * Something arriving on the tag is not the same as the order being
+         * paid. A payment in the right asset but from the wrong issuer, or
+         * one that falls short, is recorded on the intent but does not
+         * settle it — sending the customer back to the shop at that point
+         * leaves them with a partially paid order and no explanation, so
+         * they stay here and the page tells them what is missing.
+         */
+        if ($fulfilledIntent !== null && $this->settlementPolicy->isSettled($fulfilledIntent)) {
             return new RedirectResponse($request->get('returnUrl'));
         }
 
@@ -115,9 +129,6 @@ class XrplPaymentController extends StorefrontController
     }
 
     /**
-     * The template variables are unchanged; they are just read off the
-     * PaymentIntent now instead of the raw customFields array.
-     *
      * @return array<string, mixed>
      */
     private function paymentPageParameters(
@@ -127,8 +138,13 @@ class XrplPaymentController extends StorefrontController
         string $mode,
         string $returnUrl,
     ): array {
+        $amountPaid = $intent->amountPaidValue();
+
         return [
             'mode' => $mode,
+            'amountPaid' => $amountPaid,
+            'shortfall' => $amountPaid === null ? null : $this->settlementPolicy->shortfall($intent),
+            'wrongToken' => self::isWrongToken($intent),
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
@@ -143,5 +159,26 @@ class XrplPaymentController extends StorefrontController
             'showNoTransactionFoundError' => true,
             'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];
+    }
+
+    /**
+     * Whether what arrived is the right kind of token but from the wrong
+     * issuer — the case worth naming, because the customer did pay and their
+     * wallet will show a successful transaction, yet nothing counts towards
+     * the order and the full amount is still due.
+     *
+     * A presentation decision derived from the record, not a second opinion
+     * on settlement: whether it settles stays the core's call. It is a
+     * candidate to move into the core once the other platforms want the same
+     * message.
+     */
+    private static function isWrongToken(PaymentIntent $intent): bool
+    {
+        if (!is_array($intent->amountRequested) || !is_array($intent->amountPaid)) {
+            return false;
+        }
+
+        return $intent->amountPaid['currency'] !== $intent->amountRequested['currency']
+            || $intent->amountPaid['issuer'] !== $intent->amountRequested['issuer'];
     }
 }
