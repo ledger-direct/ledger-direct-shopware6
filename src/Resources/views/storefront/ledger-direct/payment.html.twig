@@ -74,6 +74,29 @@
                         </div>
                     </div>
 
+                    {% if amountPaid %}
+                        <div class="ld-warning">
+                            <div role="alert" class="alert alert-info alert-has-icon">
+                                <div class="alert-content-container">
+                                    <div class="alert-content">
+                                        {% if wrongToken %}
+                                            {{ "LedgerDirect.paymentPage.wrongTokenNotice"|trans({
+                                                "%paid%": amountPaid,
+                                                "%shortfall%": shortfall,
+                                                "%tokenName%": mode|upper
+                                            })|raw }}
+                                        {% else %}
+                                            {{ "LedgerDirect.paymentPage.partialPaymentNotice"|trans({
+                                                "%paid%": amountPaid,
+                                                "%shortfall%": shortfall
+                                            })|raw }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
                     <div class="ld-warning">
                         <div role="alert" class="alert alert-warning alert-has-icon">
                             <div class="alert-content-container">

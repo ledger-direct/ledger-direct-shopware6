@@ -5,8 +5,7 @@
         "changeXrpPaymentMethod": "XRP Zahlungsart ändern"
       }
     },
-    "errors": {
-    },
+    "errors": {},
     "paymentPage": {
       "sendXrpMessage": "Bitte zahlen Sie %value% XRP an die folgende Adresse:",
       "sendTokenMessage": "Bitte zahlen sie <strong>%amount%</strong> <strong>%tokenName%</strong> an folgende Adresse:",
@@ -18,7 +17,9 @@
       "total": "Preis",
       "exchangeRate": "Wechselkurs",
       "network": "Netzwerk",
-      "backToCart": "Zurück zum Warenkorb"
+      "backToCart": "Zurück zum Warenkorb",
+      "wrongTokenNotice": "Es ist eine Zahlung über <strong>%paid%</strong> eingegangen, aber nicht in dem Token, in dem diese Bestellung ausgewiesen ist — Währung oder Herausgeber stimmen nicht, sie kann deshalb nicht angerechnet werden. Bitte senden Sie <strong>%shortfall%</strong> %tokenName% vom oben angegebenen Herausgeber, oder melden Sie sich bei uns wegen der bereits geleisteten Zahlung.",
+      "partialPaymentNotice": "Bisher <strong>%paid%</strong> eingegangen. Es fehlen noch <strong>%shortfall%</strong> — bitte senden Sie den Restbetrag an dieselbe Adresse, mit derselben Destination Tag."
     }
   }
 }

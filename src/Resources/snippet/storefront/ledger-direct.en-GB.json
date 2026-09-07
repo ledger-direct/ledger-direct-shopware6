@@ -5,8 +5,7 @@
         "changeXrpPaymentMethod": "Change XRP payment method"
       }
     },
-    "errors": {
-    },
+    "errors": {},
     "paymentPage": {
       "sendXrpMessage": "Please send <strong>%amount%</strong> XRP to the following address:",
       "sendTokenMessage": "Please send <strong>%amount%</strong> <strong>%tokenName%</strong> to the following address:",
@@ -18,7 +17,9 @@
       "total": "Total",
       "exchangeRate": "Rate",
       "network": "Network",
-      "backToCart": "Back to cart"
+      "backToCart": "Back to cart",
+      "wrongTokenNotice": "A payment of <strong>%paid%</strong> arrived, but not in the token this order is quoted in — the currency or the issuer does not match, so it cannot be credited. Please send <strong>%shortfall%</strong> %tokenName% from the issuer shown above, or contact us about the payment you already made.",
+      "partialPaymentNotice": "<strong>%paid%</strong> received so far. <strong>%shortfall%</strong> is still outstanding — please send the remaining amount to the same address, with the same destination tag."
     }
   }
 }
