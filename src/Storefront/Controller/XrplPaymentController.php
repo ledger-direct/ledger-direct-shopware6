@@ -5,6 +5,7 @@ namespace Hardcastle\LedgerDirect\Storefront\Controller;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -145,6 +146,9 @@ class XrplPaymentController extends StorefrontController
             'amountPaid' => $amountPaid,
             'shortfall' => $amountPaid === null ? null : $this->settlementPolicy->shortfall($intent),
             'wrongToken' => self::isWrongToken($intent),
+            // The one string the page asks the customer for; see AmountFormatter.
+            'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
+            'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'total' => $orderTransaction->getAmount()->getTotalPrice(),
