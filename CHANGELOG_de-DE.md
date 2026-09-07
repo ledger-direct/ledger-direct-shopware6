@@ -1,3 +1,16 @@
+# 1.2.0
+- Destination-Tags starten je Empfangskonto an einer zufälligen Stelle statt immer bei null; zwei
+  Shops auf derselben Wallet vergeben damit nicht länger dieselben Tags — bisher konnte so die
+  Zahlung des einen Shops die Bestellung des anderen bezahlen
+- Welche Transaktion auf einem Destination-Tag eine Bestellung bezahlt, entscheidet jetzt die
+  Asset-Klasse statt der Zeilenreihenfolge: eine Fremdzahlung im anderen Asset blockiert nicht mehr
+  die echte
+- Der Sync-Cursor wird je Empfangskonto und Netzwerk geführt und erholt sich nach einem Reset des
+  XRPL-Testnets selbst, statt bei jedem Sync zu scheitern, bis die Tabelle von Hand geleert wird
+- Die Zahlungsseite erklärt jetzt eine eingegangene Zahlung, die die Bestellung nicht begleicht —
+  falscher Herausgeber oder zu geringer Betrag — samt offenem Restbetrag
+- Benötigt hardcastle/ledger-direct-core 0.4
+
 # 1.1.0
 - Shopware-6.7-Kompatibilität: Payment-Handler auf die neue `AbstractPaymentHandler`-API migriert
 - Doctrine-DBAL-4-Parametertypen korrigiert und entferntes `fetchAll()` durch `fetchAllAssociative()` ersetzt

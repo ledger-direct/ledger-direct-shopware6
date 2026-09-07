@@ -1,3 +1,15 @@
+# 1.2.0
+- Destination tags are issued from a random starting point per receiving account instead of always
+  from zero, so two shops sharing one wallet no longer hand out the same tags — which previously let
+  one shop's payment settle another shop's order
+- Which transaction on a destination tag pays an order is now decided by asset class rather than by
+  row order: a stray payment in the other asset no longer blocks the real one
+- The sync cursor is kept per receiving account and network, and recovers on its own after an XRPL
+  testnet reset instead of failing every sync until the table is cleared by hand
+- The payment page now explains a payment that arrived but does not settle the order — a token from
+  the wrong issuer, or an amount that falls short — including how much is still outstanding
+- Requires hardcastle/ledger-direct-core 0.4
+
 # 1.1.0
 - Shopware 6.7 compatibility: payment handlers migrated to the new `AbstractPaymentHandler` API
 - Fixed Doctrine DBAL 4 parameter types and replaced removed `fetchAll()` with `fetchAllAssociative()`
