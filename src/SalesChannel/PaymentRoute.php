@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\SalesChannel;
 
 use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
+use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use RuntimeException;
 use Shopware\Core\Checkout\Cart\CartException;
@@ -123,6 +124,14 @@ class PaymentRoute
             'destinationTag' => $intent->destinationTag,
             'xrpAmount' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
+            /*
+             * The raw values above stay as they are — they are an existing
+             * store-api contract. These are the same numbers as the payment
+             * page renders them, so a headless client shows the customer the
+             * amount the shop actually expects.
+             */
+            'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
+            'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
             'showNoTransactionFoundError' => true,
         ]));
     }

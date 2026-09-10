@@ -9,6 +9,10 @@
   XRPL-Testnets selbst, statt bei jedem Sync zu scheitern, bis die Tabelle von Hand geleert wird
 - Die Zahlungsseite erklärt jetzt eine eingegangene Zahlung, die die Bestellung nicht begleicht —
   falscher Herausgeber oder zu geringer Betrag — samt offenem Restbetrag
+- Betrag auf der Zahlungsseite korrigiert: die Handlungsaufforderung rundete die Quote auf zwei
+  Nachkommastellen, obwohl sie mit fünf ausgewiesen wird — wer genau den angezeigten Betrag zahlte,
+  konnte damit unterzahlen und die Bestellung blieb offen, besonders bei kleinen Bestellwerten
+- Deutsche Zahlungsseite korrigiert: dort stand der Platzhalter statt des Betrags
 - Benötigt hardcastle/ledger-direct-core 0.4
 
 # 1.1.0
