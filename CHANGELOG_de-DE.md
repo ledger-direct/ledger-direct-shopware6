@@ -1,3 +1,24 @@
+# 1.3.0
+- Gastbestellungen können bezahlt werden: Zahlungsseite und Zahlungsstatus-Endpunkt verlangen
+  keinen Login mehr. Der Link-Code der Bestellung — derselbe wie hinter dem Gast-Bestelllink in der
+  Bestätigungsmail — öffnet sie, sodass ein Gast nach der Bestellung die Zahlungsanweisung sieht
+  statt einer Login-Seite, und derselbe Link eine Stunde später in einem neuen Browser noch geht
+- Die Zahlungsseite zeigt einen von fünf Zuständen — wartend mit Countdown, abgelaufen mit
+  Schaltfläche für einen aktualisierten Betrag, teilweise bezahlt, im falschen Token bezahlt,
+  bezahlt — und fragt den Status alle acht Sekunden ab; sie lädt nicht mehr neu und verlässt sich
+  erst, wenn die Bestellung bezahlt oder geschlossen wurde
+- Zwei Teilzahlungen addieren sich: Wer den Restbetrag nachsendet, begleicht die Bestellung
+- Der Händler sieht eine Teilzahlung oder eine Zahlung im falschen Token sofort als „Teilweise
+  bezahlt" in der Administration und „Bezahlt", sobald die Bestellung beglichen ist — dafür muss
+  der Kunde nicht mehr in den Shop zurückkehren, und ein zwischenzeitlich abgelaufenes
+  Zahlungs-Token lässt eine bezahlte Bestellung nicht mehr offen
+- Der Abgleich mit dem Ledger läuft höchstens alle fünf Sekunden je Empfangskonto, egal wie viele
+  Kunden auf ihrer Zahlungsseite warten
+- Der Status-Endpunkt antwortet mit derselben Nutzlast wie alle anderen LedgerDirect-Plugins
+  (`schema_version`, `state`, `base_asset`, `amount_requested`, `amount_paid`, `shortfall`,
+  `seconds_left`) plus `redirect`, sobald die Bestellung nicht mehr wartet
+- Benötigt hardcastle/ledger-direct-core 0.7
+
 # 1.2.0
 - Destination-Tags starten je Empfangskonto an einer zufälligen Stelle statt immer bei null; zwei
   Shops auf derselben Wallet vergeben damit nicht länger dieselben Tags — bisher konnte so die

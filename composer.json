@@ -1,7 +1,7 @@
 {
     "name": "hardcastle/ledger-direct-sw6",
     "description": "LedgerDirect - Shopware6 Ledger & Blockchain Connector",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
@@ -33,7 +33,7 @@
     },
     "require": {
         "php": "^8.2",
-        "hardcastle/ledger-direct-core": "^0.4",
+        "hardcastle/ledger-direct-core": "^0.7",
         "shopware/core": "~6.6.5 || ~6.7.0",
         "shopware/storefront": "~6.6.5 || ~6.7.0"
     },

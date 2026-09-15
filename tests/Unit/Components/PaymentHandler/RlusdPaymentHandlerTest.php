@@ -6,15 +6,18 @@ use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -41,7 +44,7 @@ class RlusdPaymentHandlerTest extends TestCase
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new RlusdPaymentHandler($router, $this->stateHandler, $this->transactionService, new SettlementPolicy());
+        $this->handler = new RlusdPaymentHandler($router, $this->transactionService, $this->paymentStateService());
         $this->context = new Context(new SystemSource());
     }
 
@@ -101,9 +104,27 @@ class RlusdPaymentHandlerTest extends TestCase
         $this->handler->finalize(new Request(), new PaymentTransactionStruct(self::TX_ID), $this->context);
     }
 
-    private function givenStoredIntent(?PaymentIntent $intent): void
+    /**
+     * The real state service over the mocked Shopware state handler: what is
+     * asserted is which transition the handler asks Shopware for.
+     */
+    private function paymentStateService(): PaymentStateService
     {
+        return new PaymentStateService($this->stateHandler, $this->transactionService, new SettlementPolicy(), new NullLogger());
+    }
+
+    /**
+     * @param string $state the transaction's state when the customer comes back — Shopware parks
+     *     an asynchronous payment in `unconfirmed` while the customer is away
+     */
+    private function givenStoredIntent(?PaymentIntent $intent, string $state = 'unconfirmed'): void
+    {
+        $stateEntity = new StateMachineStateEntity();
+        $stateEntity->setTechnicalName($state);
+
         $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
+        $orderTransaction->shouldReceive('getId')->andReturn(self::TX_ID);
+        $orderTransaction->shouldReceive('getStateMachineState')->andReturn($stateEntity);
 
         $this->transactionService->shouldReceive('getOrderTransactionById')
             ->with(self::TX_ID, $this->context)

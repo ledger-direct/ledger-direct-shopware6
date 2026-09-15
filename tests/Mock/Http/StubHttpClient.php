@@ -23,6 +23,9 @@ class StubHttpClient implements ClientInterface
     /** @var array<int, array<string, mixed>> */
     private array $ledgerTransactions;
 
+    /** How often the XRPL node was asked — what a throttle is measured by. */
+    public int $ledgerRequests = 0;
+
     /**
      * @param array<int, array<string, mixed>> $ledgerTransactions
      */
@@ -54,6 +57,8 @@ class StubHttpClient implements ClientInterface
 
         if ($request->getMethod() === 'POST') {
             // XRPL JSON-RPC (account_tx)
+            ++$this->ledgerRequests;
+
             return self::json([
                 'result' => [
                     'transactions' => $this->ledgerTransactions,

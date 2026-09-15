@@ -18,8 +18,12 @@
       "exchangeRate": "Wechselkurs",
       "network": "Netzwerk",
       "backToCart": "Zurück zum Warenkorb",
-      "wrongTokenNotice": "Es ist eine Zahlung über <strong>%paid%</strong> eingegangen, aber nicht in dem Token, in dem diese Bestellung ausgewiesen ist — Währung oder Herausgeber stimmen nicht, sie kann deshalb nicht angerechnet werden. Bitte senden Sie <strong>%shortfall%</strong> %tokenName% vom oben angegebenen Herausgeber, oder melden Sie sich bei uns wegen der bereits geleisteten Zahlung.",
-      "partialPaymentNotice": "Bisher <strong>%paid%</strong> eingegangen. Es fehlen noch <strong>%shortfall%</strong> — bitte senden Sie den Restbetrag an dieselbe Adresse, mit derselben Destination Tag."
+      "wrongTokenNotice": "Es ist eine Zahlung über %paid% eingegangen, aber nicht in dem Token, in dem diese Bestellung ausgewiesen ist — Währung oder Herausgeber stimmen nicht, sie kann deshalb nicht angerechnet werden. Bitte senden Sie %shortfall% %tokenName% vom oben angegebenen Herausgeber, oder melden Sie sich bei uns wegen der bereits geleisteten Zahlung.",
+      "partialPaymentNotice": "Bisher %paid% eingegangen. Es fehlen noch %shortfall% — bitte senden Sie den Restbetrag an dieselbe Adresse, mit derselben Destination Tag.",
+      "quoteValidFor": "Dieser Betrag gilt noch",
+      "quoteExpired": "Dieser Kurs ist abgelaufen. Der Wechselkurs kann sich seitdem geändert haben.",
+      "quoteExpiredDoNotResend": "Den alten Betrag schon gesendet? Senden Sie ihn nicht erneut — nutzen Sie stattdessen die Schaltfläche unten.",
+      "refreshQuoteButton": "Betrag aktualisieren"
     }
   }
 }

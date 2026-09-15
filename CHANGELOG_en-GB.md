@@ -1,3 +1,23 @@
+# 1.3.0
+- Guest orders can be paid: the payment page and the payment-status endpoint no longer require a
+  login. The order's own link code — the one behind the guest order link in the confirmation mail —
+  opens them, so a guest who has just placed an order sees the payment instructions instead of a
+  login page, and the same link still works an hour later in a fresh browser
+- The payment page shows one of five states — waiting with a countdown, expired with a button for
+  an updated amount, partially paid, paid in the wrong token, paid — and polls the status every
+  eight seconds; it no longer reloads, and only leaves once the order is paid or was closed
+- Two partial payments add up: a customer who sends the outstanding amount settles the order
+- The merchant sees a partial payment or a payment in the wrong token as "Paid partially" in the
+  administration the moment it arrives, and "Paid" the moment the order is settled — the
+  customer no longer has to return to the shop for that, and a payment token that expired in the
+  meantime no longer leaves a paid order open
+- The ledger is synced at most once every five seconds per receiving account, however many
+  customers are waiting on their payment pages
+- The status endpoint answers with the same payload as every other LedgerDirect plugin
+  (`schema_version`, `state`, `base_asset`, `amount_requested`, `amount_paid`, `shortfall`,
+  `seconds_left`) plus a `redirect` once the order no longer waits
+- Requires hardcastle/ledger-direct-core 0.7
+
 # 1.2.0
 - Destination tags are issued from a random starting point per receiving account instead of always
   from zero, so two shops sharing one wallet no longer hand out the same tags — which previously let

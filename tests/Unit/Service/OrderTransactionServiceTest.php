@@ -9,8 +9,10 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Core\Port\XrplTransactionRepositoryInterface;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
+use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
+use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
@@ -56,11 +58,17 @@ class OrderTransactionServiceTest extends TestCase
 
     private XrplTransactionRepositoryInterface $transactionRepository;
 
+    private StubHttpClient $httpClient;
+
+    private InMemoryCache $throttleStore;
+
     protected function setUp(): void
     {
         $this->context = new Context(new SystemSource());
         $this->orderTransactionRepository = Mockery::mock(EntityRepository::class);
         $this->transactionRepository = Mockery::mock(XrplTransactionRepositoryInterface::class);
+        $this->httpClient = new StubHttpClient(2.5);
+        $this->throttleStore = new InMemoryCache();
     }
 
     protected function tearDown(): void
@@ -299,8 +307,133 @@ class OrderTransactionServiceTest extends TestCase
 
         $settlementPolicy = new SettlementPolicy();
         $this->assertFalse($settlementPolicy->isSettled($fulfilledIntent));
+        $this->assertTrue($settlementPolicy->isWrongAsset($fulfilledIntent));
+        // The delivered amount stays visible, so the page can name the wrong token.
+        $this->assertSame('rSomeoneElsesIssuerAccount', $fulfilledIntent->amountPaid['issuer']);
+        $this->assertSame('40.00', $fulfilledIntent->amountPaid['value']);
         // '40', not '40.00': the core reports a plain decimal without trailing zeros.
         $this->assertSame('40', $settlementPolicy->shortfall($fulfilledIntent), 'the full amount is still due');
+    }
+
+    /**
+     * Two payments in the quoted asset add up — the customer who sends the
+     * shortfall after a first, short payment settles the order. The intent
+     * records the newest contributing transaction.
+     */
+    public function testTwoPartialPaymentsInTheQuotedAssetAddUp(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')
+            ->with(self::DESTINATION_ACCOUNT, 'testnet')->andReturn(null);
+        // Newest first, as the port promises.
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([
+            $this->givenLedgerTransaction(['delivered_amount' => '15000000'], 'HASH_TOP_UP', '2000'),
+            $this->givenLedgerTransaction(['delivered_amount' => '25000000'], 'HASH_FIRST', '1000'),
+        ]);
+        $this->expectUpsertCapturing($customFields);
+
+        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertNotNull($fulfilledIntent);
+        $this->assertSame(40.0, $fulfilledIntent->amountPaid, '25 + 15 XRP');
+        $this->assertSame('HASH_TOP_UP', $fulfilledIntent->hash, 'the newest contributing transaction');
+
+        $intent = $customFields[0]['customFields'][OrderTransactionService::CUSTOM_FIELDS_KEY];
+        $this->assertSame(40.0, $intent['amount_paid']);
+    }
+
+    /**
+     * Once something in the quoted asset has arrived, only that counts: a
+     * payment from the wrong issuer on the same tag is neither added nor
+     * shown as the fulfillment any more.
+     */
+    public function testAPaymentInTheQuotedAssetOutranksOneFromTheWrongIssuer(): void
+    {
+        $storedIntent = $this->givenStoredStablecoinIntent();
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID,
+            $storedIntent->toArray()
+        );
+
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')
+            ->with(self::DESTINATION_ACCOUNT, 'testnet')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([
+            $this->givenLedgerTransaction([
+                'delivered_amount' => [
+                    'currency' => '524C555344000000000000000000000000000000',
+                    'value' => '40.00',
+                    'issuer' => 'rSomeoneElsesIssuerAccount',
+                ],
+            ], 'HASH_WRONG_ISSUER', '2000'),
+            $this->givenLedgerTransaction([
+                'delivered_amount' => [
+                    'currency' => '524C555344000000000000000000000000000000',
+                    'value' => '10.00',
+                    'issuer' => 'rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV',
+                ],
+            ], 'HASH_RIGHT_ISSUER', '1000'),
+        ]);
+        $this->expectUpsertCapturing($customFields);
+
+        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertNotNull($fulfilledIntent);
+        $this->assertSame('HASH_RIGHT_ISSUER', $fulfilledIntent->hash);
+        $this->assertSame('10', $fulfilledIntent->amountPaid['value']);
+
+        $settlementPolicy = new SettlementPolicy();
+        $this->assertFalse($settlementPolicy->isWrongAsset($fulfilledIntent));
+        $this->assertSame('30', $settlementPolicy->shortfall($fulfilledIntent));
+    }
+
+    /**
+     * The payment page and the status endpoint pass throttled: true. Inside
+     * the interval the node is asked once per receiving account, however
+     * many customers are polling; matching still runs against the table.
+     */
+    public function testAThrottledSyncAsksTheNodeOncePerWindow(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->times(3)->andReturn([]);
+
+        $service = $this->createService();
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+
+        $this->assertSame(1, $this->httpClient->ledgerRequests);
+
+        // The window has passed: the next call syncs again.
+        $this->throttleStore->advance(6);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+
+        $this->assertSame(2, $this->httpClient->ledgerRequests);
+    }
+
+    /**
+     * The scheduled task is the safety net and never throttled.
+     */
+    public function testAnUnthrottledSyncAlwaysAsksTheNode(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([]);
+
+        $service = $this->createService();
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertSame(2, $this->httpClient->ledgerRequests);
     }
 
     public function testSyncWithoutAStoredQuoteReturnsNull(): void
@@ -312,9 +445,9 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertNull($this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context));
     }
 
-    private function createService(array $ledgerTransactions = []): OrderTransactionService
+    private function createService(): OrderTransactionService
     {
-        $httpClient = new StubHttpClient(2.5, $ledgerTransactions);
+        $httpClient = $this->httpClient;
         $httpFactory = new HttpFactory();
         $logger = new NullLogger();
 
@@ -339,7 +472,9 @@ class OrderTransactionServiceTest extends TestCase
             $this->orderTransactionRepository,
             $this->givenCurrencyRepository(),
             $paymentIntentService,
-            $syncService
+            $syncService,
+            new SyncThrottle($this->throttleStore, $logger),
+            $logger
         );
     }
 

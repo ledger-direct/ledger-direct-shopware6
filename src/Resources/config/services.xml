@@ -40,6 +40,9 @@
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
             <argument type="service" id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" />
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderAccessGuard" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentRedirect" />
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
@@ -49,27 +52,24 @@
         <!-- Payment Handlers -->
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler">
             <argument type="service" id="router"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
-            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
 
             <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler">
             <argument type="service" id="router"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
-            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
 
             <tag name="shopware.payment.method"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler">
             <argument type="service" id="router"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
-            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
 
             <tag name="shopware.payment.method"/>
         </service>
@@ -91,9 +91,12 @@
         <service id="GuzzleHttp\Psr7\HttpFactory"/>
 
         <!--
-            A PSR-16 view of Shopware's object cache pool. The core caches only the
-            exchange rate, and only to survive a brief oracle outage mid-checkout;
-            it runs without a cache just as well.
+            A PSR-16 view of Shopware's object cache pool. The core keeps two things
+            in it: the exchange rate, to survive a brief oracle outage mid-checkout,
+            and the sync throttle's per-account mark, so a payment page polled every
+            few seconds by every waiting customer costs one node request per window.
+            It runs without a cache just as well — towards syncing, never towards
+            skipping.
         -->
         <service id="ledger_direct.rate_cache" class="Symfony\Component\Cache\Psr16Cache">
             <argument type="service" id="cache.object"/>
@@ -132,9 +135,19 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <!-- Once per PaymentStatus::MIN_SYNC_INTERVAL_SECONDS per receiving account and network. -->
+        <service id="Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle">
+            <argument type="service" id="ledger_direct.rate_cache"/>
+            <argument type="service" id="logger"/>
+        </service>
+
         <!-- Routes -->
         <service id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderAccessGuard"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentRedirect"/>
         </service>
 
         <!-- Services -->
@@ -143,12 +156,29 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <service id="Hardcastle\LedgerDirect\Service\OrderAccessGuard">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Service\PaymentStateService">
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Service\PaymentRedirect">
+            <argument type="service" id="router"/>
+        </service>
+
         <service id="Hardcastle\LedgerDirect\Service\OrderTransactionService">
             <argument type="service" id="order.repository" />
             <argument type="service" id="order_transaction.repository" />
             <argument type="service" id="currency.repository" />
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\SyncService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle"/>
+            <argument type="service" id="logger"/>
         </service>
 
     </services>
