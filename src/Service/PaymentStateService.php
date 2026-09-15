@@ -97,8 +97,33 @@ final class PaymentStateService
             return $orderTransaction;
         }
 
-        $fulfilledIntent = $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context, $throttled);
+        return $this->applyAndReload(
+            $orderTransaction,
+            $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context, $throttled),
+            $context
+        );
+    }
 
+    /**
+     * The same, against the local transaction table only — for the
+     * scheduled task, which has synced the receiving account once for all
+     * open orders beforehand.
+     */
+    public function matchAndApply(OrderTransactionEntity $orderTransaction, Context $context): OrderTransactionEntity
+    {
+        if (!$this->isOpen($orderTransaction)) {
+            return $orderTransaction;
+        }
+
+        return $this->applyAndReload(
+            $orderTransaction,
+            $this->orderTransactionService->matchOrderTransaction($orderTransaction, $context),
+            $context
+        );
+    }
+
+    private function applyAndReload(OrderTransactionEntity $orderTransaction, ?PaymentIntent $fulfilledIntent, Context $context): OrderTransactionEntity
+    {
         if ($fulfilledIntent === null || $this->applyState($orderTransaction, $fulfilledIntent, $context) === null) {
             return $orderTransaction;
         }

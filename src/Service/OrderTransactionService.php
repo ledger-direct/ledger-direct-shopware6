@@ -10,12 +10,14 @@ use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 /**
@@ -179,6 +181,26 @@ class OrderTransactionService
 
         $this->syncLedger($intent->destinationAccount, $intent->network, $throttled);
 
+        return $this->matchOrderTransaction($orderTransaction, $context);
+    }
+
+    /**
+     * The "match" half of syncOrderTransactionWithXrpl(): what the local
+     * transaction table holds for this order's tag, and whether it pays.
+     * The scheduled task syncs each receiving account once and then
+     * matches every open order against the table — one node request per
+     * account, not one per order.
+     *
+     * @return PaymentIntent|null as syncOrderTransactionWithXrpl()
+     */
+    public function matchOrderTransaction(OrderTransactionEntity $orderTransaction, Context $context): ?PaymentIntent
+    {
+        $intent = $this->readPaymentIntent($orderTransaction);
+
+        if ($intent === null) {
+            return null;
+        }
+
         $fulfilledIntent = $this->syncService->findFulfillmentFor($intent)?->applyTo($intent);
 
         if ($fulfilledIntent === null) {
@@ -202,7 +224,7 @@ class OrderTransactionService
      * A failed sync is logged, not thrown: the checkout must not go down
      * with the node, and matching still runs against what is stored.
      */
-    private function syncLedger(string $destinationAccount, string $network, bool $throttled): void
+    public function syncLedger(string $destinationAccount, string $network, bool $throttled): void
     {
         if ($throttled) {
             if (!$this->syncThrottle->shouldSync($network, $destinationAccount)) {
@@ -221,6 +243,26 @@ class OrderTransactionService
                 'exception' => $exception->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Every LedgerDirect order transaction that still waits for money on
+     * the ledger — what the scheduled task works through. Oldest first, so
+     * a backlog is settled in the order it was placed.
+     */
+    public function findOpenLedgerDirectTransactions(Context $context, int $limit = 500): OrderTransactionCollection
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', array_keys(self::BASE_ASSET_BY_PAYMENT_METHOD)));
+        $criteria->addFilter(new EqualsAnyFilter('stateMachineState.technicalName', PaymentStateService::OPEN_STATES));
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addSorting(new FieldSorting('createdAt'));
+        $criteria->setLimit($limit);
+
+        /** @var OrderTransactionCollection $transactions */
+        $transactions = $this->orderTransactionRepository->search($criteria, $context)->getEntities();
+
+        return $transactions;
     }
 
     /**
