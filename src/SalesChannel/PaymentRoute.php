@@ -54,7 +54,8 @@ class PaymentRoute
         if ($orderTransaction !== null) {
             $intent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
                 $orderTransaction,
-                $context->getContext()
+                $context->getContext(),
+                throttled: true
             );
 
             if ($intent !== null) {

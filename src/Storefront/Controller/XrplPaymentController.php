@@ -65,9 +65,12 @@ class XrplPaymentController extends StorefrontController
 
         $returnUrl = (string) $request->get('returnUrl');
 
+        // Synced on render so the first page after the checkout shows the
+        // current state; throttled so a reload costs no node request.
         $fulfilledIntent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
             $orderTransaction,
-            $context->getContext()
+            $context->getContext(),
+            throttled: true
         );
 
         /*

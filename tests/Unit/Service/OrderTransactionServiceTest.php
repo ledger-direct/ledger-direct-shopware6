@@ -9,8 +9,10 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Core\Port\XrplTransactionRepositoryInterface;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
+use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
+use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
@@ -56,11 +58,17 @@ class OrderTransactionServiceTest extends TestCase
 
     private XrplTransactionRepositoryInterface $transactionRepository;
 
+    private StubHttpClient $httpClient;
+
+    private InMemoryCache $throttleStore;
+
     protected function setUp(): void
     {
         $this->context = new Context(new SystemSource());
         $this->orderTransactionRepository = Mockery::mock(EntityRepository::class);
         $this->transactionRepository = Mockery::mock(XrplTransactionRepositoryInterface::class);
+        $this->httpClient = new StubHttpClient(2.5);
+        $this->throttleStore = new InMemoryCache();
     }
 
     protected function tearDown(): void
@@ -382,6 +390,52 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertSame('30', $settlementPolicy->shortfall($fulfilledIntent));
     }
 
+    /**
+     * The payment page and the status endpoint pass throttled: true. Inside
+     * the interval the node is asked once per receiving account, however
+     * many customers are polling; matching still runs against the table.
+     */
+    public function testAThrottledSyncAsksTheNodeOncePerWindow(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->times(3)->andReturn([]);
+
+        $service = $this->createService();
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+
+        $this->assertSame(1, $this->httpClient->ledgerRequests);
+
+        // The window has passed: the next call syncs again.
+        $this->throttleStore->advance(6);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+
+        $this->assertSame(2, $this->httpClient->ledgerRequests);
+    }
+
+    /**
+     * The scheduled task is the safety net and never throttled.
+     */
+    public function testAnUnthrottledSyncAlwaysAsksTheNode(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([]);
+
+        $service = $this->createService();
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertSame(2, $this->httpClient->ledgerRequests);
+    }
+
     public function testSyncWithoutAStoredQuoteReturnsNull(): void
     {
         $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID);
@@ -391,9 +445,9 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertNull($this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context));
     }
 
-    private function createService(array $ledgerTransactions = []): OrderTransactionService
+    private function createService(): OrderTransactionService
     {
-        $httpClient = new StubHttpClient(2.5, $ledgerTransactions);
+        $httpClient = $this->httpClient;
         $httpFactory = new HttpFactory();
         $logger = new NullLogger();
 
@@ -418,7 +472,9 @@ class OrderTransactionServiceTest extends TestCase
             $this->orderTransactionRepository,
             $this->givenCurrencyRepository(),
             $paymentIntentService,
-            $syncService
+            $syncService,
+            new SyncThrottle($this->throttleStore, $logger),
+            $logger
         );
     }
 

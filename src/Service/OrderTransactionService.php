@@ -6,8 +6,10 @@ use Exception;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
+use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
@@ -49,18 +51,26 @@ class OrderTransactionService
 
     private SyncService $syncService;
 
+    private SyncThrottle $syncThrottle;
+
+    private LoggerInterface $logger;
+
     public function __construct(
         EntityRepository $orderRepository,
         EntityRepository $orderTransactionRepository,
         EntityRepository $currencyRepository,
         PaymentIntentService $paymentIntentService,
-        SyncService $syncService
+        SyncService $syncService,
+        SyncThrottle $syncThrottle,
+        LoggerInterface $logger
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->currencyRepository = $currencyRepository;
         $this->paymentIntentService = $paymentIntentService;
         $this->syncService = $syncService;
+        $this->syncThrottle = $syncThrottle;
+        $this->logger = $logger;
     }
 
     /**
@@ -138,6 +148,12 @@ class OrderTransactionService
      * right one has arrived, so the page can say "wrong token". The intent
      * records the hash and ctid of the newest contributing transaction.
      *
+     * @param bool $throttled skip the node request when this receiving
+     *     account was synced within SyncThrottle's interval and match
+     *     against what is stored locally — the payment page and the status
+     *     endpoint pass true, the scheduled task never does: it is the
+     *     safety net on its own schedule
+     *
      * @return PaymentIntent|null the fulfilled intent, or null while nothing
      *     payable has arrived: no transaction on the tag yet, only ones that
      *     delivered nothing measurable (an EscrowCreate lands in the same
@@ -147,7 +163,8 @@ class OrderTransactionService
      */
     public function syncOrderTransactionWithXrpl(
         OrderTransactionEntity $orderTransaction,
-        Context $context
+        Context $context,
+        bool $throttled = false
     ): ?PaymentIntent {
         $intent = $this->readPaymentIntent($orderTransaction);
 
@@ -155,7 +172,7 @@ class OrderTransactionService
             return null;
         }
 
-        $this->syncService->syncTransactions($intent->destinationAccount, $intent->network);
+        $this->syncLedger($intent->destinationAccount, $intent->network, $throttled);
 
         $fulfilledIntent = $this->syncService->findFulfillmentFor($intent)?->applyTo($intent);
 
@@ -166,6 +183,39 @@ class OrderTransactionService
         $this->persistPaymentIntent($orderTransaction, $fulfilledIntent, $context);
 
         return $fulfilledIntent;
+    }
+
+    /**
+     * Pulls the account's transactions from the ledger into the local table.
+     *
+     * Throttled per receiving account and network, not per order: the sync
+     * fetches the whole account in one go and matching afterwards is local,
+     * so ten waiting customers inside one window cost one node request. The
+     * mark is set before the request, not after a successful one — a node
+     * that is down must not be hit harder than one that answers.
+     *
+     * A failed sync is logged, not thrown: the checkout must not go down
+     * with the node, and matching still runs against what is stored.
+     */
+    private function syncLedger(string $destinationAccount, string $network, bool $throttled): void
+    {
+        if ($throttled) {
+            if (!$this->syncThrottle->shouldSync($network, $destinationAccount)) {
+                return;
+            }
+
+            $this->syncThrottle->markSynced($network, $destinationAccount);
+        }
+
+        try {
+            $this->syncService->syncTransactions($destinationAccount, $network);
+        } catch (Exception $exception) {
+            $this->logger->error('LedgerDirect: ledger sync failed, matching against stored transactions', [
+                'destination_account' => $destinationAccount,
+                'network' => $network,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**
