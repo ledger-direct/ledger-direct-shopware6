@@ -84,6 +84,8 @@ class OrderTransactionService
         $criteria = new Criteria([$orderTransactionId]);
         $criteria->addAssociation('order');
         $criteria->addAssociation('paymentMethod');
+        // PaymentStateService decides on the loaded state; see there.
+        $criteria->addAssociation('stateMachineState');
 
         $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->getEntities()->first();
 
@@ -99,6 +101,7 @@ class OrderTransactionService
         $criteria->addAssociation('currency');
         $criteria->addAssociation('orderCustomer');
         $criteria->addAssociation('transactions');
+        $criteria->addAssociation('transactions.stateMachineState');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
         $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();

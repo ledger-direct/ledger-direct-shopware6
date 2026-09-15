@@ -2,9 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Components\PaymentHandler;
 
-use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
@@ -19,33 +18,30 @@ use Symfony\Component\Routing\RouterInterface;
  * asset an order is quoted in is decided by the payment method, not by the handler.
  *
  * pay() prepares the order transaction (destination tag, requested amount, exchange rate) and
- * redirects to the LedgerDirect payment page. finalize() reads the settlement the payment page
- * found on-chain and asks the core whether it pays for the quote: paid, partially paid, or open
- * while nothing has arrived. The decision itself - tolerance for the native asset, exact
- * issuer/currency/value for a token - is the core's {@see SettlementPolicy}, so every
- * LedgerDirect plugin calls an order paid under the same conditions.
+ * redirects to the LedgerDirect payment page. finalize() runs when the customer comes back over
+ * the returnUrl; it reads the settlement the payment page found on-chain and applies the
+ * matching state — paid, partially paid, or reopened while nothing has arrived. The status
+ * endpoint usually got there first (see {@see PaymentStateService}), so finalize() is a
+ * formality that must tolerate a state already set; the decision itself is the core's
+ * SettlementPolicy, so every LedgerDirect plugin calls an order paid under the same conditions.
  */
 // https://developer.shopware.com/docs/guides/plugins/plugins/checkout/payment/add-payment-plugin
 abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
 {
     private RouterInterface $router;
 
-    private OrderTransactionStateHandler $transactionStateHandler;
-
     private OrderTransactionService $transactionService;
 
-    private SettlementPolicy $settlementPolicy;
+    private PaymentStateService $paymentState;
 
     public function __construct(
         RouterInterface $router,
-        OrderTransactionStateHandler $orderTransactionStateHandler,
         OrderTransactionService $transactionService,
-        SettlementPolicy $settlementPolicy
+        PaymentStateService $paymentState
     ) {
         $this->router = $router;
-        $this->transactionStateHandler = $orderTransactionStateHandler;
         $this->transactionService = $transactionService;
-        $this->settlementPolicy = $settlementPolicy;
+        $this->paymentState = $paymentState;
     }
 
     public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
@@ -81,25 +77,21 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
 
     public function finalize(Request $request, PaymentTransactionStruct $transaction, Context $context): void
     {
-        $orderTransactionId = $transaction->getOrderTransactionId();
-        $orderTransaction = $this->transactionService->getOrderTransactionById($orderTransactionId, $context);
-        $intent = $orderTransaction === null ? null : $this->transactionService->readPaymentIntent($orderTransaction);
+        $orderTransaction = $this->transactionService->getOrderTransactionById($transaction->getOrderTransactionId(), $context);
+
+        if ($orderTransaction === null) {
+            throw new \RuntimeException('LedgerDirect: order transaction not found for ' . $transaction->getOrderTransactionId());
+        }
+
+        $intent = $this->transactionService->readPaymentIntent($orderTransaction);
 
         if ($intent === null || $intent->hash === null) {
-            // Nothing found on the ledger yet: the transaction stays open.
-            $this->transactionStateHandler->reopen($orderTransactionId, $context);
+            // Nothing found on the ledger yet: back to open, if the customer was away.
+            $this->paymentState->reopenIfAway($orderTransaction, $context);
 
             return;
         }
 
-        if ($this->settlementPolicy->isSettled($intent)) {
-            $this->transactionStateHandler->paid($orderTransactionId, $context);
-
-            return;
-        }
-
-        // Less arrived than was quoted - or a token that is not the quoted one (same name, other
-        // issuer), which the core does not credit at all. Either way the order is not paid.
-        $this->transactionStateHandler->paidPartially($orderTransactionId, $context);
+        $this->paymentState->applyState($orderTransaction, $intent, $context);
     }
 }

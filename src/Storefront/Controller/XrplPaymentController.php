@@ -9,6 +9,8 @@ use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentRedirect;
+use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -30,16 +32,24 @@ class XrplPaymentController extends StorefrontController
 
     private OrderAccessGuard $orderAccessGuard;
 
+    private PaymentStateService $paymentState;
+
+    private PaymentRedirect $paymentRedirect;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
         SettlementPolicy $settlementPolicy,
-        OrderAccessGuard $orderAccessGuard
+        OrderAccessGuard $orderAccessGuard,
+        PaymentStateService $paymentState,
+        PaymentRedirect $paymentRedirect
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
         $this->settlementPolicy = $settlementPolicy;
         $this->orderAccessGuard = $orderAccessGuard;
+        $this->paymentState = $paymentState;
+        $this->paymentRedirect = $paymentRedirect;
     }
 
     /**
@@ -65,24 +75,25 @@ class XrplPaymentController extends StorefrontController
 
         $returnUrl = (string) $request->get('returnUrl');
 
-        // Synced on render so the first page after the checkout shows the
-        // current state; throttled so a reload costs no node request.
-        $fulfilledIntent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
-            $orderTransaction,
-            $context->getContext(),
-            throttled: true
-        );
-
         /*
+         * Synced on render so the first page after the checkout shows the
+         * current state; throttled so a reload costs no node request. A hit
+         * moves the transaction's state right here, as the status endpoint
+         * does.
+         *
          * Something arriving on the tag is not the same as the order being
          * paid. A payment in the right asset but from the wrong issuer, or
          * one that falls short, is recorded on the intent but does not
          * settle it — sending the customer back to the shop at that point
          * leaves them with a partially paid order and no explanation, so
-         * they stay here and the page tells them what is missing.
+         * they stay here and the page tells them what is missing. Only a
+         * transaction that is no longer open — settled, or closed by the
+         * merchant — leaves the page.
          */
-        if ($fulfilledIntent !== null && $this->settlementPolicy->isSettled($fulfilledIntent)) {
-            return new RedirectResponse($request->get('returnUrl'));
+        $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+
+        if (!$this->paymentState->isOpen($orderTransaction)) {
+            return new RedirectResponse($this->paymentRedirect->target($order, $returnUrl));
         }
 
         return match ($orderTransaction->getPaymentMethodId()) {
