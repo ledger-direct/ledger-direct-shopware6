@@ -47,9 +47,10 @@ class XrpPayment extends Plugin {
 
     checkPayment() {
         const orderId = this.checkPaymentButton.dataset.orderId
+        const deepLinkCode = this.checkPaymentButton.dataset.deepLinkCode
         this.spinner.style.display = 'inline-block'
         this.checkPaymentButton.disabled = true
-        this.client.get('/ledger-direct/payment/check/' + orderId , this.handlePaymentData.bind(this), 'application/json', true)
+        this.client.get('/ledger-direct/payment/check/' + orderId + '?deepLinkCode=' + encodeURIComponent(deepLinkCode), this.handlePaymentData.bind(this), 'application/json', true)
     }
 
     handlePaymentData(data) {

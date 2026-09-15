@@ -40,6 +40,7 @@
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
             <argument type="service" id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" />
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderAccessGuard" />
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
@@ -135,12 +136,17 @@
         <!-- Routes -->
         <service id="Hardcastle\LedgerDirect\SalesChannel\PaymentRoute" public="true">
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderAccessGuard"/>
         </service>
 
         <!-- Services -->
         <service id="Hardcastle\LedgerDirect\Service\ConfigurationService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="logger"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\Service\OrderAccessGuard">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
         </service>
 
         <service id="Hardcastle\LedgerDirect\Service\OrderTransactionService">

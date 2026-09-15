@@ -68,9 +68,12 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
 
         $this->transactionService->prepareOrderTransactionForXrpl($order, $orderTransaction, $context);
 
+        // The deepLinkCode is the order secret the payment page and the status
+        // endpoint accept instead of a login — a guest has no other way in.
         $redirectUrl = $this->router->generate('frontend.checkout.ledger-direct.payment', [
             'orderId' => $order->getId(),
             'returnUrl' => $transaction->getReturnUrl(),
+            'deepLinkCode' => $order->getDeepLinkCode(),
         ]);
 
         return new RedirectResponse($redirectUrl);

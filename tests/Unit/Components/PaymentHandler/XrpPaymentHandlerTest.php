@@ -10,6 +10,7 @@ use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
@@ -28,6 +29,8 @@ class XrpPaymentHandlerTest extends TestCase
 
     private const TX_ID = 'order-transaction-id';
 
+    private RouterInterface $router;
+
     private OrderTransactionStateHandler $stateHandler;
 
     private OrderTransactionService $transactionService;
@@ -38,11 +41,11 @@ class XrpPaymentHandlerTest extends TestCase
 
     protected function setUp(): void
     {
-        $router = Mockery::mock(RouterInterface::class);
+        $this->router = Mockery::mock(RouterInterface::class);
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new XrpPaymentHandler($router, $this->stateHandler, $this->transactionService, new SettlementPolicy());
+        $this->handler = new XrpPaymentHandler($this->router, $this->stateHandler, $this->transactionService, new SettlementPolicy());
         $this->context = new Context(new SystemSource());
     }
 
@@ -50,6 +53,45 @@ class XrpPaymentHandlerTest extends TestCase
     {
         $this->assertFalse($this->handler->supports(PaymentHandlerType::REFUND, 'payment-method-id', $this->context));
         $this->assertFalse($this->handler->supports(PaymentHandlerType::RECURRING, 'payment-method-id', $this->context));
+    }
+
+    /**
+     * The redirect carries the order's deepLinkCode: it is what lets a guest
+     * open the payment page and poll the status without a login.
+     */
+    public function testPayRedirectsToThePaymentPageWithTheOrderSecret(): void
+    {
+        $order = new OrderEntity();
+        $order->setId('order-id');
+        $order->setDeepLinkCode('the-deep-link-code');
+
+        $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
+        $orderTransaction->shouldReceive('getOrder')->andReturn($order);
+
+        $this->transactionService->shouldReceive('getOrderTransactionById')
+            ->with(self::TX_ID, $this->context)
+            ->andReturn($orderTransaction);
+        $this->transactionService->shouldReceive('prepareOrderTransactionForXrpl')
+            ->once()
+            ->with($order, $orderTransaction, $this->context);
+        $this->router->shouldReceive('generate')
+            ->once()
+            ->with('frontend.checkout.ledger-direct.payment', [
+                'orderId' => 'order-id',
+                'returnUrl' => 'https://shop.example/payment/finalize-transaction?_sw_payment_token=t',
+                'deepLinkCode' => 'the-deep-link-code',
+            ])
+            ->andReturn('/ledger-direct/payment/order-id?returnUrl=...&deepLinkCode=the-deep-link-code');
+
+        $response = $this->handler->pay(
+            new Request(),
+            new PaymentTransactionStruct(self::TX_ID, 'https://shop.example/payment/finalize-transaction?_sw_payment_token=t'),
+            $this->context,
+            null
+        );
+
+        $this->assertNotNull($response);
+        $this->assertStringContainsString('deepLinkCode=the-deep-link-code', $response->getTargetUrl());
     }
 
     public function testFinalizeMarksPaidWhenFullyPaid(): void

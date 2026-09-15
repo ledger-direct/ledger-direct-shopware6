@@ -7,6 +7,7 @@ use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -27,30 +28,39 @@ class XrplPaymentController extends StorefrontController
 
     private SettlementPolicy $settlementPolicy;
 
+    private OrderAccessGuard $orderAccessGuard;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
-        SettlementPolicy $settlementPolicy
+        SettlementPolicy $settlementPolicy,
+        OrderAccessGuard $orderAccessGuard
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
         $this->settlementPolicy = $settlementPolicy;
+        $this->orderAccessGuard = $orderAccessGuard;
     }
 
-    #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], defaults: ['_loginRequired' => true], options: ['seo' => 'false'])]
+    /**
+     * No _loginRequired: the order's deepLinkCode (or the session customer
+     * the order belongs to) authorises the request, see OrderAccessGuard.
+     * With _loginRequired a guest — who has just placed the order — was sent
+     * to a login page instead of the payment instructions.
+     */
+    #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], options: ['seo' => 'false'])]
     public function payment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
-        $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+        $order = $this->orderAccessGuard->authorisedOrder($orderId, $request, $context);
 
         if (!$order) {
-            $this->addFlash('danger', 'Die Bestellung wurde nicht gefunden.');
-            return $this->redirectToRoute('frontend.account.home.page');
+            // Same answer for "no such order" and "not yours": neither is told apart.
+            return $this->redirectToRoute('frontend.account.order.page');
         }
 
         $orderTransaction = $order->getTransactions()->first();
         if (!$orderTransaction) {
-            $this->addFlash('danger', 'Die Bestellung wurde nicht gefunden.');
-            return $this->redirectToRoute('frontend.account.home.page');
+            return $this->redirectToRoute('frontend.account.order.page');
         }
 
         $returnUrl = (string) $request->get('returnUrl');
@@ -80,10 +90,10 @@ class XrplPaymentController extends StorefrontController
         };
     }
 
-    #[Route(path: '/ledger-direct/payment/check/{orderId}', name: 'frontend.checkout.ledger-direct.check-payment', methods: ['GET', 'POST'], defaults: ['XmlHttpRequest' => true, '_loginRequired' => true])]
-    public function checkPayment(SalesChannelContext $context,  string $orderId, Request $request): Response
+    #[Route(path: '/ledger-direct/payment/check/{orderId}', name: 'frontend.checkout.ledger-direct.check-payment', methods: ['GET', 'POST'], defaults: ['XmlHttpRequest' => true])]
+    public function checkPayment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
-        return $this->paymentRoute->check($orderId, $context);
+        return $this->paymentRoute->check($orderId, $request, $context);
     }
 
     /**
@@ -160,6 +170,8 @@ class XrplPaymentController extends StorefrontController
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,
+            // Handed to the script so the status poll carries the order secret too.
+            'deepLinkCode' => (string) $order->getDeepLinkCode(),
             'showNoTransactionFoundError' => true,
             'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];

@@ -4,12 +4,14 @@ namespace Hardcastle\LedgerDirect\SalesChannel;
 
 use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
+use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use RuntimeException;
 use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(defaults: ['_routeScope' => ['store-api']])]
@@ -17,39 +19,50 @@ class PaymentRoute
 {
     private OrderTransactionService $orderTransactionService;
 
-    public function __construct(OrderTransactionService $orderTransactionService)
-    {
+    private OrderAccessGuard $orderAccessGuard;
+
+    public function __construct(
+        OrderTransactionService $orderTransactionService,
+        OrderAccessGuard $orderAccessGuard
+    ) {
         $this->orderTransactionService = $orderTransactionService;
+        $this->orderAccessGuard = $orderAccessGuard;
     }
 
+    /**
+     * Guarded by the order's deepLinkCode or the session customer, not by
+     * _loginRequired — see OrderAccessGuard. 403 for anything else, without
+     * telling whether the order exists.
+     */
     #[Route(
         path: '/store-api/ledger-direct/payment/check/{orderId}',
         name: 'store-api.ledger-direct.payment.check',
-        methods: ['GET', 'POST'],
-        defaults: ['_loginRequired' => true]
+        methods: ['GET', 'POST']
     )]
-    public function check(string $orderId, SalesChannelContext $context): PaymentRouteResponse
+    public function check(string $orderId, Request $request, SalesChannelContext $context): PaymentRouteResponse
     {
-        $order = $this->orderTransactionService->getOrderWithTransactions($orderId, $context->getContext());
+        $order = $this->orderAccessGuard->authorisedOrder($orderId, $request, $context);
+
+        if ($order === null) {
+            throw CartException::insufficientPermission();
+        }
 
         $response = new ArrayStruct(['success' => false]);
 
-        if ($order) {
-            $orderTransaction = $order->getTransactions()->first();
+        $orderTransaction = $order->getTransactions()->first();
 
-            if ($orderTransaction !== null) {
-                $intent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
-                    $orderTransaction,
-                    $context->getContext()
-                );
+        if ($orderTransaction !== null) {
+            $intent = $this->orderTransactionService->syncOrderTransactionWithXrpl(
+                $orderTransaction,
+                $context->getContext()
+            );
 
-                if ($intent !== null) {
-                    $response = new ArrayStruct([
-                        'success' => true,
-                        'hash' => $intent->hash,
-                        'ctid' => $intent->ctid,
-                    ]);
-                }
+            if ($intent !== null) {
+                $response = new ArrayStruct([
+                    'success' => true,
+                    'hash' => $intent->hash,
+                    'ctid' => $intent->ctid,
+                ]);
             }
         }
 
