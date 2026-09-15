@@ -54,6 +54,29 @@ To test the plugin, you can configure it to use the XRP Ledger Testnet. This all
 3. Use a test XRP Ledger account to make test payments.
 4. You can create test accounts from https://xrpl.org/xrp-testnet-faucet.html for XRP or https://tryrlusd.com/ for RLUSD.
 
+## Payment page
+
+After the checkout the customer is sent to the LedgerDirect payment page, which shows the amount, the receiving
+account and the destination tag. The page is reachable by the order's link code (the same one Shopware uses for guest
+order links), so guest orders work and the link from the confirmation mail keeps working without a login.
+
+The page shows one of five states and polls the shop every eight seconds:
+
+| State | Meaning |
+|---|---|
+| waiting | Nothing has arrived and the quoted amount is still valid — a countdown shows for how long |
+| expired | Nothing has arrived and the quote has passed — a button fetches an updated amount, account and tag stay the same |
+| partial | Something arrived in the quoted asset, but not enough — the page says what arrived and what is still due; a second payment adds up |
+| wrong_asset | Something arrived, but in another token or from another issuer — nothing is credited, the full amount is still due |
+| settled | Paid — the customer is sent on to the order confirmation |
+
+The transaction state in the administration follows the ledger: `Paid partially` as soon as something arrives that does
+not settle the order, `Paid` as soon as it does — whether or not the customer is still looking at the page.
+
+The status endpoint (`/store-api/ledger-direct/payment/check/{orderId}?deepLinkCode=…`) returns the same payload as
+every other LedgerDirect plugin, plus a `redirect` URL once the order no longer waits for payment. The ledger is synced
+at most once every five seconds per receiving account.
+
 ## External Services
 LedgerDirect uses public APIs from Coingecko, Binance, and Kraken to retrieve current cryptocurrency exchange rates. These rates are needed to correctly calculate and display payments.
 
