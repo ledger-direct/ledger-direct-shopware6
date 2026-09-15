@@ -299,8 +299,87 @@ class OrderTransactionServiceTest extends TestCase
 
         $settlementPolicy = new SettlementPolicy();
         $this->assertFalse($settlementPolicy->isSettled($fulfilledIntent));
+        $this->assertTrue($settlementPolicy->isWrongAsset($fulfilledIntent));
+        // The delivered amount stays visible, so the page can name the wrong token.
+        $this->assertSame('rSomeoneElsesIssuerAccount', $fulfilledIntent->amountPaid['issuer']);
+        $this->assertSame('40.00', $fulfilledIntent->amountPaid['value']);
         // '40', not '40.00': the core reports a plain decimal without trailing zeros.
         $this->assertSame('40', $settlementPolicy->shortfall($fulfilledIntent), 'the full amount is still due');
+    }
+
+    /**
+     * Two payments in the quoted asset add up — the customer who sends the
+     * shortfall after a first, short payment settles the order. The intent
+     * records the newest contributing transaction.
+     */
+    public function testTwoPartialPaymentsInTheQuotedAssetAddUp(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')
+            ->with(self::DESTINATION_ACCOUNT, 'testnet')->andReturn(null);
+        // Newest first, as the port promises.
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([
+            $this->givenLedgerTransaction(['delivered_amount' => '15000000'], 'HASH_TOP_UP', '2000'),
+            $this->givenLedgerTransaction(['delivered_amount' => '25000000'], 'HASH_FIRST', '1000'),
+        ]);
+        $this->expectUpsertCapturing($customFields);
+
+        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertNotNull($fulfilledIntent);
+        $this->assertSame(40.0, $fulfilledIntent->amountPaid, '25 + 15 XRP');
+        $this->assertSame('HASH_TOP_UP', $fulfilledIntent->hash, 'the newest contributing transaction');
+
+        $intent = $customFields[0]['customFields'][OrderTransactionService::CUSTOM_FIELDS_KEY];
+        $this->assertSame(40.0, $intent['amount_paid']);
+    }
+
+    /**
+     * Once something in the quoted asset has arrived, only that counts: a
+     * payment from the wrong issuer on the same tag is neither added nor
+     * shown as the fulfillment any more.
+     */
+    public function testAPaymentInTheQuotedAssetOutranksOneFromTheWrongIssuer(): void
+    {
+        $storedIntent = $this->givenStoredStablecoinIntent();
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID,
+            $storedIntent->toArray()
+        );
+
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')
+            ->with(self::DESTINATION_ACCOUNT, 'testnet')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->andReturn([
+            $this->givenLedgerTransaction([
+                'delivered_amount' => [
+                    'currency' => '524C555344000000000000000000000000000000',
+                    'value' => '40.00',
+                    'issuer' => 'rSomeoneElsesIssuerAccount',
+                ],
+            ], 'HASH_WRONG_ISSUER', '2000'),
+            $this->givenLedgerTransaction([
+                'delivered_amount' => [
+                    'currency' => '524C555344000000000000000000000000000000',
+                    'value' => '10.00',
+                    'issuer' => 'rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV',
+                ],
+            ], 'HASH_RIGHT_ISSUER', '1000'),
+        ]);
+        $this->expectUpsertCapturing($customFields);
+
+        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+
+        $this->assertNotNull($fulfilledIntent);
+        $this->assertSame('HASH_RIGHT_ISSUER', $fulfilledIntent->hash);
+        $this->assertSame('10', $fulfilledIntent->amountPaid['value']);
+
+        $settlementPolicy = new SettlementPolicy();
+        $this->assertFalse($settlementPolicy->isWrongAsset($fulfilledIntent));
+        $this->assertSame('30', $settlementPolicy->shortfall($fulfilledIntent));
     }
 
     public function testSyncWithoutAStoredQuoteReturnsNull(): void

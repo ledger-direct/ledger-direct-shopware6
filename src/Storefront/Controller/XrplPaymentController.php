@@ -145,7 +145,7 @@ class XrplPaymentController extends StorefrontController
             'mode' => $mode,
             'amountPaid' => $amountPaid,
             'shortfall' => $amountPaid === null ? null : $this->settlementPolicy->shortfall($intent),
-            'wrongToken' => self::isWrongToken($intent),
+            'wrongToken' => $this->settlementPolicy->isWrongAsset($intent),
             // The one string the page asks the customer for; see AmountFormatter.
             'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
             'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
@@ -163,26 +163,5 @@ class XrplPaymentController extends StorefrontController
             'showNoTransactionFoundError' => true,
             'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];
-    }
-
-    /**
-     * Whether what arrived is the right kind of token but from the wrong
-     * issuer — the case worth naming, because the customer did pay and their
-     * wallet will show a successful transaction, yet nothing counts towards
-     * the order and the full amount is still due.
-     *
-     * A presentation decision derived from the record, not a second opinion
-     * on settlement: whether it settles stays the core's call. It is a
-     * candidate to move into the core once the other platforms want the same
-     * message.
-     */
-    private static function isWrongToken(PaymentIntent $intent): bool
-    {
-        if (!is_array($intent->amountRequested) || !is_array($intent->amountPaid)) {
-            return false;
-        }
-
-        return $intent->amountPaid['currency'] !== $intent->amountRequested['currency']
-            || $intent->amountPaid['issuer'] !== $intent->amountRequested['issuer'];
     }
 }

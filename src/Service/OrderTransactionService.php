@@ -129,12 +129,14 @@ class OrderTransactionService
     }
 
     /**
-     * Syncs the merchant's incoming XRPL transactions and, when one of them
-     * pays this order, records the settlement on the intent.
+     * Syncs the merchant's incoming XRPL transactions and, when they pay
+     * this order, records the settlement on the intent.
      *
-     * Which candidate on the tag that is — a tag can carry a stray payment,
-     * a non-payment, or two attempts — is decided by the core, by asset
-     * class and newest first.
+     * What pays is the core's decision: every payment in the quoted asset on
+     * the tag counts and they add up, so a top-up of a shortfall settles; a
+     * payment in another asset is the fulfillment only while nothing in the
+     * right one has arrived, so the page can say "wrong token". The intent
+     * records the hash and ctid of the newest contributing transaction.
      *
      * @return PaymentIntent|null the fulfilled intent, or null while nothing
      *     payable has arrived: no transaction on the tag yet, only ones that
@@ -155,23 +157,11 @@ class OrderTransactionService
 
         $this->syncService->syncTransactions($intent->destinationAccount, $intent->network);
 
-        $transaction = $this->syncService->findTransactionFor($intent);
+        $fulfilledIntent = $this->syncService->findFulfillmentFor($intent)?->applyTo($intent);
 
-        if ($transaction === null) {
+        if ($fulfilledIntent === null) {
             return null;
         }
-
-        /*
-         * No null check on the delivered amount here any more: the core only
-         * returns a candidate it has already decoded successfully and whose
-         * asset class matches the quote, so this cannot be null and cannot
-         * be the shape withFulfillment() rejects.
-         */
-        $fulfilledIntent = $intent->withFulfillment(
-            $transaction->hash,
-            $transaction->getDeliveredAmount(),
-            $transaction->ctid
-        );
 
         $this->persistPaymentIntent($orderTransaction, $fulfilledIntent, $context);
 
