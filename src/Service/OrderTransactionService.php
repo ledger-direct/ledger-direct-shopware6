@@ -102,6 +102,8 @@ class OrderTransactionService
         $criteria->addAssociation('orderCustomer');
         $criteria->addAssociation('transactions');
         $criteria->addAssociation('transactions.stateMachineState');
+        // prepareOrderTransactionForXrpl() quotes by payment method.
+        $criteria->addAssociation('transactions.paymentMethod');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
         $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();

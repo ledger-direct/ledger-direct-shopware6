@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Presentation;
 
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
+use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -45,6 +46,47 @@ class AmountFormatterTest extends TestCase
     public function testAnIssuedCurrencyIsShownByItsValue(): void
     {
         $this->assertSame('84.75', AmountFormatter::amountRequested($this->givenStablecoinIntent('84.75')));
+    }
+
+    /**
+     * The settlement notice used to print raw values; now what arrived and
+     * what is missing come out of the same place as the request, and by the
+     * same rule — the core's plain decimal, nothing rounded in the view.
+     */
+    public function testWhatArrivedAndWhatIsMissingFollowTheSameRuleAsTheRequest(): void
+    {
+        $policy = new SettlementPolicy();
+        $intent = $this->givenXrpIntent(0.83211);
+
+        $this->assertNull(AmountFormatter::amountPaid($intent));
+        $this->assertSame('0.83211', AmountFormatter::shortfall($intent, $policy), 'the whole request while nothing arrived');
+
+        $partlyPaid = $intent->withFulfillment('HASH', 0.5, 'CTID');
+
+        $this->assertSame('0.5', AmountFormatter::amountPaid($partlyPaid));
+        $this->assertSame('0.33211', AmountFormatter::shortfall($partlyPaid, $policy));
+
+        $settled = $intent->withFulfillment('HASH', 0.83211, 'CTID');
+
+        $this->assertSame('0.83211', AmountFormatter::amountPaid($settled));
+        $this->assertNull(AmountFormatter::shortfall($settled, $policy));
+    }
+
+    /**
+     * In the wrong-asset case the page names what the customer actually
+     * sent, and declares the whole request still due.
+     */
+    public function testAWrongAssetShowsTheDeliveredValueAndTheFullShortfall(): void
+    {
+        $policy = new SettlementPolicy();
+        $wrongIssuer = $this->givenStablecoinIntent('84.75')->withFulfillment('HASH', [
+            'currency' => '524C555344000000000000000000000000000000',
+            'value' => '84.75',
+            'issuer' => 'rSomeoneElse',
+        ], 'CTID');
+
+        $this->assertSame('84.75', AmountFormatter::amountPaid($wrongIssuer));
+        $this->assertSame('84.75', AmountFormatter::shortfall($wrongIssuer, $policy));
     }
 
     #[DataProvider('rates')]

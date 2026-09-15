@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Presentation;
 
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
+use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 
 /**
  * The one place amounts on the payment page are turned into strings.
@@ -36,6 +37,26 @@ final class AmountFormatter
     public static function amountRequested(PaymentIntent $intent): string
     {
         return $intent->amountRequestedValue();
+    }
+
+    /**
+     * What has arrived so far, by the same rule as the request — the core's
+     * plain decimal of the delivered amount — or null while nothing has.
+     * In the wrong-asset case this is the delivered token's value, so the
+     * page can name what the customer actually sent.
+     */
+    public static function amountPaid(PaymentIntent $intent): ?string
+    {
+        return $intent->amountPaidValue();
+    }
+
+    /**
+     * What is still due, in the requested asset, as the core states it:
+     * null once settled, the whole request while nothing counted.
+     */
+    public static function shortfall(PaymentIntent $intent, SettlementPolicy $settlementPolicy): ?string
+    {
+        return $settlementPolicy->shortfall($intent);
     }
 
     /**

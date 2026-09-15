@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
+use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
@@ -111,6 +112,45 @@ class XrplPaymentController extends StorefrontController
     }
 
     /**
+     * A new quote for an expired one — the button under the "quote expired"
+     * notice. Only while nothing has arrived: a payment on the tag, short or
+     * in the wrong asset, is matched against the quote it was made for, and
+     * a refresh would re-quote an order that is already partly paid. The
+     * destination account and tag stay the same either way
+     * (see OrderTransactionService::prepareOrderTransactionForXrpl()).
+     */
+    #[Route(path: '/ledger-direct/payment/refresh/{orderId}', name: 'frontend.checkout.ledger-direct.refresh-quote', methods: ['POST'], options: ['seo' => 'false'])]
+    public function refreshQuote(SalesChannelContext $context, string $orderId, Request $request): Response
+    {
+        $order = $this->orderAccessGuard->authorisedOrder($orderId, $request, $context);
+
+        if (!$order) {
+            return $this->redirectToRoute('frontend.account.order.page');
+        }
+
+        $backToPaymentPage = $this->redirectToRoute('frontend.checkout.ledger-direct.payment', array_filter([
+            'orderId' => $order->getId(),
+            'deepLinkCode' => (string) $order->getDeepLinkCode(),
+            'returnUrl' => (string) $request->get('returnUrl'),
+        ]));
+
+        $orderTransaction = $order->getTransactions()->first();
+        $intent = $orderTransaction === null ? null : $this->orderTransactionService->readPaymentIntent($orderTransaction);
+
+        if ($intent === null || !$this->paymentState->isOpen($orderTransaction)) {
+            return $backToPaymentPage;
+        }
+
+        if (PaymentStatus::fromIntent($intent, $this->settlementPolicy)->state() !== PaymentStatus::EXPIRED) {
+            return $backToPaymentPage;
+        }
+
+        $this->orderTransactionService->prepareOrderTransactionForXrpl($order, $orderTransaction, $context->getContext());
+
+        return $backToPaymentPage;
+    }
+
+    /**
      * Renders the payment page for XRP payments.
      */
     private function renderXrpPaymentPage(
@@ -163,14 +203,29 @@ class XrplPaymentController extends StorefrontController
         string $mode,
         string $returnUrl,
     ): array {
-        $amountPaid = $intent->amountPaidValue();
+        $status = PaymentStatus::fromIntent($intent, $this->settlementPolicy);
+        $deepLinkCode = (string) $order->getDeepLinkCode();
+
+        $routeParameters = array_filter([
+            'orderId' => $order->getId(),
+            'deepLinkCode' => $deepLinkCode,
+            'returnUrl' => $returnUrl,
+        ]);
 
         return [
             'mode' => $mode,
-            'amountPaid' => $amountPaid,
-            'shortfall' => $amountPaid === null ? null : $this->settlementPolicy->shortfall($intent),
+            /*
+             * The five-state payment status (INVARIANTS.md, "Payment status"),
+             * rendered server-side: one block per state, the script only
+             * switches them and fills in two numbers from the poll.
+             */
+            'state' => $status->state(),
+            'secondsLeft' => $status->secondsLeft,
+            'hasExpiry' => $intent->expiry !== null,
+            // Every amount on the page comes out of AmountFormatter; nothing is rounded in the view.
+            'amountPaidDisplay' => AmountFormatter::amountPaid($intent),
+            'shortfallDisplay' => AmountFormatter::shortfall($intent, $this->settlementPolicy),
             'wrongToken' => $this->settlementPolicy->isWrongAsset($intent),
-            // The one string the page asks the customer for; see AmountFormatter.
             'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
             'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
             'orderId' => $order->getId(),
@@ -184,9 +239,9 @@ class XrplPaymentController extends StorefrontController
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,
-            // Handed to the script so the status poll carries the order secret too.
-            'deepLinkCode' => (string) $order->getDeepLinkCode(),
-            'showNoTransactionFoundError' => true,
+            'deepLinkCode' => $deepLinkCode,
+            'pollUrl' => $this->generateUrl('frontend.checkout.ledger-direct.check-payment', $routeParameters),
+            'refreshUrl' => $this->generateUrl('frontend.checkout.ledger-direct.refresh-quote', ['orderId' => $order->getId()]),
             'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];
     }
