@@ -29,6 +29,23 @@
             <tag name="console.command"/>
         </service>
 
+        <!--
+            The safety net: settles every open LedgerDirect order from the ledger
+            on a schedule, whether or not anyone is looking at a payment page.
+        -->
+        <service id="Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTask">
+            <tag name="shopware.scheduled.task"/>
+        </service>
+
+        <service id="Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTaskHandler">
+            <argument type="service" id="scheduled_task.repository"/>
+            <argument type="service" id="logger"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
+
+            <tag name="messenger.message_handler"/>
+        </service>
+
         <!-- Controllers -->
         <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrpPriceAggregatorController" public="true">
             <call method="setContainer">
