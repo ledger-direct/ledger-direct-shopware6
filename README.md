@@ -56,9 +56,12 @@ To test the plugin, you can configure it to use the XRP Ledger Testnet. This all
 
 ## Payment page
 
-After the checkout the customer is sent to the LedgerDirect payment page, which shows the amount, the receiving
-account and the destination tag. The page is reachable by the order's link code (the same one Shopware uses for guest
-order links), so guest orders work and the link from the confirmation mail keeps working without a login.
+After the checkout the customer is sent to the LedgerDirect payment page: the amount to send, large and with a copy
+button; the receiving address; the destination tag, marked as required; for tokens the issuer; one QR code with
+address and tag (the amount joins once the wallet scan test is done); a countdown for the quoted amount; and, on a
+desktop, the browser wallets XRPL Connect detects (Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu, Xyra; Xaman and
+WalletConnect once their public identifier is configured). The page is reachable by the order's link code (the same
+one Shopware uses for guest order links), so guest orders work and the link keeps working without a login.
 
 The page shows one of five states and polls the shop every eight seconds:
 
@@ -66,16 +69,24 @@ The page shows one of five states and polls the shop every eight seconds:
 |---|---|
 | waiting | Nothing has arrived and the quoted amount is still valid — a countdown shows for how long |
 | expired | Nothing has arrived and the quote has passed — a button fetches an updated amount, account and tag stay the same |
-| partial | Something arrived in the quoted asset, but not enough — the page says what arrived and what is still due; a second payment adds up |
+| partial | Something arrived in the quoted asset, but not enough — the outstanding amount becomes the main amount; a second payment adds up |
 | wrong_asset | Something arrived, but in another token or from another issuer — nothing is credited, the full amount is still due |
-| settled | Paid — the customer is sent on to the order confirmation |
+| settled | Paid — a confirmation, then the customer is sent on to the order |
 
-The transaction state in the administration follows the ledger: `Paid partially` as soon as something arrives that does
-not settle the order, `Paid` as soon as it does — whether or not the customer is still looking at the page.
+**Configuration card "Payment page":** the logo (the shop's theme logo, a picture from the media library, or a
+monogram of the shop name), one accent colour for buttons and highlights (a colour too light for white text falls
+back to the default), and the optional Xaman API key and WalletConnect project ID — public browser identifiers,
+which you should restrict to your shop domain in the respective dashboard.
+
+The transaction state in the administration follows the ledger: `Paid partially` as soon as something arrives that
+does not settle the order, `Paid` as soon as it does — whether or not the customer is still looking at the page.
 
 The status endpoint (`/store-api/ledger-direct/payment/check/{orderId}?deepLinkCode=…`) returns the same payload as
-every other LedgerDirect plugin, plus a `redirect` URL once the order no longer waits for payment. The ledger is synced
-at most once every five seconds per receiving account.
+every other LedgerDirect plugin, plus a `redirect` URL once the order no longer waits for payment. The ledger is
+synced at most once every five seconds per receiving account.
+
+The page's behaviour and design live in `src/Resources/app/storefront/src/payment-ui/`, free of any Shopware
+import, with the markup contract in its README — the same files will serve the other LedgerDirect plugins.
 
 ## External Services
 LedgerDirect uses public APIs from Coingecko, Binance, and Kraken to retrieve current cryptocurrency exchange rates. These rates are needed to correctly calculate and display payments.

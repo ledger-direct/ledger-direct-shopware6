@@ -1,3 +1,28 @@
+# 1.4.0
+- The payment page is redesigned: the amount to send is the largest thing on the page and has a
+  copy button, the fiat amount sits below it; the receiving address, the destination tag (marked
+  as required, with its hint right there) and, for tokens, the issuer are numbered fields with
+  copy buttons; a countdown in minutes and seconds with a bar; one column on phones; dark mode
+  follows the system; no web font is loaded
+- One QR code with the receiving address and the destination tag (and, for tokens, currency and
+  issuer) — typing the tag was the biggest source of lost payments. The amount will join once
+  the wallet scan test has confirmed how it is read
+- Browser wallets over XRPL Connect: Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu and Xyra
+  are offered when detected; Xaman and WalletConnect when the merchant enters their public
+  identifier in the new "Payment page" configuration card. The wallet library is loaded only
+  when the wallet list is opened
+- New configuration card "Payment page": shop logo, a picture from the media library or a
+  monogram; an accent colour (a colour too light for white text falls back to the default)
+- A partial payment turns the outstanding amount into the main amount with a progress bar; an
+  expired amount is struck through and cannot be copied; a settled payment shows a confirmation
+  before the redirect
+- Fixed: the issuer was never shown although the wrong-token notice referred to it; the
+  destination-tag hint said "XRP" for every asset; the exchange rate read backwards
+- The check button works without JavaScript
+- The checkout's payment-method icons now exist; the stray "change payment method" link is gone
+- The page's behaviour and design are framework-free (payment-ui/) and will be shared with the
+  other LedgerDirect plugins
+
 # 1.3.0
 - Guest orders can be paid: the payment page and the payment-status endpoint no longer require a
   login. The order's own link code — the one behind the guest order link in the confirmation mail —
