@@ -161,7 +161,7 @@
                                 <details class="ld-qr" data-ld-qr-details open>
                                     <summary><span class="ld-qr-sum-open">{{ "LedgerDirect.paymentPage.qrOpen"|trans }}</span><span class="ld-qr-sum-closed">{{ "LedgerDirect.paymentPage.qrClosed"|trans }}</span></summary>
                                     <div class="ld-qr-box{% if state == 'expired' %} is-void{% endif %}" data-ld-qr-box>
-                                        <div data-ld-qr></div>
+                                        <div data-ld-qr data-ld-qr-label="{{ "LedgerDirect.paymentPage.qrLabel"|trans|striptags }}"></div>
                                         <div class="ld-qr-void" data-ld-qr-void {% if state != 'expired' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.qrVoid"|trans }}</div>
                                     </div>
                                     <p class="ld-qr-caption">{{ "LedgerDirect.paymentPage.qrCaption"|trans }}</p>

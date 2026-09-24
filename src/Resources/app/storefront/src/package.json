@@ -8,6 +8,7 @@
     "@crossmarkio/sdk": "^0.4.0",
     "@gemwallet/api": "^3.7.0",
     "bignumber.js": "^9.3.1",
-    "kjua": "^0.10.0"
+    "kjua": "^0.10.0",
+    "qrcode-generator": "^2.0.4"
   }
 }

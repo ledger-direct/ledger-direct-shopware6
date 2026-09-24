@@ -5,8 +5,10 @@ namespace Hardcastle\LedgerDirect\Storefront\Controller;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Xrpl\XrplAmount;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
+use Hardcastle\LedgerDirect\Presentation\PaymentUri;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
@@ -221,6 +223,7 @@ class XrplPaymentController extends StorefrontController
         $amountPaid = AmountFormatter::amountPaid($intent);
         $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
         $isToken = is_array($intent->amountRequested);
+        $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
 
         return [
             'mode' => $mode,
@@ -242,7 +245,7 @@ class XrplPaymentController extends StorefrontController
             'amountRequestedDisplay' => $amountRequested,
             'amountPaidDisplay' => $amountPaid,
             'shortfallDisplay' => $shortfall,
-            'amountDueDisplay' => $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested,
+            'amountDueDisplay' => $amountDue,
             'paidShare' => self::paidShare($amountPaid, $amountRequested, $status->state()),
             'wrongToken' => $this->settlementPolicy->isWrongAsset($intent),
             'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
@@ -260,8 +263,10 @@ class XrplPaymentController extends StorefrontController
             // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
             'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
             'currencyHex' => $isToken ? (string) $intent->amountRequested['currency'] : null,
-            'amountDrops' => null,
-            'paymentUri' => null,
+            // For a browser wallet: the amount in drops, converted by the core, never in the browser.
+            'amountDrops' => $isToken ? null : XrplAmount::xrpToDrops($amountDue),
+            // The payment request behind the QR code; see PaymentUri for what it carries.
+            'paymentUri' => PaymentUri::forIntent($intent, $amountDue),
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,

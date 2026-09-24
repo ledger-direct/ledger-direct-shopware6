@@ -20,6 +20,8 @@
  * the server states them.
  */
 
+import { startQr } from './qr';
+
 const POLL_INTERVAL_MS = 8000;
 const REDIRECT_DELAY_S = 5;
 
@@ -404,6 +406,7 @@ export function startPaymentPage(root) {
 
     showState(state);
     startCountdown();
+    startQr(root);
     schedulePoll();
 
     return {

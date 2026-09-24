@@ -33,6 +33,7 @@
       "qrOpen": "Mit Wallet-App scannen",
       "qrClosed": "QR-Code anzeigen ▾",
       "qrCaption": "Mit Xaman oder einer anderen XRPL-Wallet scannen. Adresse, Destination Tag und Betrag werden übernommen – bitte vor dem Senden prüfen.",
+      "qrLabel": "QR-Code mit Adresse und Destination Tag",
       "qrVoid": "Abgelaufen – bitte neuen Betrag anfordern",
       "detailTotal": "Bestellsumme",
       "detailRate": "Kurs",

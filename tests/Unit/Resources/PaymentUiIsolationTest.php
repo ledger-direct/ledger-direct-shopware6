@@ -42,10 +42,11 @@ class PaymentUiIsolationTest extends TestCase
                 );
             }
 
+            // Relative modules, or one of the framework-free libraries the page needs.
             $this->assertDoesNotMatchRegularExpression(
-                '/^\s*import\s.*from\s+[\'"](?!\.)/m',
+                '/^\s*import\s.*from\s+[\'"](?!\.|qrcode-generator|xrpl-connect)/m',
                 $source,
-                basename($file) . ' may only import relative modules'
+                basename($file) . ' may only import relative modules or an allowed library'
             );
         }
     }
