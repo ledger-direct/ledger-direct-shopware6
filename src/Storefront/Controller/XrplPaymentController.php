@@ -7,7 +7,9 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplAmount;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Presentation\AccentColor;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
+use Hardcastle\LedgerDirect\Presentation\PageLogo;
 use Hardcastle\LedgerDirect\Presentation\PaymentUri;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
@@ -42,6 +44,8 @@ class XrplPaymentController extends StorefrontController
 
     private ConfigurationService $configuration;
 
+    private PageLogo $pageLogo;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
@@ -49,7 +53,8 @@ class XrplPaymentController extends StorefrontController
         OrderAccessGuard $orderAccessGuard,
         PaymentStateService $paymentState,
         PaymentRedirect $paymentRedirect,
-        ConfigurationService $configuration
+        ConfigurationService $configuration,
+        PageLogo $pageLogo
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
@@ -58,6 +63,7 @@ class XrplPaymentController extends StorefrontController
         $this->paymentState = $paymentState;
         $this->paymentRedirect = $paymentRedirect;
         $this->configuration = $configuration;
+        $this->pageLogo = $pageLogo;
     }
 
     /**
@@ -105,9 +111,9 @@ class XrplPaymentController extends StorefrontController
         }
 
         return match ($orderTransaction->getPaymentMethodId()) {
-            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
-            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl),
-            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl),
+            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl, $context),
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl, $context),
+            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl, $context),
             default => $this->redirectToRoute('frontend.checkout.cart.page'),
         };
     }
@@ -164,6 +170,7 @@ class XrplPaymentController extends StorefrontController
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
         string $returnUrl,
+        SalesChannelContext $context,
     ): Response
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -176,7 +183,7 @@ class XrplPaymentController extends StorefrontController
 
         return $this->renderStorefront(
             '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl)
+            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl, $context)
         );
     }
 
@@ -185,6 +192,7 @@ class XrplPaymentController extends StorefrontController
         OrderTransactionEntity $orderTransaction,
         string $type,
         string $returnUrl,
+        SalesChannelContext $context,
     ): Response
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -196,7 +204,7 @@ class XrplPaymentController extends StorefrontController
 
         return $this->renderStorefront(
             '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl)
+            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl, $context)
         );
     }
 
@@ -209,7 +217,9 @@ class XrplPaymentController extends StorefrontController
         PaymentIntent $intent,
         string $mode,
         string $returnUrl,
+        SalesChannelContext $context,
     ): array {
+        $shopName = (string) ($context->getSalesChannel()->getTranslation('name') ?? $context->getSalesChannel()->getName());
         $status = PaymentStatus::fromIntent($intent, $this->settlementPolicy);
         $deepLinkCode = (string) $order->getDeepLinkCode();
 
@@ -228,6 +238,13 @@ class XrplPaymentController extends StorefrontController
         return [
             'mode' => $mode,
             'assetLabel' => strtoupper($mode),
+            // The merchant's part of the design: one accent colour and the logo, see AccentColor and PageLogo.
+            'accentColor' => AccentColor::sanitize($this->configuration->getPaymentPageAccentColor()),
+            'logo' => $this->pageLogo->forShop($shopName, $context->getContext()),
+            'shopName' => $shopName,
+            // Public browser identifiers for the wallet apps; the wallet module shows those only when set.
+            'xamanApiKey' => $this->configuration->getXamanApiKey(),
+            'walletConnectProjectId' => $this->configuration->getWalletConnectProjectId(),
             /*
              * The five-state payment status (INVARIANTS.md, "Payment status"),
              * rendered server-side: one block per state, the script only

@@ -61,6 +61,7 @@
             <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService" />
             <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentRedirect" />
             <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Presentation\PageLogo" />
 
             <call method="setContainer">
                 <argument type="service" id="service_container" />
@@ -166,6 +167,12 @@
             <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentRedirect"/>
+        </service>
+
+        <!-- Presentation -->
+        <service id="Hardcastle\LedgerDirect\Presentation\PageLogo">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService"/>
+            <argument type="service" id="media.repository"/>
         </service>
 
         <!-- Services -->

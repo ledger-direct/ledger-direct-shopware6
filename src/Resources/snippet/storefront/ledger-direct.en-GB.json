@@ -1,11 +1,5 @@
 {
   "LedgerDirect": {
-    "confirm": {
-      "payment": {
-        "changeXrpPaymentMethod": "Change XRP payment method"
-      }
-    },
-    "errors": {},
     "paymentPage": {
       "pageTitle": "Complete your payment",
       "testnetBadge": "Testnet – no real money",

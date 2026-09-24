@@ -13,7 +13,6 @@
         Markup contract: src/Resources/app/storefront/src/payment-ui/README.md.
         No arithmetic on amounts here: every amount comes out of AmountFormatter.
     #}
-    {% set shopName = context.salesChannel.translated.name %}
     {% set copyIcon %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{% endset %}
     {% set infoIcon %}<svg class="ld-notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>{% endset %}
 
@@ -26,6 +25,9 @@
          data-ld-network="{{ network }}"
          data-ld-explorer-base="{{ explorerBase }}"
          data-ld-quote-seconds="{{ quoteSeconds }}"
+         style="--ld-accent: {{ accentColor }}"
+         {% if xamanApiKey %}data-ld-xaman-key="{{ xamanApiKey }}"{% endif %}
+         {% if walletConnectProjectId %}data-ld-wc-project="{{ walletConnectProjectId }}"{% endif %}
          {% if secondsLeft is not null %}data-ld-seconds-left="{{ secondsLeft }}"{% endif %}
          {% if paymentUri %}data-ld-payment-uri="{{ paymentUri }}"{% endif %}
          {% if amountDrops %}data-ld-amount-drops="{{ amountDrops }}"{% endif %}
@@ -33,7 +35,13 @@
 
         <header class="ld-top">
             <a class="ld-shop" href="{{ path('frontend.home.page') }}">
-                <span class="ld-shop-logo" aria-hidden="true">{{ shopName|first|upper }}</span>
+                {# The logo, always as an <img> with fixed maximum size; the monogram when there is none. #}
+                {% set shopLogoUrl = logo.mode == 'shop' ? theme_config('sw-logo-desktop') : (logo.mode == 'custom' ? logo.url : null) %}
+                {% if shopLogoUrl %}
+                    <span class="ld-shop-logo ld-shop-logo--image"><img src="{{ shopLogoUrl }}" alt="" width="160" height="32"></span>
+                {% else %}
+                    <span class="ld-shop-logo" aria-hidden="true">{{ logo.monogram }}</span>
+                {% endif %}
                 <span>{{ shopName }}</span>
             </a>
             <div class="ld-top-meta">
