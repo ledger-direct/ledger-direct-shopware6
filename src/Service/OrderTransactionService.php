@@ -236,6 +236,14 @@ class OrderTransactionService
 
         try {
             $this->syncService->syncTransactions($destinationAccount, $network);
+
+            // One line per node request, at debug level: it is what shows whether the
+            // throttle holds — two status calls inside the window must leave one line.
+            $this->logger->debug('LedgerDirect: ledger synced', [
+                'destination_account' => $destinationAccount,
+                'network' => $network,
+                'throttled' => $throttled,
+            ]);
         } catch (Exception $exception) {
             $this->logger->error('LedgerDirect: ledger sync failed, matching against stored transactions', [
                 'destination_account' => $destinationAccount,
