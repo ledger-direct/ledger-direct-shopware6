@@ -99,5 +99,15 @@ composer require hardcastle/ledger-direct-core:dev-master
 
 Keep the plugin's own constraint on the released version; the shop-level override is a local concern.
 
+### A cache that survives the request
+
+The payment-status endpoint throttles ledger syncs per receiving account through `cache.object`, and
+the core caches exchange rates in the same pool. Shopware's own `dev` configuration backs that pool
+with the in-memory array adapter, so in a dev shop both are silently void: every poll is a node
+request. Set `framework.cache.app` to `cache.adapter.filesystem` (or Redis) in
+`config/packages/dev/` when you test the payment page in `APP_ENV=dev`. Production configurations
+are unaffected. Each actual sync is logged at debug level as `LedgerDirect: ledger synced`, which
+is how you see whether the throttle holds.
+
 ## License
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
