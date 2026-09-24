@@ -21,6 +21,7 @@
  */
 
 import { startQr } from './qr';
+import { startWallets } from './wallets';
 
 const POLL_INTERVAL_MS = 8000;
 const REDIRECT_DELAY_S = 5;
@@ -394,6 +395,12 @@ export function startPaymentPage(root) {
         checkForm.addEventListener('submit', checkNow);
     }
 
+    // A wallet reported a submitted transaction: ask the server right away.
+    root.addEventListener('ld:check', () => {
+        clearTimeout(pollTimer);
+        poll();
+    });
+
     const qrDetails = $('[data-ld-qr-details]');
     if (qrDetails && window.matchMedia) {
         const narrow = window.matchMedia('(max-width: 760px)');
@@ -407,6 +414,7 @@ export function startPaymentPage(root) {
     showState(state);
     startCountdown();
     startQr(root);
+    startWallets(root);
     schedulePoll();
 
     return {

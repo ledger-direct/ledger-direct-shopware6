@@ -198,6 +198,11 @@
   .ld-main { padding: .5rem .75rem 1.5rem; }
   /* Browser wallets are desktop extensions: none on a phone unless a wallet app is configured */
   .ld-page [data-ld-wallet-section]:not([data-ld-wallet-mobile]) { display: none !important; }
+  .ld-page [data-ld-wallet-desktop] { display: none !important; }
+}
+
+@media (min-width: 761px) {
+  .ld-page [data-ld-wallet-app] { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

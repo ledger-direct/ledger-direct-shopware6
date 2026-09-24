@@ -176,6 +176,40 @@
                                 </details>
                             {% endif %}
 
+                            {#
+                                Browser wallets, loaded only on click (payment-ui/wallets.js).
+                                Every sentence the module can show is rendered here.
+                            #}
+                            {% set hasWalletApp = xamanApiKey or walletConnectProjectId %}
+                            <div data-ld-wallet-section {% if hasWalletApp %}data-ld-wallet-mobile{% endif %} {% if state == 'expired' %}hidden{% endif %}>
+                                <div class="ld-or">{{ "LedgerDirect.paymentPage.walletOr"|trans }}</div>
+                                <div data-ld-wallet-desktop>
+                                    <button type="button" class="ld-btn ld-btn--secondary ld-btn--block" data-ld-wallet-toggle aria-expanded="false" aria-controls="ld-wallets">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M16 13h2M2 10h20"/></svg>
+                                        {{ "LedgerDirect.paymentPage.walletButton"|trans }}
+                                    </button>
+                                    <div class="ld-wallets" id="ld-wallets" data-ld-wallets hidden>
+                                        <p class="ld-hint" data-ld-wallet-status="loading" hidden>{{ "LedgerDirect.paymentPage.walletLoading"|trans }}</p>
+                                        <div data-ld-wallet-list></div>
+                                        <p class="ld-hint" data-ld-wallet-status="none" hidden>{{ "LedgerDirect.paymentPage.walletNone"|trans }}</p>
+                                        <p class="ld-hint" data-ld-wallet-status="hint" hidden>{{ "LedgerDirect.paymentPage.walletHint"|trans }}</p>
+                                    </div>
+                                </div>
+                                {% if hasWalletApp %}
+                                    <button type="button" class="ld-btn ld-btn--secondary ld-btn--block" data-ld-wallet-app data-ld-wallet-id="{{ xamanApiKey ? 'xaman' : 'walletconnect' }}">{{ "LedgerDirect.paymentPage.walletAppButton"|trans }}</button>
+                                {% endif %}
+                                <p class="ld-hint" data-ld-wallet-message aria-live="polite" hidden></p>
+                                <span hidden data-ld-wallet-text="found">{{ "LedgerDirect.paymentPage.walletFound"|trans }}</span>
+                                <span hidden data-ld-wallet-text="confirm">{{ "LedgerDirect.paymentPage.walletConfirm"|trans }}</span>
+                                <span hidden data-ld-wallet-text="submitted">{{ "LedgerDirect.paymentPage.walletSubmitted"|trans }}</span>
+                                <span hidden data-ld-wallet-text="error-unavailable">{{ "LedgerDirect.paymentPage.walletErrorUnavailable"|trans }}</span>
+                                <span hidden data-ld-wallet-text="error-network">{{ "LedgerDirect.paymentPage.walletErrorNetwork"|trans }}</span>
+                                <span hidden data-ld-wallet-text="error-mismatch">{{ "LedgerDirect.paymentPage.walletErrorMismatch"|trans }}</span>
+                                <span hidden data-ld-wallet-text="error-other">{{ "LedgerDirect.paymentPage.walletErrorOther"|trans }}</span>
+                                <span hidden data-ld-wallet-text="network-mainnet">{{ "LedgerDirect.paymentPage.network.mainnet"|trans }}</span>
+                                <span hidden data-ld-wallet-text="network-testnet">{{ "LedgerDirect.paymentPage.network.testnet"|trans }}</span>
+                            </div>
+
                             <dl class="ld-details">
                                 <dt>{{ "LedgerDirect.paymentPage.detailTotal"|trans }}</dt><dd>{{ total|currency }}</dd>
                                 <dt>{{ "LedgerDirect.paymentPage.detailRate"|trans }}</dt><dd>{{ "LedgerDirect.paymentPage.rateSentence"|trans({"%asset%": assetLabel, "%rate%": exchangeRateDisplay, "%currency%": currencyCode}) }}</dd>
