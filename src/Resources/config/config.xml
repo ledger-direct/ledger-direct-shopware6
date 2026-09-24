@@ -51,4 +51,68 @@
         </input-field>
     </card>
 
+    <card>
+        <title>LedgerDirect - Payment page</title>
+        <title lang="de-DE">LedgerDirect - Zahlungsseite</title>
+
+        <input-field type="single-select">
+            <name>paymentPageLogoMode</name>
+            <label>Logo on the payment page</label>
+            <label lang="de-DE">Logo auf der Zahlungsseite</label>
+            <helpText>The shop logo from the theme, a picture from the media library, or a monogram of the shop name.</helpText>
+            <helpText lang="de-DE">Das Shop-Logo aus dem Theme, ein Bild aus der Medienverwaltung oder ein Monogramm aus dem Shopnamen.</helpText>
+            <defaultValue>shop</defaultValue>
+            <options>
+                <option>
+                    <id>shop</id>
+                    <name>Shop logo (from the theme)</name>
+                    <name lang="de-DE">Shop-Logo (aus dem Theme)</name>
+                </option>
+                <option>
+                    <id>custom</id>
+                    <name>Picture from the media library</name>
+                    <name lang="de-DE">Bild aus der Medienverwaltung</name>
+                </option>
+                <option>
+                    <id>none</id>
+                    <name>No logo (monogram)</name>
+                    <name lang="de-DE">Kein Logo (Monogramm)</name>
+                </option>
+            </options>
+        </input-field>
+
+        <component name="sw-media-field">
+            <name>paymentPageLogo</name>
+            <label>Own logo</label>
+            <label lang="de-DE">Eigenes Logo</label>
+            <helpText>Only used with "Picture from the media library". Shown at most 32 px high and 160 px wide.</helpText>
+            <helpText lang="de-DE">Nur bei „Bild aus der Medienverwaltung". Wird höchstens 32 px hoch und 160 px breit angezeigt.</helpText>
+        </component>
+
+        <input-field type="colorpicker">
+            <name>paymentPageAccentColor</name>
+            <label>Accent colour</label>
+            <label lang="de-DE">Akzentfarbe</label>
+            <helpText>Buttons, the countdown bar and the destination tag frame. A colour too light for white text falls back to the default.</helpText>
+            <helpText lang="de-DE">Schaltflächen, Countdown-Balken und der Rahmen des Destination Tags. Eine Farbe mit zu wenig Kontrast zu weißer Schrift fällt auf den Standard zurück.</helpText>
+            <defaultValue>#1f5eff</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>xamanApiKey</name>
+            <label>Xaman API key (optional)</label>
+            <label lang="de-DE">Xaman-API-Key (optional)</label>
+            <helpText>A public browser identifier, not a secret. Offers "Open in wallet app" with Xaman; restrict it to your shop domain in the Xaman developer dashboard.</helpText>
+            <helpText lang="de-DE">Eine öffentliche Browser-Kennung, kein Geheimnis. Bietet „In Wallet-App öffnen" mit Xaman an; im Xaman-Entwickler-Dashboard auf die Shop-Domain beschränken.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>walletConnectProjectId</name>
+            <label>WalletConnect project ID (optional)</label>
+            <label lang="de-DE">WalletConnect-Projekt-ID (optional)</label>
+            <helpText>A public browser identifier, not a secret. Offers WalletConnect wallets; restrict it to your shop domain in the WalletConnect dashboard.</helpText>
+            <helpText lang="de-DE">Eine öffentliche Browser-Kennung, kein Geheimnis. Bietet WalletConnect-Wallets an; im WalletConnect-Dashboard auf die Shop-Domain beschränken.</helpText>
+        </input-field>
+    </card>
+
 </config>

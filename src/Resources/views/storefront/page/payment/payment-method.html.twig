@@ -1,30 +1,28 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-method.html.twig' %}
 
-{% block component_payment_method_field %}
-    {% set checked = payment.id is same as(selectedPaymentMethodId) %}
-    {% set paymentMethodIsXrp = 'XrpPaymentHandler' in payment.handlerIdentifier %}
-
-    {{ parent() }}
-{% endblock %}
-
+{#
+    The LedgerDirect payment methods carry no media logo in the database; the
+    icons ship with the plugin and are chosen by handler. Every other method
+    keeps the storefront's rendering.
+#}
 {% block component_payment_method_image %}
-    {% if paymentMethodIsXrp %}
-        {% block page_checkout_confirm_payment_current_xrp_logo %}
-            <img src="{{ asset('bundles/ledgerdirect/storefront/img/xrp_payment.svg') }}" id="ledgerdirect-xrp-logo" alt="Xrp" title="Xrp">
-        {% endblock %}
+    {% set ledgerDirectIcon = null %}
+    {% if 'XrpPaymentHandler' in payment.handlerIdentifier %}
+        {% set ledgerDirectIcon = 'xrp' %}
+    {% elseif 'RlusdPaymentHandler' in payment.handlerIdentifier %}
+        {% set ledgerDirectIcon = 'rlusd' %}
+    {% elseif 'UsdcPaymentHandler' in payment.handlerIdentifier %}
+        {% set ledgerDirectIcon = 'usdc' %}
+    {% endif %}
+
+    {% if ledgerDirectIcon %}
+        <img class="payment-method-image"
+             src="{{ asset('bundles/ledgerdirect/storefront/img/' ~ ledgerDirectIcon ~ '_payment.svg', 'asset') }}"
+             alt="{{ payment.translated.name }}"
+             title="{{ payment.translated.name }}"
+             width="40"
+             height="40">
     {% else %}
         {{ parent() }}
-    {% endif %}
-{% endblock %}
-
-{% block component_payment_method_description %}
-    {{ parent() }}
-
-    {% if paymentMethodIsXrp %}
-        <a id="lederdirect-change-xrp-payment"
-           href="#test"
-           title="{{ "LedgerDirect.confirm.payment.changeXrpPaymentMethod"|trans|striptags }}">
-            {{ "LedgerDirect.confirm.payment.changeXrpPaymentMethod"|trans|striptags }}
-        </a>
     {% endif %}
 {% endblock %}

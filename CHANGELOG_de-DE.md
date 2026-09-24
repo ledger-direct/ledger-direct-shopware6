@@ -1,3 +1,30 @@
+# 1.4.0
+- Die Zahlungsseite ist neu gestaltet: Der zu sendende Betrag ist das Größte auf der Seite und
+  hat einen Kopier-Button, der Fiat-Betrag steht darunter; Empfängeradresse, Destination Tag (als
+  Pflicht markiert, mit dem Hinweis direkt darunter) und bei Tokens der Herausgeber sind
+  nummerierte Felder mit Kopier-Buttons; Countdown in Minuten und Sekunden mit Balken; eine Spalte
+  auf dem Handy; Dunkelmodus folgt dem System; keine Webschrift wird geladen
+- Ein QR-Code mit Empfängeradresse und Destination Tag (bei Tokens auch Währung und Herausgeber) —
+  das Abtippen des Tags war die größte Fehlerquelle. Der Betrag kommt hinzu, sobald der Scan-Test
+  mit der Wallet geklärt hat, wie er gelesen wird
+- Browser-Wallets über XRPL Connect: Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu und Xyra
+  werden angeboten, wenn sie erkannt werden; Xaman und WalletConnect, wenn der Händler ihre
+  öffentliche Kennung in der neuen Konfigurationskarte „Zahlungsseite" einträgt. Die
+  Wallet-Bibliothek wird erst beim Öffnen der Wallet-Liste geladen
+- Neue Konfigurationskarte „Zahlungsseite": Shop-Logo, ein Bild aus der Medienverwaltung oder
+  ein Monogramm; eine Akzentfarbe (eine zu helle Farbe für weiße Schrift fällt auf den Standard
+  zurück)
+- Eine Teilzahlung macht den Restbetrag zum Hauptbetrag mit Fortschrittsbalken; ein abgelaufener
+  Betrag ist durchgestrichen und nicht kopierbar; eine eingegangene Zahlung zeigt eine
+  Bestätigung vor der Weiterleitung
+- Behoben: Der Herausgeber wurde nie angezeigt, obwohl der Hinweis zum falschen Token darauf
+  verwies; der Destination-Tag-Hinweis sagte bei jedem Asset „XRP"; der Kurs stand verkehrt herum
+- Der Prüfen-Button funktioniert ohne JavaScript
+- Die Zahlungsart-Icons im Checkout existieren jetzt; der verirrte Link „Zahlungsart ändern" ist
+  weg
+- Verhalten und Design der Seite sind frameworkfrei (payment-ui/) und werden mit den anderen
+  LedgerDirect-Plugins geteilt
+
 # 1.3.0
 - Gastbestellungen können bezahlt werden: Zahlungsseite und Zahlungsstatus-Endpunkt verlangen
   keinen Login mehr. Der Link-Code der Bestellung — derselbe wie hinter dem Gast-Bestelllink in der
