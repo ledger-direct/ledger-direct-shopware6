@@ -8,6 +8,7 @@ use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
@@ -37,13 +38,16 @@ class XrplPaymentController extends StorefrontController
 
     private PaymentRedirect $paymentRedirect;
 
+    private ConfigurationService $configuration;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
         SettlementPolicy $settlementPolicy,
         OrderAccessGuard $orderAccessGuard,
         PaymentStateService $paymentState,
-        PaymentRedirect $paymentRedirect
+        PaymentRedirect $paymentRedirect,
+        ConfigurationService $configuration
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
@@ -51,6 +55,7 @@ class XrplPaymentController extends StorefrontController
         $this->orderAccessGuard = $orderAccessGuard;
         $this->paymentState = $paymentState;
         $this->paymentRedirect = $paymentRedirect;
+        $this->configuration = $configuration;
     }
 
     /**
@@ -212,21 +217,34 @@ class XrplPaymentController extends StorefrontController
             'returnUrl' => $returnUrl,
         ]);
 
+        $amountRequested = AmountFormatter::amountRequested($intent);
+        $amountPaid = AmountFormatter::amountPaid($intent);
+        $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
+        $isToken = is_array($intent->amountRequested);
+
         return [
             'mode' => $mode,
+            'assetLabel' => strtoupper($mode),
             /*
              * The five-state payment status (INVARIANTS.md, "Payment status"),
              * rendered server-side: one block per state, the script only
-             * switches them and fills in two numbers from the poll.
+             * switches them and fills in numbers from the poll.
              */
             'state' => $status->state(),
             'secondsLeft' => $status->secondsLeft,
             'hasExpiry' => $intent->expiry !== null,
-            // Every amount on the page comes out of AmountFormatter; nothing is rounded in the view.
-            'amountPaidDisplay' => AmountFormatter::amountPaid($intent),
-            'shortfallDisplay' => AmountFormatter::shortfall($intent, $this->settlementPolicy),
+            'quoteSeconds' => $this->configuration->getQuoteExpirySeconds(),
+            /*
+             * Every amount on the page comes out of AmountFormatter; nothing
+             * is rounded in the view. The amount to send is the shortfall
+             * while a partial payment is in, the request otherwise.
+             */
+            'amountRequestedDisplay' => $amountRequested,
+            'amountPaidDisplay' => $amountPaid,
+            'shortfallDisplay' => $shortfall,
+            'amountDueDisplay' => $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested,
+            'paidShare' => self::paidShare($amountPaid, $amountRequested, $status->state()),
             'wrongToken' => $this->settlementPolicy->isWrongAsset($intent),
-            'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
             'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
@@ -234,15 +252,37 @@ class XrplPaymentController extends StorefrontController
             'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'network' => $intent->network,
+            'explorerBase' => $intent->network === 'mainnet'
+                ? 'https://livenet.xrpl.org/transactions/'
+                : 'https://testnet.xrpl.org/transactions/',
             'destinationAccount' => $intent->destinationAccount,
             'destinationTag' => $intent->destinationTag,
+            // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
+            'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
+            'currencyHex' => $isToken ? (string) $intent->amountRequested['currency'] : null,
+            'amountDrops' => null,
+            'paymentUri' => null,
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,
             'deepLinkCode' => $deepLinkCode,
+            'pageUrl' => $this->generateUrl('frontend.checkout.ledger-direct.payment', ['orderId' => $order->getId()]),
             'pollUrl' => $this->generateUrl('frontend.checkout.ledger-direct.check-payment', $routeParameters),
             'refreshUrl' => $this->generateUrl('frontend.checkout.ledger-direct.refresh-quote', ['orderId' => $order->getId()]),
-            'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];
+    }
+
+    /**
+     * The width of the partial-payment progress bar, in whole percent. A
+     * visual only — never shown as a number, and the only arithmetic on
+     * this page that is not the core's.
+     */
+    private static function paidShare(?string $paid, string $requested, string $state): int
+    {
+        if ($state !== PaymentStatus::PARTIAL || $paid === null || !is_numeric($paid) || !is_numeric($requested) || (float) $requested <= 0.0) {
+            return 0;
+        }
+
+        return (int) max(0, min(100, round(((float) $paid / (float) $requested) * 100)));
     }
 }

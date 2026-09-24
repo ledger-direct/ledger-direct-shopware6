@@ -3,210 +3,216 @@
 {% block base_body_classes %}{{ parent() }} ld-body{% endblock %}
 
 {% block base_body_inner %}
-
-    {% set basicConfig = config('core.basicInformation') %}
-    {% set assetLabel = mode|upper %}
-
-    {% if paymentPageTitle %}
-        <div class="ld-header">
-            <h2>{{ paymentPageTitle }}</h2>
-        </div>
-    {% endif %}
-
     {#
-        One block per payment state (waiting, expired, partial, wrong_asset),
-        all rendered, the server decides which starts visible. The script only
-        switches blocks and fills in numbers; every sentence a customer reads
-        lives here and in the snippet files, nowhere else. A settled order
-        never renders this page — the controller redirects it.
+        The LedgerDirect payment page. Every sentence a customer reads is here or
+        in the snippets; one block per payment state, all rendered, the server
+        decides which starts visible. The script (payment-ui/payment-page.js)
+        only switches blocks, inserts numbers and polls. A settled order never
+        renders this page — the controller redirects it.
+
+        Markup contract: src/Resources/app/storefront/src/payment-ui/README.md.
+        No arithmetic on amounts here: every amount comes out of AmountFormatter.
     #}
-    <div class="ld-container"
+    {% set shopName = context.salesChannel.translated.name %}
+    {% set copyIcon %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{% endset %}
+    {% set infoIcon %}<svg class="ld-notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>{% endset %}
+
+    <div class="ld-page"
+         data-ld-page="true"
          data-xrp-payment-page="true"
          data-ld-state="{{ state }}"
          data-ld-poll-url="{{ pollUrl }}"
-         {% if secondsLeft is not null %}data-ld-seconds-left="{{ secondsLeft }}"{% endif %}>
-        <div class="ld-content">
+         data-ld-asset="{{ assetLabel }}"
+         data-ld-network="{{ network }}"
+         data-ld-explorer-base="{{ explorerBase }}"
+         data-ld-quote-seconds="{{ quoteSeconds }}"
+         {% if secondsLeft is not null %}data-ld-seconds-left="{{ secondsLeft }}"{% endif %}
+         {% if paymentUri %}data-ld-payment-uri="{{ paymentUri }}"{% endif %}
+         {% if amountDrops %}data-ld-amount-drops="{{ amountDrops }}"{% endif %}
+         {% if currencyHex %}data-ld-currency="{{ currencyHex }}" data-ld-issuer="{{ issuer }}"{% endif %}>
 
+        <header class="ld-top">
+            <a class="ld-shop" href="{{ path('frontend.home.page') }}">
+                <span class="ld-shop-logo" aria-hidden="true">{{ shopName|first|upper }}</span>
+                <span>{{ shopName }}</span>
+            </a>
+            <div class="ld-top-meta">
+                {% if network == 'testnet' %}
+                    <span class="ld-badge ld-badge--testnet">{{ "LedgerDirect.paymentPage.testnetBadge"|trans }}</span><br>
+                {% endif %}
+                {{ "LedgerDirect.paymentPage.orderLabel"|trans }} <strong>{{ orderNumber }}</strong>
+            </div>
+        </header>
+
+        <main class="ld-main">
             <div class="ld-card">
 
-                <div class="ld-card-left">
-                    {% if mode == 'xrp' %}
-                        <p>{{ "LedgerDirect.paymentPage.sendXrpMessage"|trans({"%amount%": amountRequestedDisplay})|raw }}</p>
-                        {# Read by the wallet integrations; same string the customer is shown. #}
-                        <input id="xrp-amount"
-                               type="text"
-                               name="xrp-amount"
-                               value="{{ amountRequestedDisplay }}"
-                               readonly
-                               style="display: none;"
-                        />
-                    {% elseif mode == 'rlusd' || mode == 'usdc' %}
-                        <p>{{ "LedgerDirect.paymentPage.sendTokenMessage"|trans({"%amount%": amountRequestedDisplay, "%tokenName%": assetLabel})|raw}}</p>
-                        <input id="token-amount"
-                               type="text"
-                               name="token-amount"
-                               value="{{ amountRequestedDisplay }}"
-                               readonly
-                               style="display: none;"
-                        />
-                    {% endif %}
+                <div data-ld-open>
+                    <div class="ld-grid">
+                        <section class="ld-col" aria-labelledby="ld-heading">
+                            <h1 id="ld-heading" class="ld-sr">{{ "LedgerDirect.paymentPage.pageTitle"|trans }}</h1>
 
-                    <div class="ld-payment-info">
-                    <span>
-                        {{ "LedgerDirect.paymentPage.destinationAccountLabel"|trans }}
-                        {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/wallet_svg.html.twig' with {
-                            class: 'inline-svg',
-                            height:'16',
-                            width:'16',
-                            viewBox: '0 0 24 24'
-                        } %}
-                    </span>
-                        <div class="ld-payment-info-text">
-                            <div id="destination-account" class="" data-value="{{ destinationAccount }}">
-                                {{ destinationAccount }}
-                            </div>
-                            <div class="ld-payment-info-functions">
-                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/copy_svg.html.twig' with { class: 'action-svg' } %}
-                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/qr_svg.html.twig' with { class: 'action-svg' } %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="ld-payment-info">
-                    <span>
-                        {{ "LedgerDirect.paymentPage.destinationTagLabel"|trans }}
-                        {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/tag_svg.html.twig' with {
-                            class: 'inline-svg',
-                            height:'16',
-                            width:'16',
-                            viewBox: '0 0 24 24'
-                        } %}
-                    </span>
-                        <div class="ld-payment-info-text">
-                            <div id="destination-tag" class="" data-value="{{ destinationTag }}">
-                                {{ destinationTag }}
-                            </div>
-                            <div class="ld-payment-info-functions">
-                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/copy_svg.html.twig' with { class: 'action-svg' } %}
-                                {% sw_include '@LedgerDirect/storefront/ledger-direct/svg/qr_svg.html.twig' with { class: 'action-svg' } %}
-                            </div>
-                        </div>
-                    </div>
-
-                    {#
-                        Something arrived but the order is not paid. Neutral tone
-                        on purpose: the customer did what their wallet told them;
-                        the page explains, it does not alarm. The markup enclosing
-                        the numbers is passed in here, so the translations carry
-                        none of it and the script can find the numbers to update.
-                    #}
-                    <div class="ld-warning" data-ld-partial {% if state != 'partial' %}hidden{% endif %}>
-                        <div role="alert" class="alert alert-info alert-has-icon">
-                            <div class="alert-content-container">
-                                <div class="alert-content">
-                                    {{ "LedgerDirect.paymentPage.partialPaymentNotice"|trans({
-                                        "%paid%": '<strong data-ld-paid>' ~ (amountPaidDisplay ?? '') ~ '</strong> ' ~ assetLabel,
-                                        "%shortfall%": '<strong data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</strong> ' ~ assetLabel
-                                    })|raw }}
+                            {# Something arrived but the order is not paid. Neutral tone on purpose. #}
+                            <div class="ld-notice ld-notice--info" data-ld-block="partial" role="status" {% if state != 'partial' %}hidden{% endif %}>
+                                {{ infoIcon }}
+                                <div>
+                                    <p>{{ "LedgerDirect.paymentPage.partialArrived"|trans({
+                                        "%paid%": '<strong><span data-ld-paid>' ~ (amountPaidDisplay ?? '') ~ '</span> ' ~ assetLabel ~ '</strong>',
+                                        "%shortfall%": '<strong><span data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</span> ' ~ assetLabel ~ '</strong>'
+                                    })|raw }}</p>
+                                    <div class="ld-progress" aria-hidden="true"><span data-ld-progress style="width: {{ paidShare }}%"></span></div>
+                                    <p>{{ "LedgerDirect.paymentPage.partialSendRest"|trans }}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="ld-warning" data-ld-wrong-asset {% if state != 'wrong_asset' %}hidden{% endif %}>
-                        <div role="alert" class="alert alert-info alert-has-icon">
-                            <div class="alert-content-container">
-                                <div class="alert-content">
-                                    {{ "LedgerDirect.paymentPage.wrongTokenNotice"|trans({
+                            <div class="ld-notice ld-notice--info" data-ld-block="wrong_asset" role="status" {% if state != 'wrong_asset' %}hidden{% endif %}>
+                                {{ infoIcon }}
+                                <div>
+                                    <p>{{ "LedgerDirect.paymentPage.wrongAssetArrived"|trans({
                                         "%paid%": '<strong data-ld-paid>' ~ (amountPaidDisplay ?? '') ~ '</strong>',
-                                        "%shortfall%": '<strong data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</strong>',
-                                        "%tokenName%": assetLabel
-                                    })|raw }}
+                                        "%asset%": '<strong>' ~ assetLabel ~ '</strong>'
+                                    })|raw }}</p>
+                                    <p>{{ "LedgerDirect.paymentPage.wrongAssetSend"|trans({
+                                        "%shortfall%": '<strong><span data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</span> ' ~ assetLabel ~ '</strong>'
+                                    })|raw }}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="ld-warning">
-                        <div role="alert" class="alert alert-warning alert-has-icon">
-                            <div class="alert-content-container">
-                                <div class="alert-content">
-                                    {{ "LedgerDirect.paymentPage.destinationTagWarning"|trans }}
+                            <div class="ld-notice ld-notice--warn" data-ld-block="expired" role="status" {% if state != 'expired' %}hidden{% endif %}>
+                                <svg class="ld-notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                                <div>
+                                    <p><strong>{{ "LedgerDirect.paymentPage.expiredTitle"|trans }}</strong> {{ "LedgerDirect.paymentPage.expiredRate"|trans }}</p>
+                                    <p>{{ "LedgerDirect.paymentPage.expiredAlreadySent"|trans }}</p>
+                                    <form method="post" action="{{ refreshUrl }}">
+                                        <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
+                                        <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
+                                        <button type="submit" class="ld-btn ld-btn--primary">{{ "LedgerDirect.paymentPage.refreshQuoteButton"|trans }}</button>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {% if hasExpiry %}
-                        {#
-                            Both blocks are always rendered so the countdown can
-                            swap them without a reload; the server decides which
-                            one starts visible. Neither shows while a payment has
-                            arrived: the state blocks above take over, and a
-                            refresh would re-quote an order that is already
-                            partly paid.
-                        #}
-                        <p class="ld-quote-validity" data-ld-live {% if state != 'waiting' %}hidden{% endif %}>
-                            {{ "LedgerDirect.paymentPage.quoteValidFor"|trans }}
-                            <strong data-ld-countdown>{{ secondsLeft ?? 0 }}</strong>
-                        </p>
+                            <p class="ld-eyebrow" data-ld-amount-label>
+                                <span data-ld-label="due" {% if state == 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.amountLabel"|trans }}</span>
+                                <span data-ld-label="remaining" {% if state != 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.amountLabelRemaining"|trans }}</span>
+                            </p>
+                            <div class="ld-amount">
+                                <span class="ld-amount-value" data-ld-amount>{{ amountDueDisplay }}</span>
+                                <span class="ld-amount-asset">{{ assetLabel }}</span>
+                                <button type="button" class="ld-copy" data-copy="amount" aria-label="{{ "LedgerDirect.paymentPage.copyAmount"|trans|striptags }}">
+                                    {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
+                                </button>
+                            </div>
+                            {# Read by the end-to-end harness and the wallet module; same string the customer is shown. #}
+                            <input id="{{ mode == 'xrp' ? 'xrp-amount' : 'token-amount' }}" type="hidden" value="{{ amountRequestedDisplay }}">
+                            <p class="ld-fiat" data-ld-fiat>
+                                <span data-ld-fiat-for="full" {% if state == 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.fiatEquivalent"|trans({"%fiat%": total|currency}) }}</span>
+                                <span data-ld-fiat-for="partial" {% if state != 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.fiatOfTotal"|trans({"%total%": amountRequestedDisplay, "%asset%": assetLabel, "%fiat%": total|currency}) }}</span>
+                            </p>
 
-                        <div class="ld-warning" data-ld-expired {% if state != 'expired' %}hidden{% endif %}>
-                            <div role="alert" class="alert alert-warning alert-has-icon">
-                                <div class="alert-content-container">
-                                    <div class="alert-content">
-                                        <p>{{ "LedgerDirect.paymentPage.quoteExpired"|trans }}</p>
-                                        <p>{{ "LedgerDirect.paymentPage.quoteExpiredDoNotResend"|trans }}</p>
-                                        <form method="post" action="{{ refreshUrl }}">
-                                            <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
-                                            <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
-                                            <button type="submit" class="btn btn-primary btn-sm">
-                                                {{ "LedgerDirect.paymentPage.refreshQuoteButton"|trans }}
-                                            </button>
-                                        </form>
+                            {% if hasExpiry %}
+                                <div class="ld-timer" data-ld-timer data-ld-block="waiting" aria-live="off" {% if state != 'waiting' %}hidden{% endif %}>
+                                    {{ "LedgerDirect.paymentPage.quoteValidFor"|trans({"%countdown%": '<strong data-ld-countdown>' ~ (secondsLeft ?? 0) ~ '</strong>'})|raw }}
+                                    <div class="ld-timer-bar" aria-hidden="true"><span data-ld-timer-bar style="width: 100%"></span></div>
+                                </div>
+                            {% endif %}
+
+                            <ol class="ld-steps">
+                                <li>
+                                    <div class="ld-field-label"><span class="ld-step-no">1</span> {{ "LedgerDirect.paymentPage.stepAccount"|trans }}</div>
+                                    <div class="ld-field">
+                                        <span class="ld-field-value" id="destination-account" data-ld-account data-value="{{ destinationAccount }}">{{ destinationAccount }}</span>
+                                        <button type="button" class="ld-copy" data-copy="account" aria-label="{{ "LedgerDirect.paymentPage.copyAccount"|trans|striptags }}">
+                                            {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
+                                </li>
+                                <li>
+                                    <div class="ld-field-label"><span class="ld-step-no">2</span> {{ "LedgerDirect.paymentPage.stepTag"|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
+                                    <div class="ld-field ld-field--key">
+                                        <span class="ld-field-value" id="destination-tag" data-ld-tag data-value="{{ destinationTag }}">{{ destinationTag }}</span>
+                                        <button type="button" class="ld-copy" data-copy="tag" aria-label="{{ "LedgerDirect.paymentPage.copyTag"|trans|striptags }}">
+                                            {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
+                                        </button>
+                                    </div>
+                                    <p class="ld-hint">{{ "LedgerDirect.paymentPage.tagHint"|trans }}</p>
+                                </li>
+                                {% if issuer %}
+                                    <li>
+                                        <div class="ld-field-label"><span class="ld-step-no">3</span> {{ "LedgerDirect.paymentPage.stepIssuer"|trans }}</div>
+                                        <div class="ld-field">
+                                            <span class="ld-field-value">{{ assetLabel }} · <span data-ld-issuer data-value="{{ issuer }}">{{ issuer }}</span></span>
+                                            <button type="button" class="ld-copy" data-copy="issuer" aria-label="{{ "LedgerDirect.paymentPage.copyIssuer"|trans|striptags }}">
+                                                {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
+                                            </button>
+                                        </div>
+                                        <p class="ld-hint">{{ "LedgerDirect.paymentPage.issuerHint"|trans({"%asset%": assetLabel}) }}</p>
+                                    </li>
+                                {% endif %}
+                            </ol>
 
-                    <div class="ld-sync">
-                        <!--
-                        <button id="gem-wallet-button" class="wallet-disabled">G</button>
-                        <button id="crossmark-wallet-button" class="wallet-disabled">C</button>
-                        <button id="xumm-wallet-button" class="wallet-disabled">X</button>
-                        -->
-                        {# The manual path, and the only one a browser without JavaScript has. #}
-                        <button id="check-payment-button" data-order-id="{{ orderId }}" data-deep-link-code="{{ deepLinkCode }}">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none"></span>
-                            {{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}
-                        </button>
+                            <details class="ld-exchange">
+                                <summary>{{ "LedgerDirect.paymentPage.exchangeSummary"|trans }}</summary>
+                                <p>{{ "LedgerDirect.paymentPage.exchangeHint"|trans }}</p>
+                            </details>
+                        </section>
+
+                        <aside class="ld-col ld-col--side" aria-label="{{ "LedgerDirect.paymentPage.asideLabel"|trans|striptags }}">
+                            {% if paymentUri %}
+                                <details class="ld-qr" data-ld-qr-details open>
+                                    <summary><span class="ld-qr-sum-open">{{ "LedgerDirect.paymentPage.qrOpen"|trans }}</span><span class="ld-qr-sum-closed">{{ "LedgerDirect.paymentPage.qrClosed"|trans }}</span></summary>
+                                    <div class="ld-qr-box{% if state == 'expired' %} is-void{% endif %}" data-ld-qr-box>
+                                        <div data-ld-qr></div>
+                                        <div class="ld-qr-void" data-ld-qr-void {% if state != 'expired' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.qrVoid"|trans }}</div>
+                                    </div>
+                                    <p class="ld-qr-caption">{{ "LedgerDirect.paymentPage.qrCaption"|trans }}</p>
+                                </details>
+                            {% endif %}
+
+                            <dl class="ld-details">
+                                <dt>{{ "LedgerDirect.paymentPage.detailTotal"|trans }}</dt><dd>{{ total|currency }}</dd>
+                                <dt>{{ "LedgerDirect.paymentPage.detailRate"|trans }}</dt><dd>{{ "LedgerDirect.paymentPage.rateSentence"|trans({"%asset%": assetLabel, "%rate%": exchangeRateDisplay, "%currency%": currencyCode}) }}</dd>
+                                <dt>{{ "LedgerDirect.paymentPage.detailNetwork"|trans }}</dt><dd>{{ ("LedgerDirect.paymentPage.network." ~ network)|trans }}</dd>
+                            </dl>
+                        </aside>
                     </div>
 
+                    <div class="ld-status">
+                        <div class="ld-status-text" aria-live="polite">
+                            <span class="ld-pulse" aria-hidden="true"></span>
+                            <span data-ld-status-for="waiting" {% if state != 'waiting' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.statusWaiting"|trans }}</span>
+                            <span data-ld-status-for="partial" {% if state != 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.statusPartial"|trans }}</span>
+                            <span data-ld-status-for="wrong_asset" {% if state != 'wrong_asset' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.statusWrongAsset"|trans }}</span>
+                            <span data-ld-status-for="expired" {% if state != 'expired' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.statusExpired"|trans }}</span>
+                        </div>
+                        {# The manual path, and the only one a browser without JavaScript has: a plain post back to this page. #}
+                        <form method="post" action="{{ pageUrl }}" data-ld-check-form>
+                            <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
+                            <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
+                            <button type="submit" class="ld-btn ld-btn--secondary" id="check-payment-button" data-ld-check>
+                                <span data-ld-check-label="idle">{{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}</span>
+                                <span data-ld-check-label="busy" hidden><span class="ld-spinner" aria-hidden="true"></span> {{ "LedgerDirect.paymentPage.checking"|trans }}</span>
+                            </button>
+                        </form>
+                        <p class="ld-toast" data-ld-toast hidden>{{ "LedgerDirect.paymentPage.checkNothingFound"|trans }}</p>
+                    </div>
                 </div>
 
-                <div class="ld-card-right">
-                    {#
-                        One block for all three assets. It used to be two
-                        copy-pasted branches, which is how a hard-coded "RLUSD"
-                        survived in the USDC path until recently.
-                    #}
-                    <div class="ld-sum">{{ total|currency }}</div>
-                    <span>{{ "LedgerDirect.paymentPage.orderNumber"|trans }}: {{ orderNumber }}</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.total"|trans }}: {{ amountRequestedDisplay }} {{ assetLabel }}</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.exchangeRate"|trans }}: {{ exchangeRateDisplay }} {{ assetLabel }} / {{ currencyCode }}</span><br/>
-                    <span>{{ "LedgerDirect.paymentPage.network"|trans }}: {{ network }}</span>
+                {# Shown by the script when the poll reports settled; a page loaded for a paid order is redirected by the controller. #}
+                <div class="ld-success" data-ld-success hidden>
+                    <div class="ld-success-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+                    <h2>{{ "LedgerDirect.paymentPage.successTitle"|trans }}</h2>
+                    <p>{{ "LedgerDirect.paymentPage.successAmount"|trans({"%amount%": '<strong><span data-ld-settled-amount></span> ' ~ assetLabel ~ '</strong>'})|raw }}</p>
+                    <p data-ld-hash-row hidden>{{ "LedgerDirect.paymentPage.successHash"|trans }} <a data-ld-hash href="#" target="_blank" rel="noopener"><code></code></a></p>
+                    <p>{{ "LedgerDirect.paymentPage.successRedirect"|trans({"%seconds%": '<span data-ld-redirect-count>5</span>'})|raw }}</p>
+                    <a class="ld-btn ld-btn--primary" data-ld-redirect-link href="{{ path('frontend.account.order.single.page', {deepLinkCode: deepLinkCode}) }}">{{ "LedgerDirect.paymentPage.successButton"|trans }}</a>
                 </div>
 
             </div>
+        </main>
 
-            <div class="ld-footer">
-                <a href="{{ path('frontend.checkout.cart.page') }}" class="ld-back-to-cart">
-                    {{ "LedgerDirect.paymentPage.backToCart"|trans }}
-                </a>
-            </div>
-
-        </div>
+        <footer class="ld-foot">
+            <a href="{{ path('frontend.checkout.cart.page') }}">{{ "LedgerDirect.paymentPage.backToCart"|trans }}</a>
+            <span>{{ "LedgerDirect.paymentPage.poweredBy"|trans }}</span>
+        </footer>
     </div>
-
 {% endblock %}
