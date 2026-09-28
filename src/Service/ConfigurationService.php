@@ -178,7 +178,7 @@ class ConfigurationService
         return $id === '' ? null : $id;
     }
 
-    /** The accent colour as stored; validation and the contrast rule live in Presentation\AccentColor. */
+    /** The accent colour as stored; validation and the contrast rule live in the core's Presentation\AccentColor. */
     public function getPaymentPageAccentColor(): string
     {
         return $this->getString(self::CONFIG_KEY_ACCENT_COLOR);
