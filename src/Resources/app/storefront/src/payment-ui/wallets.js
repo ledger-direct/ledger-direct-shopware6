@@ -146,6 +146,39 @@ export function startWallets(root) {
 
     /* ---- payment ---- */
 
+    /**
+     * The account to pay from. A second click, a wallet that was restarted
+     * mid-connection, or a connection left over from an earlier attempt all
+     * make XRPL Connect refuse a fresh connect() with ALREADY_CONNECTED —
+     * so an existing connection to the same wallet is reused, and anything
+     * else is disconnected first.
+     */
+    async function connectTo(m, walletId) {
+        if (m.connected && m.account && m.wallet && m.wallet.id === walletId) {
+            return m.account;
+        }
+        if (m.connected || m.connectingWallet) {
+            await disconnectQuietly(m);
+        }
+        try {
+            return await m.connect(walletId, { network });
+        } catch (error) {
+            if (error && String(error.code) === 'ALREADY_CONNECTED') {
+                await disconnectQuietly(m);
+                return m.connect(walletId, { network });
+            }
+            throw error;
+        }
+    }
+
+    async function disconnectQuietly(m) {
+        try {
+            await m.disconnect();
+        } catch (e) {
+            // a wallet that is already gone cannot be disconnected; connect() decides what happens next
+        }
+    }
+
     async function pay(walletId) {
         if (amountStale) {
             window.location.reload();
@@ -154,7 +187,7 @@ export function startWallets(root) {
         say('confirm');
         try {
             const m = await ensureManager();
-            const account = await m.connect(walletId, { network });
+            const account = await connectTo(m, walletId);
             const transaction = transactionFor(account.address);
             await m.signAndSubmit(transaction);
             say('submitted');
