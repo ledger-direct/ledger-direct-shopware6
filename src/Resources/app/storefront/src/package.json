@@ -9,5 +9,8 @@
     "qrcode-generator": "^2.0.4",
     "xrpl": "^4.6.0",
     "xrpl-connect": "1.0.0-rc.2"
+  },
+  "scripts": {
+    "sync": "cp node_modules/@ledger-direct/payment-ui/src/payment-page.css scss/payment-page.css"
   }
 }
