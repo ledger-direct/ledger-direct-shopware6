@@ -1,0 +1,22 @@
+# shopware-cli: how the store zip is built.
+#
+# The storefront bundle in src/Resources/app/storefront/dist is committed and
+# built with Shopware's own bin/build-storefront.sh (see the README); the zip
+# ships it as it is. Letting shopware-cli build the assets again produced a
+# second, differently named copy of the 1.5 MB wallet chunk next to the
+# committed one.
+build:
+  zip:
+    assets:
+      enabled: false
+    pack:
+      excludes:
+        paths:
+          - phpunit.xml
+          - phpstan.neon
+          - makefile
+          - payment_page.png
+          - tests
+          - .github
+          - .shopware-extension.yml
+          - src/Resources/app/storefront/src/node_modules
