@@ -171,6 +171,12 @@ export function startWallets(root) {
         }
     }
 
+    /** XRPL Connect names the standard networks mainnet, testnet, devnet — the same words the page uses. */
+    function onRequestedNetwork(account) {
+        const id = account && account.network && account.network.id ? String(account.network.id).toLowerCase() : '';
+        return id === '' || id === network;
+    }
+
     async function disconnectQuietly(m) {
         try {
             await m.disconnect();
@@ -188,6 +194,14 @@ export function startWallets(root) {
         try {
             const m = await ensureManager();
             const account = await connectTo(m, walletId);
+            if (!onRequestedNetwork(account)) {
+                // The wallet is on another network than the page: a payment
+                // there would go to an account that does not exist on it.
+                // Not every adapter checks this itself, so the page does.
+                await disconnectQuietly(m);
+                say('error-mismatch', { network: text('network-' + network) || network });
+                return;
+            }
             const transaction = transactionFor(account.address);
             await m.signAndSubmit(transaction);
             say('submitted');
