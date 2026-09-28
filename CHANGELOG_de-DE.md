@@ -1,3 +1,8 @@
+# 1.4.3
+- Core 0.8: Die Zahlungsanfrage hinter dem QR-Code (`PaymentUri`) und die Regel für die Akzentfarbe
+  (`AccentColor`) kommen jetzt aus der geteilten Core-Bibliothek; die Kopien im Plugin sind weg. Für
+  Kunden und Händler ändert sich nichts
+
 # 1.4.2
 - Verhalten und Design der Zahlungsseite kommen jetzt aus dem geteilten Paket `@ledger-direct/payment-ui`
   (0.1.1), demselben Code, den jedes LedgerDirect-Plugin rendert; die lokale Kopie ist weg. Die Wurzel der
