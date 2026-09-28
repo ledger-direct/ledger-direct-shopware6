@@ -85,8 +85,15 @@ The status endpoint (`/store-api/ledger-direct/payment/check/{orderId}?deepLinkC
 every other LedgerDirect plugin, plus a `redirect` URL once the order no longer waits for payment. The ledger is
 synced at most once every five seconds per receiving account.
 
-The page's behaviour and design live in `src/Resources/app/storefront/src/payment-ui/`, free of any Shopware
-import, with the markup contract in its README — the same files will serve the other LedgerDirect plugins.
+The page's behaviour and design are [`@ledger-direct/payment-ui`](https://github.com/ledger-direct/ledger-direct-payment-ui),
+the package every LedgerDirect plugin shares (`src/Resources/app/storefront/src/package.json` pins its tag). The
+template renders the package's markup contract (`src/README.md` there); `main.js` is the Shopware hull that
+registers the page as a storefront plugin. The package's stylesheet is committed as `scss/payment-page.css`:
+Shopware compiles a plugin's SCSS on the server, in the merchant's shop, where `node_modules` does not exist.
+To move to a new package version: change the tag in `package.json`, run `npm install` and `npm run sync` in
+that directory, rebuild the storefront with Shopware's `bin/build-storefront.sh` and commit
+`src/Resources/app/storefront/dist/` together with the stylesheet copy. A unit test compares the copy with
+the installed package.
 
 ## External Services
 LedgerDirect uses public APIs from Coingecko, Binance, and Kraken to retrieve current cryptocurrency exchange rates. These rates are needed to correctly calculate and display payments.

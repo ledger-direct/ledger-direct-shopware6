@@ -6,11 +6,11 @@
     {#
         The LedgerDirect payment page. Every sentence a customer reads is here or
         in the snippets; one block per payment state, all rendered, the server
-        decides which starts visible. The script (payment-ui/payment-page.js)
+        decides which starts visible. The script (@ledger-direct/payment-ui)
         only switches blocks, inserts numbers and polls. A settled order never
         renders this page — the controller redirects it.
 
-        Markup contract: src/Resources/app/storefront/src/payment-ui/README.md.
+        Markup contract: src/README.md of @ledger-direct/payment-ui.
         No arithmetic on amounts here: every amount comes out of AmountFormatter.
     #}
     {% set copyIcon %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{% endset %}
@@ -18,13 +18,13 @@
 
     <div class="ld-page"
          data-ld-page="true"
-         data-xrp-payment-page="true"
          data-ld-state="{{ state }}"
          data-ld-poll-url="{{ pollUrl }}"
          data-ld-asset="{{ assetLabel }}"
          data-ld-network="{{ network }}"
          data-ld-explorer-base="{{ explorerBase }}"
          data-ld-quote-seconds="{{ quoteSeconds }}"
+         data-ld-amount-requested="{{ amountRequestedDisplay }}"
          style="--ld-accent: {{ accentColor }}"
          {% if xamanApiKey %}data-ld-xaman-key="{{ xamanApiKey }}"{% endif %}
          {% if walletConnectProjectId %}data-ld-wc-project="{{ walletConnectProjectId }}"{% endif %}
@@ -110,8 +110,6 @@
                                     {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
                                 </button>
                             </div>
-                            {# Read by the end-to-end harness and the wallet module; same string the customer is shown. #}
-                            <input id="{{ mode == 'xrp' ? 'xrp-amount' : 'token-amount' }}" type="hidden" value="{{ amountRequestedDisplay }}">
                             <p class="ld-fiat" data-ld-fiat>
                                 <span data-ld-fiat-for="full" {% if state == 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.fiatEquivalent"|trans({"%fiat%": total|currency}) }}</span>
                                 <span data-ld-fiat-for="partial" {% if state != 'partial' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.fiatOfTotal"|trans({"%total%": amountRequestedDisplay, "%asset%": assetLabel, "%fiat%": total|currency}) }}</span>
@@ -128,7 +126,7 @@
                                 <li>
                                     <div class="ld-field-label"><span class="ld-step-no">1</span> {{ "LedgerDirect.paymentPage.stepAccount"|trans }}</div>
                                     <div class="ld-field">
-                                        <span class="ld-field-value" id="destination-account" data-ld-account data-value="{{ destinationAccount }}">{{ destinationAccount }}</span>
+                                        <span class="ld-field-value" data-ld-account data-value="{{ destinationAccount }}">{{ destinationAccount }}</span>
                                         <button type="button" class="ld-copy" data-copy="account" aria-label="{{ "LedgerDirect.paymentPage.copyAccount"|trans|striptags }}">
                                             {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
                                         </button>
@@ -137,7 +135,7 @@
                                 <li>
                                     <div class="ld-field-label"><span class="ld-step-no">2</span> {{ "LedgerDirect.paymentPage.stepTag"|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
                                     <div class="ld-field ld-field--key">
-                                        <span class="ld-field-value" id="destination-tag" data-ld-tag data-value="{{ destinationTag }}">{{ destinationTag }}</span>
+                                        <span class="ld-field-value" data-ld-tag data-value="{{ destinationTag }}">{{ destinationTag }}</span>
                                         <button type="button" class="ld-copy" data-copy="tag" aria-label="{{ "LedgerDirect.paymentPage.copyTag"|trans|striptags }}">
                                             {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
                                         </button>
@@ -177,7 +175,7 @@
                             {% endif %}
 
                             {#
-                                Browser wallets, loaded only on click (payment-ui/wallets.js).
+                                Browser wallets, loaded only on click (the package's wallet module).
                                 Every sentence the module can show is rendered here.
                             #}
                             {% set hasWalletApp = xamanApiKey or walletConnectProjectId %}
@@ -230,7 +228,7 @@
                         <form method="post" action="{{ pageUrl }}" data-ld-check-form>
                             <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
                             <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
-                            <button type="submit" class="ld-btn ld-btn--secondary" id="check-payment-button" data-ld-check>
+                            <button type="submit" class="ld-btn ld-btn--secondary" data-ld-check>
                                 <span data-ld-check-label="idle">{{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}</span>
                                 <span data-ld-check-label="busy" hidden><span class="ld-spinner" aria-hidden="true"></span> {{ "LedgerDirect.paymentPage.checking"|trans }}</span>
                             </button>
