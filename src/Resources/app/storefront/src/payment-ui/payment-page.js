@@ -57,7 +57,6 @@ export function startPaymentPage(root) {
     const $$ = (selector, scope = root) => Array.from(scope.querySelectorAll(selector));
 
     const pollUrl = root.getAttribute('data-ld-poll-url');
-    const assetLabel = root.getAttribute('data-ld-asset') || '';
     const quoteSeconds = parseInt(root.getAttribute('data-ld-quote-seconds'), 10);
     const explorerBase = root.getAttribute('data-ld-explorer-base') || '';
 
@@ -304,7 +303,7 @@ export function startPaymentPage(root) {
         let payload = null;
         try {
             payload = await requestStatus();
-        } catch (e) {
+        } catch {
             // A failed poll is not worth surfacing — the next one may well
             // work, and the platform's safety net is the actual guarantee.
         }
@@ -333,7 +332,7 @@ export function startPaymentPage(root) {
         let payload = null;
         try {
             payload = await requestStatus();
-        } catch (e) {
+        } catch {
             // answered below like a poll that found nothing new
         }
         if (button) {
@@ -373,7 +372,7 @@ export function startPaymentPage(root) {
         }
         try {
             await navigator.clipboard.writeText(value);
-        } catch (e) {
+        } catch {
             return;
         }
         button.classList.add('is-done');

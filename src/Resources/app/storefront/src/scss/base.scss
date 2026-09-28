@@ -4,7 +4,7 @@
 @import '../payment-ui/payment-page';
 
 // The page replaces the storefront body: no theme header, no footer.
-body.ld-body {
+.ld-body {
   margin: 0;
   background: transparent;
 }

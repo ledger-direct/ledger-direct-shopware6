@@ -180,7 +180,7 @@ export function startWallets(root) {
     async function disconnectQuietly(m) {
         try {
             await m.disconnect();
-        } catch (e) {
+        } catch {
             // a wallet that is already gone cannot be disconnected; connect() decides what happens next
         }
     }

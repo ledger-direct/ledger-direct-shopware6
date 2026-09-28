@@ -17,7 +17,7 @@ function withAmount(uri, amount) {
     let url;
     try {
         url = new URL(uri);
-    } catch (e) {
+    } catch {
         return uri;
     }
     if (!url.searchParams.has('amount') || !amount) {

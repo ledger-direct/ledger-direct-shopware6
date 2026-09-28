@@ -158,3 +158,35 @@ to *Cancelled*.
 Look for: the next poll carries a `redirect` while `state` is still `waiting`; the page leaves.
 Then send the amount anyway: the transaction stays `cancelled` (neither the scheduled task nor a
 return over the `returnUrl` reopens it).
+
+## Automated with ld-e2e
+
+The `ledger-direct-e2e` harness runs the whole catalogue against this shop unattended — PS-01 to PS-09 and
+PS-11 in the `automated` set, PS-10 (a 35-minute wait) on request or nightly. It pays real testnet
+transactions from its treasury to a receiving account it creates for the run, and writes the checklist lines
+into the pull request:
+
+```
+ld-e2e run --target shopware --base-url http://localhost \
+  --access-key <sales channel access key> --cases automated
+ld-e2e report pr --repo ledger-direct/ledger-direct-shopware6 --pr <n>
+```
+
+What it does, in this shop's terms — the same steps as above, without a browser:
+
+- **Orders** go through the Store API the way a headless client places them: guest registration, cart,
+  `POST /store-api/checkout/order`, `POST /store-api/handle-payment`. The `deepLinkCode` comes with the
+  order, the `returnUrl` with the payment redirect.
+- **Configuration**, **order state** and **cancelling** use the Admin API; the access token lives ten
+  minutes, the driver renews it on a 401.
+- **The customer's side** is HTTP: the payment page (`data-ld-state`, the displayed amount, account, tag),
+  the status endpoint with the `deepLinkCode`, the refresh as a POST to `/ledger-direct/payment/refresh/{orderId}`.
+- **The scheduled task** (PS-09) is the one step without an HTTP face: `scheduled-task:run-single
+  ledger_direct.settle_open_transactions` plus `messenger:consume` through the container's console.
+- **PS-08** needs a cache that survives a request. Shopware's dev configuration sets
+  `framework.cache.app` to the array adapter, which turns the throttle into a no-op; the harness folder's
+  `config/dev-cache.yaml` switches it to the filesystem (`dev-restore.sh` copies it in).
+- **Evidence** stays in the shop: the orders of a run, their transactions and states, and the hashes on
+  `order_transaction.custom_fields`.
+
+Last full run against this plugin: 1.4.0, 2026-09-24 and 2026-09-28, eleven of eleven green (PR #20).

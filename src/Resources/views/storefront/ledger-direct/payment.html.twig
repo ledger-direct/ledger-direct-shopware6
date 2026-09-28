@@ -38,7 +38,7 @@
                 {# The logo, always as an <img> with fixed maximum size; the monogram when there is none. #}
                 {% set shopLogoUrl = logo.mode == 'shop' ? theme_config('sw-logo-desktop') : (logo.mode == 'custom' ? logo.url : null) %}
                 {% if shopLogoUrl %}
-                    <span class="ld-shop-logo ld-shop-logo--image"><img src="{{ shopLogoUrl }}" alt="" width="160" height="32"></span>
+                    <span class="ld-shop-logo ld-shop-logo--image"><img src="{{ shopLogoUrl }}" alt="{{ shopName }}" width="160" height="32"></span>
                 {% else %}
                     <span class="ld-shop-logo" aria-hidden="true">{{ logo.monogram }}</span>
                 {% endif %}
