@@ -26,6 +26,8 @@
   --ld-info: #1d4ed8;
   --ld-info-bg: #eef3ff;
   --ld-info-border: #c9d7fb;
+  /* The accent used as text (step numbers): the accent itself on light surfaces, lightened on dark ones. */
+  --ld-accent-text: var(--ld-accent);
   --ld-radius: 14px;
   --ld-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   width: 100%;
@@ -52,6 +54,8 @@
     --ld-info: #8fb0ff;
     --ld-info-bg: #141d33;
     --ld-info-border: #28375e;
+    /* #1f5eff as text on #1a1e23 is 3.3:1 — too little for 12 px; lightened it passes 4.5:1 for any accent that passes on white. */
+    --ld-accent-text: color-mix(in srgb, var(--ld-accent) 55%, #fff);
   }
 }
 
@@ -114,7 +118,7 @@
 /* Fields */
 .ld-steps { list-style: none; margin: 1.75rem 0 0; padding: 0; display: grid; gap: 1rem; }
 .ld-field-label { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; font-weight: 600; font-size: .92rem; }
-.ld-step-no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 700; background: color-mix(in srgb, var(--ld-accent) 12%, transparent); color: var(--ld-accent); }
+.ld-step-no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 700; background: color-mix(in srgb, var(--ld-accent) 12%, transparent); color: var(--ld-accent-text); }
 .ld-field { display: flex; align-items: center; gap: .5rem; padding: .55rem .55rem .55rem .85rem; border: 1px solid var(--ld-border); border-radius: 10px; background: var(--ld-surface); }
 .ld-field--key { border-color: color-mix(in srgb, var(--ld-accent) 45%, var(--ld-border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ld-accent) 10%, transparent); }
 .ld-field-value { flex: 1; min-width: 0; font-family: var(--ld-mono); font-size: .95rem; overflow-wrap: anywhere; }
