@@ -1,3 +1,9 @@
+# 1.4.2
+- The payment page's behaviour and design now come from the shared package `@ledger-direct/payment-ui`
+  (0.1.1), the same code every LedgerDirect plugin renders; the local copy is gone. The page's root
+  carries the requested amount as `data-ld-amount-requested`; the legacy ids `xrp-amount`,
+  `token-amount`, `destination-account` and `destination-tag` are gone. No change for customers
+
 # 1.4.1
 - Housekeeping after 1.4.0: dead files removed (Cypress remnants, an unused exception class), lint
   warnings cleared in the payment page scripts, the store zip now ships the committed storefront

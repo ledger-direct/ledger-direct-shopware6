@@ -1,3 +1,9 @@
+# 1.4.2
+- Verhalten und Design der Zahlungsseite kommen jetzt aus dem geteilten Paket `@ledger-direct/payment-ui`
+  (0.1.1), demselben Code, den jedes LedgerDirect-Plugin rendert; die lokale Kopie ist weg. Die Wurzel der
+  Seite trägt den geforderten Betrag als `data-ld-amount-requested`; die alten IDs `xrp-amount`,
+  `token-amount`, `destination-account` und `destination-tag` entfallen. Für Kunden ändert sich nichts
+
 # 1.4.1
 - Aufräumen nach 1.4.0: tote Dateien entfernt (Cypress-Reste, eine unbenutzte Exception-Klasse),
   Lint-Warnungen in den Skripten der Zahlungsseite bereinigt, das Store-Zip liefert das committete

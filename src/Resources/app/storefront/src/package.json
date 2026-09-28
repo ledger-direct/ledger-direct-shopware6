@@ -2,11 +2,12 @@
   "name": "ledger-direct-storefront",
   "version": "0.0.1",
   "private": true,
-  "description": "LedgerDirect payment page for Shopware 6 (payment-ui is framework-free)",
+  "description": "LedgerDirect payment page for Shopware 6: the Shopware hull around @ledger-direct/payment-ui",
   "license": "MIT",
   "dependencies": {
+    "@ledger-direct/payment-ui": "github:ledger-direct/ledger-direct-payment-ui#0.1.1",
     "qrcode-generator": "^2.0.4",
-    "xrpl-connect": "1.0.0-rc.2",
-    "xrpl": "^4.6.0"
+    "xrpl": "^4.6.0",
+    "xrpl-connect": "1.0.0-rc.2"
   }
 }

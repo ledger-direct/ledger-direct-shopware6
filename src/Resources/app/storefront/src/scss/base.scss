@@ -1,7 +1,9 @@
-// The payment page's design lives in the framework-free payment-ui directory;
-// this file only pulls it into Shopware's theme build. Plain CSS imported
-// without an extension is inlined by Sass.
-@import '../payment-ui/payment-page';
+// The payment page's design is @ledger-direct/payment-ui's stylesheet; this
+// file only pulls it into Shopware's theme build. The path is relative to the
+// installed package: Shopware's Sass compiler resolves plugin imports from the
+// file, not from node_modules. Plain CSS imported without an extension is
+// inlined by Sass.
+@import '../node_modules/@ledger-direct/payment-ui/src/payment-page';
 
 // The page replaces the storefront body: no theme header, no footer.
 .ld-body {

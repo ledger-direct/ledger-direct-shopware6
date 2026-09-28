@@ -1,10 +1,11 @@
 /**
- * The Shopware hull around the framework-free payment page: registers a
- * storefront plugin on the page's root element and hands it to payment-ui.
- * Everything the page does lives in ./payment-ui; nothing Shopware-specific
- * is allowed in there.
+ * The Shopware hull around the shared payment page: registers a storefront
+ * plugin on the page's root element and hands it to @ledger-direct/payment-ui.
+ * Everything the page does lives in that package; nothing here but the
+ * registration. Webpack code-splits the wallet library out of the package's
+ * dynamic import, so it loads only when a customer opens the wallet list.
  */
-import { startPaymentPage } from './payment-ui/payment-page';
+import { startPaymentPage } from '@ledger-direct/payment-ui';
 
 const PluginManager = window.PluginManager;
 const Plugin = window.PluginBaseClass;
