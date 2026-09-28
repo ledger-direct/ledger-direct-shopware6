@@ -1,3 +1,8 @@
+# 1.4.1
+- Housekeeping after 1.4.0: dead files removed (Cypress remnants, an unused exception class), lint
+  warnings cleared in the payment page scripts, the store zip now ships the committed storefront
+  bundle as it is instead of building it a second time. No change in behaviour
+
 # 1.4.0
 - The payment page is redesigned: the amount to send is the largest thing on the page and has a
   copy button, the fiat amount sits below it; the receiving address, the destination tag (marked

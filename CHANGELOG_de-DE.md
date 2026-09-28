@@ -1,3 +1,8 @@
+# 1.4.1
+- Aufräumen nach 1.4.0: tote Dateien entfernt (Cypress-Reste, eine unbenutzte Exception-Klasse),
+  Lint-Warnungen in den Skripten der Zahlungsseite bereinigt, das Store-Zip liefert das committete
+  Storefront-Bundle unverändert aus, statt es ein zweites Mal zu bauen. Keine Verhaltensänderung
+
 # 1.4.0
 - Die Zahlungsseite ist neu gestaltet: Der zu sendende Betrag ist das Größte auf der Seite und
   hat einen Kopier-Button, der Fiat-Betrag steht darunter; Empfängeradresse, Destination Tag (als
