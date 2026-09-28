@@ -58,7 +58,7 @@ To test the plugin, you can configure it to use the XRP Ledger Testnet. This all
 
 After the checkout the customer is sent to the LedgerDirect payment page: the amount to send, large and with a copy
 button; the receiving address; the destination tag, marked as required; for tokens the issuer; one QR code with
-address and tag (the amount joins once the wallet scan test is done); a countdown for the quoted amount; and, on a
+address, tag and amount (verified with Xaman on the testnet); a countdown for the quoted amount; and, on a
 desktop, the browser wallets XRPL Connect detects (Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu, Xyra; Xaman and
 WalletConnect once their public identifier is configured). The page is reachable by the order's link code (the same
 one Shopware uses for guest order links), so guest orders work and the link keeps working without a login.

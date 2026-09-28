@@ -15,21 +15,28 @@ class PaymentUriTest extends TestCase
 
     private const TAG = 4294967295;
 
-    public function testAnXrpRequestCarriesAccountAndTag(): void
+    /**
+     * Verified with Xaman on the testnet (PW-04): the amount is read as the
+     * XRP decimal shown on the page, so the default request carries it.
+     */
+    public function testAnXrpRequestCarriesAccountTagAndTheDisplayedAmount(): void
     {
+        $this->assertSame(PaymentUri::AMOUNT_DISPLAYED, PaymentUri::AMOUNT_MODE);
+
         $uri = PaymentUri::forIntent($this->xrp(0.83211), '0.83211');
 
-        $this->assertSame(PaymentUri::BASE . '?to=' . self::ACCOUNT . '&dt=' . self::TAG, $uri);
+        $this->assertSame(PaymentUri::BASE . '?to=' . self::ACCOUNT . '&dt=' . self::TAG . '&amount=0.83211', $uri);
     }
 
     /**
-     * Until the scan test (PW-04) has shown how Xaman reads the amount, the
-     * default request carries none — never an unverified amount.
+     * A platform that has not verified its wallets can still hand out
+     * address and tag only.
      */
-    public function testTheDefaultModeCarriesNoAmount(): void
+    public function testTheNoneModeCarriesNoAmount(): void
     {
-        $this->assertSame(PaymentUri::AMOUNT_NONE, PaymentUri::AMOUNT_MODE);
-        $this->assertStringNotContainsString('amount=', PaymentUri::forIntent($this->xrp(0.83211), '0.83211'));
+        $uri = PaymentUri::forIntent($this->xrp(0.83211), '0.83211', PaymentUri::AMOUNT_NONE);
+
+        $this->assertSame(PaymentUri::BASE . '?to=' . self::ACCOUNT . '&dt=' . self::TAG, $uri);
     }
 
     public function testTheDisplayedAmountIsPassedThroughUnchanged(): void
@@ -53,7 +60,7 @@ class PaymentUriTest extends TestCase
 
     public function testATokenRequestNamesCurrencyAndIssuer(): void
     {
-        $uri = PaymentUri::forIntent($this->stablecoin('RLUSD', '524C555344000000000000000000000000000000', 'rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV', '84.75'), '84.75');
+        $uri = PaymentUri::forIntent($this->stablecoin('RLUSD', '524C555344000000000000000000000000000000', 'rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV', '84.75'), '84.75', PaymentUri::AMOUNT_NONE);
 
         $this->assertSame(
             PaymentUri::BASE . '?to=' . self::ACCOUNT . '&dt=' . self::TAG
@@ -64,7 +71,7 @@ class PaymentUriTest extends TestCase
 
     public function testATokenRequestWithAmountKeepsTheOrderOfParameters(): void
     {
-        $uri = PaymentUri::forIntent($this->stablecoin('USDC', '5553444300000000000000000000000000000000', 'rHuGNhqTG32mfmAvWA8hUyWRLV3tCSwKQt', '1.16'), '1.16', PaymentUri::AMOUNT_DISPLAYED);
+        $uri = PaymentUri::forIntent($this->stablecoin('USDC', '5553444300000000000000000000000000000000', 'rHuGNhqTG32mfmAvWA8hUyWRLV3tCSwKQt', '1.16'), '1.16');
 
         $this->assertSame(
             PaymentUri::BASE . '?to=' . self::ACCOUNT . '&dt=' . self::TAG
@@ -85,7 +92,7 @@ class PaymentUriTest extends TestCase
             destinationAccount: 'r&=?#', destinationTag: 1,
         );
 
-        $this->assertStringContainsString('to=r%26%3D%3F%23&dt=1', PaymentUri::forIntent($intent, '1'));
+        $this->assertStringContainsString('to=r%26%3D%3F%23&dt=1&amount=1', PaymentUri::forIntent($intent, '1'));
     }
 
     private function xrp(float $amount): PaymentIntent

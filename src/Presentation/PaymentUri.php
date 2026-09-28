@@ -15,11 +15,11 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
  *
  * The form is the one Xaman's parser (xumm-string-decode) accepts:
  * `https://xrplf.org//send?to=<account>&dt=<tag>&amount=<amount>`, for a
- * token with `currency=<hex>&issuer=<address>`. What the parser has NOT
- * been shown to do yet is read the amount unambiguously — as XRP, or as
- * drops — and take a token over. Until that scan test is done, AMOUNT_MODE
- * is NONE: address and tag only, never an unverified amount. A QR code
- * with the wrong unit would be a real money error.
+ * token with `currency=<hex>&issuer=<address>`. Verified by scanning with
+ * Xaman on the testnet (2026-09-28, PW-04): `amount` is read as the XRP
+ * decimal the page shows — not as drops — and a token request takes the
+ * currency and issuer over. So the request carries exactly the amount the
+ * customer sees, the shortfall while a partial payment is in.
  */
 final class PaymentUri
 {
@@ -31,8 +31,8 @@ final class PaymentUri
     /** The amount as the page shows it — XRP for the native asset, the token value otherwise. */
     public const AMOUNT_DISPLAYED = 'displayed';
 
-    /** Pending the scan test (PW-04); switch to AMOUNT_DISPLAYED once Xaman reads it as XRP. */
-    public const AMOUNT_MODE = self::AMOUNT_NONE;
+    /** Since the scan test (PW-04): the amount as displayed. AMOUNT_NONE stays available for a platform that has not verified its wallets. */
+    public const AMOUNT_MODE = self::AMOUNT_DISPLAYED;
 
     /**
      * @param string $amountDue the amount to send, as the page shows it: the

@@ -4,9 +4,9 @@
   as required, with its hint right there) and, for tokens, the issuer are numbered fields with
   copy buttons; a countdown in minutes and seconds with a bar; one column on phones; dark mode
   follows the system; no web font is loaded
-- One QR code with the receiving address and the destination tag (and, for tokens, currency and
-  issuer) — typing the tag was the biggest source of lost payments. The amount will join once
-  the wallet scan test has confirmed how it is read
+- One QR code with the receiving address, the destination tag and the amount (and, for tokens,
+  currency and issuer) — typing the tag was the biggest source of lost payments. Verified with
+  Xaman on the testnet: address, tag and amount are taken over as shown
 - Browser wallets over XRPL Connect: Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu and Xyra
   are offered when detected; Xaman and WalletConnect when the merchant enters their public
   identifier in the new "Payment page" configuration card. The wallet library is loaded only

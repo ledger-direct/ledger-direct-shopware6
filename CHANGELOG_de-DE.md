@@ -4,9 +4,9 @@
   Pflicht markiert, mit dem Hinweis direkt darunter) und bei Tokens der Herausgeber sind
   nummerierte Felder mit Kopier-Buttons; Countdown in Minuten und Sekunden mit Balken; eine Spalte
   auf dem Handy; Dunkelmodus folgt dem System; keine Webschrift wird geladen
-- Ein QR-Code mit Empfängeradresse und Destination Tag (bei Tokens auch Währung und Herausgeber) —
-  das Abtippen des Tags war die größte Fehlerquelle. Der Betrag kommt hinzu, sobald der Scan-Test
-  mit der Wallet geklärt hat, wie er gelesen wird
+- Ein QR-Code mit Empfängeradresse, Destination Tag und Betrag (bei Tokens auch Währung und
+  Herausgeber) — das Abtippen des Tags war die größte Fehlerquelle. Mit Xaman am Testnet
+  verifiziert: Adresse, Tag und Betrag werden wie angezeigt übernommen
 - Browser-Wallets über XRPL Connect: Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu und Xyra
   werden angeboten, wenn sie erkannt werden; Xaman und WalletConnect, wenn der Händler ihre
   öffentliche Kennung in der neuen Konfigurationskarte „Zahlungsseite" einträgt. Die

@@ -27,7 +27,7 @@
       "qrOpen": "Scan with a wallet app",
       "qrClosed": "Show QR code ▾",
       "qrCaption": "Scan with Xaman or another XRPL wallet. Address, destination tag and amount are filled in – please check them before sending.",
-      "qrLabel": "QR code with address and destination tag",
+      "qrLabel": "QR code with address, destination tag and amount",
       "qrVoid": "Expired – please request a new amount",
       "walletOr": "or",
       "walletButton": "Pay with a browser wallet",
