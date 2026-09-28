@@ -5,9 +5,14 @@ namespace Hardcastle\LedgerDirect\Storefront\Controller;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Xrpl\XrplAmount;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Presentation\AccentColor;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
+use Hardcastle\LedgerDirect\Presentation\PageLogo;
+use Hardcastle\LedgerDirect\Presentation\PaymentUri;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
@@ -37,13 +42,19 @@ class XrplPaymentController extends StorefrontController
 
     private PaymentRedirect $paymentRedirect;
 
+    private ConfigurationService $configuration;
+
+    private PageLogo $pageLogo;
+
     public function __construct(
         OrderTransactionService $orderTransactionService,
         PaymentRoute $paymentRoute,
         SettlementPolicy $settlementPolicy,
         OrderAccessGuard $orderAccessGuard,
         PaymentStateService $paymentState,
-        PaymentRedirect $paymentRedirect
+        PaymentRedirect $paymentRedirect,
+        ConfigurationService $configuration,
+        PageLogo $pageLogo
     ) {
         $this->orderTransactionService = $orderTransactionService;
         $this->paymentRoute = $paymentRoute;
@@ -51,6 +62,8 @@ class XrplPaymentController extends StorefrontController
         $this->orderAccessGuard = $orderAccessGuard;
         $this->paymentState = $paymentState;
         $this->paymentRedirect = $paymentRedirect;
+        $this->configuration = $configuration;
+        $this->pageLogo = $pageLogo;
     }
 
     /**
@@ -98,9 +111,9 @@ class XrplPaymentController extends StorefrontController
         }
 
         return match ($orderTransaction->getPaymentMethodId()) {
-            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl),
-            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl),
-            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl),
+            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl, $context),
+            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl, $context),
+            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl, $context),
             default => $this->redirectToRoute('frontend.checkout.cart.page'),
         };
     }
@@ -157,6 +170,7 @@ class XrplPaymentController extends StorefrontController
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
         string $returnUrl,
+        SalesChannelContext $context,
     ): Response
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -169,7 +183,7 @@ class XrplPaymentController extends StorefrontController
 
         return $this->renderStorefront(
             '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl)
+            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl, $context)
         );
     }
 
@@ -178,6 +192,7 @@ class XrplPaymentController extends StorefrontController
         OrderTransactionEntity $orderTransaction,
         string $type,
         string $returnUrl,
+        SalesChannelContext $context,
     ): Response
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -189,7 +204,7 @@ class XrplPaymentController extends StorefrontController
 
         return $this->renderStorefront(
             '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl)
+            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl, $context)
         );
     }
 
@@ -202,7 +217,9 @@ class XrplPaymentController extends StorefrontController
         PaymentIntent $intent,
         string $mode,
         string $returnUrl,
+        SalesChannelContext $context,
     ): array {
+        $shopName = (string) ($context->getSalesChannel()->getTranslation('name') ?? $context->getSalesChannel()->getName());
         $status = PaymentStatus::fromIntent($intent, $this->settlementPolicy);
         $deepLinkCode = (string) $order->getDeepLinkCode();
 
@@ -212,21 +229,42 @@ class XrplPaymentController extends StorefrontController
             'returnUrl' => $returnUrl,
         ]);
 
+        $amountRequested = AmountFormatter::amountRequested($intent);
+        $amountPaid = AmountFormatter::amountPaid($intent);
+        $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
+        $isToken = is_array($intent->amountRequested);
+        $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
+
         return [
             'mode' => $mode,
+            'assetLabel' => strtoupper($mode),
+            // The merchant's part of the design: one accent colour and the logo, see AccentColor and PageLogo.
+            'accentColor' => AccentColor::sanitize($this->configuration->getPaymentPageAccentColor()),
+            'logo' => $this->pageLogo->forShop($shopName, $context->getContext()),
+            'shopName' => $shopName,
+            // Public browser identifiers for the wallet apps; the wallet module shows those only when set.
+            'xamanApiKey' => $this->configuration->getXamanApiKey(),
+            'walletConnectProjectId' => $this->configuration->getWalletConnectProjectId(),
             /*
              * The five-state payment status (INVARIANTS.md, "Payment status"),
              * rendered server-side: one block per state, the script only
-             * switches them and fills in two numbers from the poll.
+             * switches them and fills in numbers from the poll.
              */
             'state' => $status->state(),
             'secondsLeft' => $status->secondsLeft,
             'hasExpiry' => $intent->expiry !== null,
-            // Every amount on the page comes out of AmountFormatter; nothing is rounded in the view.
-            'amountPaidDisplay' => AmountFormatter::amountPaid($intent),
-            'shortfallDisplay' => AmountFormatter::shortfall($intent, $this->settlementPolicy),
+            'quoteSeconds' => $this->configuration->getQuoteExpirySeconds(),
+            /*
+             * Every amount on the page comes out of AmountFormatter; nothing
+             * is rounded in the view. The amount to send is the shortfall
+             * while a partial payment is in, the request otherwise.
+             */
+            'amountRequestedDisplay' => $amountRequested,
+            'amountPaidDisplay' => $amountPaid,
+            'shortfallDisplay' => $shortfall,
+            'amountDueDisplay' => $amountDue,
+            'paidShare' => self::paidShare($amountPaid, $amountRequested, $status->state()),
             'wrongToken' => $this->settlementPolicy->isWrongAsset($intent),
-            'amountRequestedDisplay' => AmountFormatter::amountRequested($intent),
             'exchangeRateDisplay' => AmountFormatter::rate($intent->exchangeRate),
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
@@ -234,15 +272,39 @@ class XrplPaymentController extends StorefrontController
             'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'network' => $intent->network,
+            'explorerBase' => $intent->network === 'mainnet'
+                ? 'https://livenet.xrpl.org/transactions/'
+                : 'https://testnet.xrpl.org/transactions/',
             'destinationAccount' => $intent->destinationAccount,
             'destinationTag' => $intent->destinationTag,
+            // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
+            'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
+            'currencyHex' => $isToken ? (string) $intent->amountRequested['currency'] : null,
+            // For a browser wallet: the amount in drops, converted by the core, never in the browser.
+            'amountDrops' => $isToken ? null : XrplAmount::xrpToDrops($amountDue),
+            // The payment request behind the QR code; see PaymentUri for what it carries.
+            'paymentUri' => PaymentUri::forIntent($intent, $amountDue),
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,
             'deepLinkCode' => $deepLinkCode,
+            'pageUrl' => $this->generateUrl('frontend.checkout.ledger-direct.payment', ['orderId' => $order->getId()]),
             'pollUrl' => $this->generateUrl('frontend.checkout.ledger-direct.check-payment', $routeParameters),
             'refreshUrl' => $this->generateUrl('frontend.checkout.ledger-direct.refresh-quote', ['orderId' => $order->getId()]),
-            'paymentPageTitle' => 'Pay with ' . strtoupper($mode) . ' on XRPL ' . $intent->network,
         ];
+    }
+
+    /**
+     * The width of the partial-payment progress bar, in whole percent. A
+     * visual only — never shown as a number, and the only arithmetic on
+     * this page that is not the core's.
+     */
+    private static function paidShare(?string $paid, string $requested, string $state): int
+    {
+        if ($state !== PaymentStatus::PARTIAL || $paid === null || !is_numeric($paid) || !is_numeric($requested) || (float) $requested <= 0.0) {
+            return 0;
+        }
+
+        return (int) max(0, min(100, round(((float) $paid / (float) $requested) * 100)));
     }
 }

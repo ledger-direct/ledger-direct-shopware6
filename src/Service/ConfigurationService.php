@@ -21,6 +21,23 @@ class ConfigurationService
 
     private const CONFIG_KEY_QUOTE_EXPIRY = 'xrplQuoteExpiry';
 
+    // Payment page card — keys as in config.xml, checked there, not against the code.
+    private const CONFIG_KEY_LOGO_MODE = 'paymentPageLogoMode';
+
+    private const CONFIG_KEY_LOGO_MEDIA_ID = 'paymentPageLogo';
+
+    private const CONFIG_KEY_ACCENT_COLOR = 'paymentPageAccentColor';
+
+    private const CONFIG_KEY_XAMAN_API_KEY = 'xamanApiKey';
+
+    private const CONFIG_KEY_WALLETCONNECT_PROJECT_ID = 'walletConnectProjectId';
+
+    public const LOGO_MODE_SHOP = 'shop';
+
+    public const LOGO_MODE_CUSTOM = 'custom';
+
+    public const LOGO_MODE_NONE = 'none';
+
     public const DEFAULT_QUOTE_EXPIRY_SECONDS = 300;
 
     private SystemConfigService $systemConfigService;
@@ -131,5 +148,49 @@ class ConfigurationService
     public function getQuoteExpirySeconds(): int
     {
         return $this->getInt(self::CONFIG_KEY_QUOTE_EXPIRY, self::DEFAULT_QUOTE_EXPIRY_SECONDS);
+    }
+
+    /**
+     * Reads a string setting; an unset or non-string value is the default.
+     */
+    public function getString(string $configName, string $defaultValue = ''): string
+    {
+        $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName);
+
+        return is_string($value) ? trim($value) : $defaultValue;
+    }
+
+    /** One of the LOGO_MODE_* constants; anything else reads as the default, the shop logo. */
+    public function getPaymentPageLogoMode(): string
+    {
+        $mode = $this->getString(self::CONFIG_KEY_LOGO_MODE, self::LOGO_MODE_SHOP);
+
+        return in_array($mode, [self::LOGO_MODE_SHOP, self::LOGO_MODE_CUSTOM, self::LOGO_MODE_NONE], true)
+            ? $mode
+            : self::LOGO_MODE_SHOP;
+    }
+
+    /** The media id chosen for the payment page logo, or null. */
+    public function getPaymentPageLogoMediaId(): ?string
+    {
+        $id = $this->getString(self::CONFIG_KEY_LOGO_MEDIA_ID);
+
+        return $id === '' ? null : $id;
+    }
+
+    /** The accent colour as stored; validation and the contrast rule live in Presentation\AccentColor. */
+    public function getPaymentPageAccentColor(): string
+    {
+        return $this->getString(self::CONFIG_KEY_ACCENT_COLOR);
+    }
+
+    public function getXamanApiKey(): string
+    {
+        return $this->getString(self::CONFIG_KEY_XAMAN_API_KEY);
+    }
+
+    public function getWalletConnectProjectId(): string
+    {
+        return $this->getString(self::CONFIG_KEY_WALLETCONNECT_PROJECT_ID);
     }
 }
