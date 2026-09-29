@@ -1,0 +1,106 @@
+# Nightly end-to-end run against the XRPL testnet (Handover-E2E-Teststrategie.md, stage 1).
+#
+# The same dockware Shopware as the PHPUnit job in ci.yml, published on port 80, the
+# plugin installed into it; then the harness `ledger-direct-e2e` drives the case
+# catalogue PS-01…PS-11 over the Store API, the Admin API and the container's
+# console. Real transactions on the testnet: a fresh receiving account per run, paid
+# from the treasury the organisation secrets name. Not a merge gate — the testnet
+# and its faucet are not deterministic — so it runs on a schedule and on demand.
+#
+# Secrets (organisation-wide, shared by the plugin repos):
+#   LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED / _ADDRESS   the payer wallet (XRP, RLUSD, USDC)
+#   LEDGERDIRECT_E2E_READ_TOKEN                           read access to ledger-direct/ledger-direct-e2e (private)
+name: E2E (testnet)
+
+on:
+  schedule:
+    - cron: '47 3 * * *'
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: 'Case IDs, "automated" or "all" (all includes PS-10, 35 minutes)'
+        default: 'all'
+
+jobs:
+  e2e:
+    name: ld-e2e against dockware
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: LedgerDirect
+
+      - name: Start dockware (Shopware 6.7 + DB)
+        run: |
+          docker run -d --name shopware -p 80:80 dockware/shopware:6.7-latest
+          for i in $(seq 1 60); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' shopware 2>/dev/null || echo starting)"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker exec shopware test -f /var/www/html/bin/console
+
+      - name: Copy plugin into the container
+        run: |
+          docker exec shopware mkdir -p /var/www/html/custom/plugins
+          docker cp LedgerDirect shopware:/var/www/html/custom/plugins/LedgerDirect
+
+      # Shopware's dev config uses an in-memory cache per request, which turns the
+      # sync throttle and the rate cache into no-ops (PS-08 fails). The same override
+      # the local harness installs: a cache that survives a request.
+      - name: Install and activate the plugin, with a persistent cache
+        run: |
+          docker exec shopware bash -lc 'mkdir -p /var/www/html/config/packages/dev && printf "framework:\n    cache:\n        app: cache.adapter.filesystem\n" > /var/www/html/config/packages/dev/zz_ledger_direct_cache.yaml'
+          docker exec shopware bash -lc 'cd /var/www/html && php bin/console plugin:refresh && php bin/console plugin:install --activate LedgerDirect && php bin/console theme:compile && php bin/console cache:clear'
+
+      # The Storefront sales channel's access key, which the Store API requires.
+      - name: Read the sales channel access key
+        id: channel
+        run: |
+          key="$(docker exec shopware bash -lc 'mysql -h127.0.0.1 -uroot -proot shopware -N -e "SELECT access_key FROM sales_channel WHERE type_id = UNHEX(\"8A243080F92E4C719546314B577CF82B\") LIMIT 1"' | tr -d '[:space:]')"
+          test -n "$key"
+          echo "access_key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the harness
+        uses: actions/checkout@v4
+        with:
+          repository: ledger-direct/ledger-direct-e2e
+          token: ${{ secrets.LEDGERDIRECT_E2E_READ_TOKEN }}
+          path: e2e
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Build the harness
+        working-directory: e2e
+        run: npm ci && npm run build
+
+      - name: Run the case catalogue
+        working-directory: e2e
+        env:
+          LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED: ${{ secrets.LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED }}
+          LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS: ${{ secrets.LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS }}
+        run: >
+          node dist/cli.js run --target shopware
+          --cases "${{ github.event.inputs.cases || 'all' }}"
+          --base-url http://localhost
+          --access-key "${{ steps.channel.outputs.access_key }}"
+          --container shopware
+          --report out/report.json
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ld-e2e-report
+          path: e2e/out/report.json
+          if-no-files-found: ignore
+
+      - name: Show the shop log
+        if: failure()
+        run: docker exec shopware bash -lc 'tail -n 200 /var/www/html/var/log/dev.log' || true
