@@ -8,7 +8,7 @@
 # and its faucet are not deterministic — so it runs on a schedule and on demand.
 #
 # Secrets (organisation-wide, shared by the plugin repos):
-#   LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED / _ADDRESS   the payer wallet (XRP, RLUSD, USDC)
+#   LEDGERDIRECT_CI_XRPL_TREASURY_SEED / _ADDRESS   the CI payer wallet (XRP, RLUSD, USDC), separate from the local one
 # The harness repository ledger-direct/ledger-direct-e2e is public; its checkout needs no token.
 name: E2E (testnet)
 
@@ -82,8 +82,9 @@ jobs:
       - name: Run the case catalogue
         working-directory: e2e
         env:
-          LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED: ${{ secrets.LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED }}
-          LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS: ${{ secrets.LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS }}
+          # The harness reads the testnet treasury variables; in CI they hold the dedicated CI wallet.
+          LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_SEED }}
+          LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_ADDRESS }}
         run: >
           node dist/cli.js run --target shopware
           --cases "${{ github.event.inputs.cases || 'all' }}"
