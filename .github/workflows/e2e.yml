@@ -9,7 +9,7 @@
 #
 # Secrets (organisation-wide, shared by the plugin repos):
 #   LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED / _ADDRESS   the payer wallet (XRP, RLUSD, USDC)
-#   LEDGERDIRECT_E2E_READ_TOKEN                           read access to ledger-direct/ledger-direct-e2e (private)
+# The harness repository ledger-direct/ledger-direct-e2e is public; its checkout needs no token.
 name: E2E (testnet)
 
 on:
@@ -67,7 +67,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ledger-direct/ledger-direct-e2e
-          token: ${{ secrets.LEDGERDIRECT_E2E_READ_TOKEN }}
           path: e2e
 
       - uses: actions/setup-node@v4
