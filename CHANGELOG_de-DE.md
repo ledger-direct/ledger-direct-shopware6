@@ -1,3 +1,9 @@
+# 1.4.4
+- Core 0.8.1: Eine Zahlung in der anderen Asset-Klasse — ein Token für eine XRP-Bestellung oder XRP für
+  eine Token-Bestellung — wird als Zahlung im falschen Token mit dem vollen Restbetrag gemeldet
+  (Transaktion `paid_partially`), statt ignoriert zu werden. Bisher blieb die Seite auf „Warten", während
+  das Geld auf dem Ledger lag
+
 # 1.4.3
 - Core 0.8: Die Zahlungsanfrage hinter dem QR-Code (`PaymentUri`) und die Regel für die Akzentfarbe
   (`AccentColor`) kommen jetzt aus der geteilten Core-Bibliothek; die Kopien im Plugin sind weg. Für
