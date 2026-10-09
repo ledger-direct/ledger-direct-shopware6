@@ -46,6 +46,15 @@ jobs:
         with:
           path: LedgerDirect
 
+      # Docker Hub counts anonymous pulls per IP, and GitHub-hosted runners share
+      # theirs with everyone, so the dockware pull failed at random with
+      # "toomanyrequests". Logged in, it counts against the organisation's account.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Start dockware (Shopware 6.7 + DB)
         run: |
           # If this exact tag is unavailable, use dockware/shopware:6.7.13.0
