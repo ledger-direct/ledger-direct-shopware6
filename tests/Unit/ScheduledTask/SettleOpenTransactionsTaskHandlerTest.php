@@ -6,6 +6,7 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTask;
 use Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTaskHandler;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Mockery;
@@ -30,6 +31,9 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
     private OrderTransactionService $orderTransactionService;
 
     private OrderTransactionStateHandler $stateHandler;
+
+    /** The configured receiving account; empty means none. */
+    private string $configuredAccount = '';
 
     protected function setUp(): void
     {
@@ -96,11 +100,27 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $this->handler()->run();
     }
 
-    public function testNothingOpenMeansNoNodeRequest(): void
+    public function testNothingOpenAndNoAccountConfiguredMeansNoNodeRequest(): void
     {
         $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
             ->once()->andReturn(new OrderTransactionCollection([]));
         $this->orderTransactionService->shouldReceive('syncLedger')->never();
+
+        $this->handler()->run();
+    }
+
+    /**
+     * A payment on an order the merchant cancelled, with nothing else open,
+     * must still reach the transaction table: the configured account is
+     * synced on every run, whether or not an order points at it.
+     */
+    public function testTheConfiguredAccountIsSyncedEvenWithNothingOpen(): void
+    {
+        $this->configuredAccount = 'rConfiguredAccount';
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([]));
+        $this->orderTransactionService->shouldReceive('syncLedger')
+            ->once()->with('rConfiguredAccount', 'testnet', false);
 
         $this->handler()->run();
     }
@@ -111,8 +131,18 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
             Mockery::mock(EntityRepository::class),
             new NullLogger(),
             $this->orderTransactionService,
-            new PaymentStateService($this->stateHandler, $this->orderTransactionService, new SettlementPolicy(), new NullLogger())
+            new PaymentStateService($this->stateHandler, $this->orderTransactionService, new SettlementPolicy(), new NullLogger()),
+            $this->configuration()
         );
+    }
+
+    private function configuration(): ConfigurationService
+    {
+        $configuration = Mockery::mock(ConfigurationService::class);
+        $configuration->shouldReceive('getDestinationAccount')->andReturn($this->configuredAccount);
+        $configuration->shouldReceive('getNetwork')->andReturn('testnet');
+
+        return $configuration;
     }
 
     private function transaction(string $id, string $state): OrderTransactionEntity
