@@ -1,0 +1,8 @@
+{% block sw_order_detail_details_payment %}
+    {% parent %}
+
+    <ledger-direct-payment-card
+        v-if="transaction && isLedgerDirectTransaction"
+        :order-transaction-id="transaction.id"
+    />
+{% endblock %}

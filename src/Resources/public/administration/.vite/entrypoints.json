@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/ledgerdirect/administration/",
+  "entryPoints": {
+    "ledger-direct": {
+      "css": [
+        "/bundles/ledgerdirect/administration/assets/ledger-direct-CANFXNlH.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/ledgerdirect/administration/assets/ledger-direct-rTdLB6k2.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

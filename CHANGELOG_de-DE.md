@@ -1,3 +1,13 @@
+# 1.5.0
+- Eine LedgerDirect-Karte im Bestelldetail (Tab Details, unter der Transaktionskarte): Zustand der
+  Zahlung, was quotiert wurde (Asset, Betrag, Kurs, Empfangskonto, Destination Tag, Herausgeber,
+  Kursgültigkeit), was eingegangen ist — bei falschem Token mit dessen Namen und Herausgeber —, was
+  noch offen ist, und die Transaktion als Link zum XRPL-Explorer. Nur lesend; der Server berechnet
+  alles über die neue Admin-Route `/api/_action/ledger-direct/payment-info/{orderTransactionId}`
+  (`order:read`)
+- Der Scheduled Task synchronisiert das konfigurierte Empfangskonto bei jedem Lauf, sodass auch eine
+  Zahlung auf eine bereits stornierte Bestellung erfasst wird
+
 # 1.4.4
 - Core 0.8.1: Eine Zahlung in der anderen Asset-Klasse — ein Token für eine XRP-Bestellung oder XRP für
   eine Token-Bestellung — wird als Zahlung im falschen Token mit dem vollen Restbetrag gemeldet

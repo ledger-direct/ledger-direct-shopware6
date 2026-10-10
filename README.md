@@ -46,10 +46,14 @@ in place while the customer watches, without reloading.
 The transaction state in the administration follows the ledger. **Paid** once the order is settled,
 whether or not the customer is still looking at the page. **Paid partially** as soon as something
 arrives that does not settle the order — also for a payment in another token or from another issuer,
-where nothing is credited but money is there and Shopware has no closer state. The amounts behind
-that state are stored on the order transaction's custom fields; the administration does not yet show
-them in a panel of their own, as the PrestaShop, Magento and WooCommerce plugins do. A transaction the
-merchant closed by hand (cancelled, failed, refunded) is never reopened by a late payment.
+where nothing is credited but money is there and Shopware has no closer state. The numbers behind
+that state are on the **LedgerDirect card** of the order detail (tab *Details*, under the transaction
+card): the payment's state in the core's five words, what was quoted (asset, amount, rate, receiving
+account, destination tag, issuer for a token, quote validity), what arrived — naming the other token
+and its issuer when it was the wrong one —, what is still due, and the transaction as a link to the
+XRPL explorer. The card is read-only and computed on the server; it is the same payload the payment
+page polls. A transaction the merchant closed by hand (cancelled, failed, refunded) is never reopened
+by a late payment.
 
 The page asks the server every 8 seconds. That endpoint syncs with the XRPL node at most once every
 5 seconds per receiving account, whatever the number of customers waiting; in between it answers

@@ -48,6 +48,14 @@
         </service>
 
         <!-- Controllers -->
+        <service id="Hardcastle\LedgerDirect\Api\PaymentInfoController" public="true">
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService" />
+            <argument type="service" id="Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy" />
+            <call method="setContainer">
+                <argument type="service" id="service_container" />
+            </call>
+        </service>
+
         <service id="Hardcastle\LedgerDirect\Storefront\Controller\XrpPriceAggregatorController" public="true">
             <call method="setContainer">
                 <argument type="service" id="service_container" />
