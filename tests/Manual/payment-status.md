@@ -84,6 +84,11 @@ request; the poll answers `"state":"wrong_asset"` with `amount_paid.issuer` the 
 `redirect`, `paid`, and `ledger_direct.hash` is the USDC transaction. (Order 10014 in the dev
 database is a standing example of the first half.)
 
+Run it a second time **across the asset class**: an *XRP* order paid with RLUSD. Look for the same
+wrong-asset block; the poll's `amount_paid` is the token object and `shortfall` the XRP number; the
+transaction `paid_partially`; then the XRP in full settles with the XRP hash. Core 0.8.1 — before,
+the payment was skipped and the page stayed on *waiting*.
+
 ## PS-05 — Settled
 
 Place an XRP order of about 1.00 EUR. Send exactly the amount the page shows.

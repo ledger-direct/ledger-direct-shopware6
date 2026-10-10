@@ -1,3 +1,9 @@
+# 1.4.4
+- Core 0.8.1: a payment in the other asset class — a token sent for an XRP order, or XRP for a token
+  order — is reported as a wrong-token payment with the full amount still due (transaction
+  `paid_partially`), instead of being ignored. Before, the page stayed on "waiting" while the money sat
+  on the ledger
+
 # 1.4.3
 - Core 0.8: the payment request behind the QR code (`PaymentUri`) and the accent-colour rule
   (`AccentColor`) come from the shared core library now; the plugin's copies are gone. No change
