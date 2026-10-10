@@ -42,6 +42,7 @@
             <argument type="service" id="logger"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\OrderTransactionService"/>
             <argument type="service" id="Hardcastle\LedgerDirect\Service\PaymentStateService"/>
+            <argument type="service" id="Hardcastle\LedgerDirect\Service\ConfigurationService"/>
 
             <tag name="messenger.message_handler"/>
         </service>

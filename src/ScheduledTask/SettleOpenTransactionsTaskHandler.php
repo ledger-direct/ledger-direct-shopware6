@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\ScheduledTask;
 
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Psr\Log\LoggerInterface;
@@ -14,13 +15,14 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
 /**
- * One node request per receiving account and network, then every open
- * order matched against the local transaction table — not one sync per
+ * The configured receiving account is synced on every run, then one node
+ * request per further receiving account and network of the open orders,
+ * then every open order matched against the local transaction table — not one sync per
  * order. Unthrottled: this is the safety net on its own schedule, the
  * throttle is for the payment page that anyone can poll.
  *
- * Which accounts to sync is read from the open orders themselves, not from
- * the configuration: a shop with a test phase has orders on both networks,
+ * Which further accounts to sync is read from the open orders themselves, not
+ * only from the configuration: a shop with a test phase has orders on both networks,
  * and an order quoted against an earlier receiving address still has to
  * settle after the merchant changed it.
  */
@@ -32,6 +34,7 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
         LoggerInterface $logger,
         private readonly OrderTransactionService $orderTransactionService,
         private readonly PaymentStateService $paymentState,
+        private readonly ConfigurationService $configuration,
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
     }
@@ -41,7 +44,16 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
         $context = Context::createCLIContext();
         $transactions = $this->orderTransactionService->findOpenLedgerDirectTransactions($context);
 
+        // The configured receiving account is synced on every run, open orders or not: a
+        // payment on an order the merchant has already cancelled would otherwise never
+        // reach the transaction table until some other order on the account happened to
+        // trigger a sync. One node request.
         $accounts = [];
+        $configuredAccount = $this->configuration->getDestinationAccount();
+        if ($configuredAccount !== '') {
+            $configuredNetwork = $this->configuration->getNetwork();
+            $accounts[$configuredNetwork . '|' . $configuredAccount] = [$configuredAccount, $configuredNetwork];
+        }
         $matchable = [];
 
         /** @var OrderTransactionEntity $transaction */
