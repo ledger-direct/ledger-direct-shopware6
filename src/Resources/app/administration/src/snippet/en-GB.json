@@ -1,0 +1,29 @@
+{
+    "ledger-direct": {
+        "paymentCard": {
+            "title": "LedgerDirect",
+            "state": {
+                "waiting": "Waiting for payment",
+                "expired": "Quote expired, nothing received",
+                "partial": "Partially paid",
+                "wrong_asset": "Payment in the wrong asset",
+                "settled": "Paid"
+            },
+            "asset": "Asset",
+            "amountRequested": "Amount requested",
+            "exchangeRate": "Exchange rate",
+            "destinationAccount": "Receiving account",
+            "destinationTag": "Destination tag",
+            "issuer": "Issuer",
+            "quoteValidUntil": "Quote valid until",
+            "amountReceived": "Amount received",
+            "receivedWrongToken": "{amount} {currency} from issuer {issuer} – not the requested asset, not credited",
+            "receivedWrongNative": "{amount} {currency} – not the requested asset, not credited",
+            "amountOutstanding": "Amount outstanding",
+            "transaction": "Transaction",
+            "ctid": "CTID",
+            "unreadable": "The payment record on this transaction cannot be read.",
+            "unavailable": "The payment information could not be loaded."
+        }
+    }
+}

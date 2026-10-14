@@ -1,0 +1,76 @@
+{% block ledger_direct_payment_card %}
+<mt-card
+    v-if="!hidden"
+    class="ledger-direct-payment-card"
+    position-identifier="ledger-direct-payment-card"
+    :title="$tc('ledger-direct.paymentCard.title')"
+    :is-loading="isLoading"
+>
+    {% block ledger_direct_payment_card_problem %}
+    <p v-if="problem === 'unreadable'" class="ledger-direct-payment-card__problem">
+        {{ $tc('ledger-direct.paymentCard.unreadable') }}
+    </p>
+    <p v-else-if="problem === 'unavailable'" class="ledger-direct-payment-card__problem">
+        {{ $tc('ledger-direct.paymentCard.unavailable') }}
+    </p>
+    {% endblock %}
+
+    {% block ledger_direct_payment_card_content %}
+    <template v-if="display">
+        <div class="ledger-direct-payment-card__state">
+            <sw-label :variant="stateVariant" appearance="pill" size="medium">{{ stateLabel }}</sw-label>
+        </div>
+
+        <sw-description-list class="ledger-direct-payment-card__rows" :columns="2">
+            <dt>{{ $tc('ledger-direct.paymentCard.asset') }}</dt>
+            <dd>{{ display.asset }} ({{ display.chain }} {{ display.network }})</dd>
+
+            <dt>{{ $tc('ledger-direct.paymentCard.amountRequested') }}</dt>
+            <dd>{{ display.amountRequested }} {{ display.asset }}</dd>
+
+            <dt>{{ $tc('ledger-direct.paymentCard.exchangeRate') }}</dt>
+            <dd>{{ display.exchangeRate }} {{ display.pairing }}</dd>
+
+            <dt>{{ $tc('ledger-direct.paymentCard.destinationAccount') }}</dt>
+            <dd><code>{{ display.destinationAccount }}</code></dd>
+
+            <dt>{{ $tc('ledger-direct.paymentCard.destinationTag') }}</dt>
+            <dd><code>{{ display.destinationTag }}</code></dd>
+
+            <template v-if="display.issuer">
+                <dt>{{ $tc('ledger-direct.paymentCard.issuer') }}</dt>
+                <dd><code>{{ display.issuer }}</code></dd>
+            </template>
+
+            <template v-if="display.quoteValidUntil">
+                <dt>{{ $tc('ledger-direct.paymentCard.quoteValidUntil') }}</dt>
+                <dd>{{ dateFilter(display.quoteValidUntil, { hour: '2-digit', minute: '2-digit' }) }}</dd>
+            </template>
+
+            <template v-if="display.amountPaid !== null">
+                <dt>{{ $tc('ledger-direct.paymentCard.amountReceived') }}</dt>
+                <dd :class="{ 'ledger-direct-payment-card__wrong-asset': display.wrongAsset }">{{ receivedText }}</dd>
+            </template>
+
+            <template v-if="display.shortfall !== null && display.amountPaid !== null">
+                <dt>{{ $tc('ledger-direct.paymentCard.amountOutstanding') }}</dt>
+                <dd>{{ display.shortfall }} {{ display.asset }}</dd>
+            </template>
+
+            <template v-if="display.hash">
+                <dt>{{ $tc('ledger-direct.paymentCard.transaction') }}</dt>
+                <dd>
+                    <a v-if="display.explorerUrl" :href="display.explorerUrl" target="_blank" rel="noopener noreferrer"><code>{{ display.hash }}</code></a>
+                    <code v-else>{{ display.hash }}</code>
+                </dd>
+            </template>
+
+            <template v-if="display.ctid">
+                <dt>{{ $tc('ledger-direct.paymentCard.ctid') }}</dt>
+                <dd><code>{{ display.ctid }}</code></dd>
+            </template>
+        </sw-description-list>
+    </template>
+    {% endblock %}
+</mt-card>
+{% endblock %}

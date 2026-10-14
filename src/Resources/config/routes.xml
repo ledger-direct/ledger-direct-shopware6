@@ -6,4 +6,5 @@
 
     <import resource="../../SalesChannel/*Route.php" type="attribute" />
     <import resource="../../Storefront/Controller/*Controller.php" type="attribute" />
+    <import resource="../../Api/*Controller.php" type="attribute" />
 </routes>

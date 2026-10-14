@@ -1,0 +1,29 @@
+{
+    "ledger-direct": {
+        "paymentCard": {
+            "title": "LedgerDirect",
+            "state": {
+                "waiting": "Warten auf Zahlung",
+                "expired": "Kurs abgelaufen, nichts eingegangen",
+                "partial": "Teilweise bezahlt",
+                "wrong_asset": "Zahlung im falschen Asset",
+                "settled": "Bezahlt"
+            },
+            "asset": "Asset",
+            "amountRequested": "Geforderter Betrag",
+            "exchangeRate": "Wechselkurs",
+            "destinationAccount": "Empfangskonto",
+            "destinationTag": "Destination Tag",
+            "issuer": "Herausgeber",
+            "quoteValidUntil": "Kurs gültig bis",
+            "amountReceived": "Eingegangen",
+            "receivedWrongToken": "{amount} {currency} von Herausgeber {issuer} – nicht das geforderte Asset, nicht angerechnet",
+            "receivedWrongNative": "{amount} {currency} – nicht das geforderte Asset, nicht angerechnet",
+            "amountOutstanding": "Offener Betrag",
+            "transaction": "Transaktion",
+            "ctid": "CTID",
+            "unreadable": "Der Zahlungsdatensatz dieser Transaktion ist nicht lesbar.",
+            "unavailable": "Die Zahlungsinformationen konnten nicht geladen werden."
+        }
+    }
+}

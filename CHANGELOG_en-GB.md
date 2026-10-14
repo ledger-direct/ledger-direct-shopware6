@@ -1,3 +1,12 @@
+# 1.5.0
+- A LedgerDirect card on the order detail (tab Details, under the transaction card): the payment's
+  state, what was quoted (asset, amount, rate, receiving account, destination tag, issuer, quote
+  validity), what arrived — naming the other token and its issuer when it was the wrong one —, what is
+  still due, and the transaction as a link to the XRPL explorer. Read-only; computed on the server by
+  the new admin route `/api/_action/ledger-direct/payment-info/{orderTransactionId}` (`order:read`)
+- The scheduled task syncs the configured receiving account on every run, so a payment on an order
+  the merchant has already cancelled is on record too
+
 # 1.4.4
 - Core 0.8.1: a payment in the other asset class — a token sent for an XRP order, or XRP for a token
   order — is reported as a wrong-token payment with the full amount still due (transaction

@@ -1,0 +1,27 @@
+.ledger-direct-payment-card {
+    &__state {
+        margin-bottom: 16px;
+    }
+
+    &__rows {
+        dt {
+            color: var(--color-text-secondary-default, #52667a);
+        }
+
+        dd {
+            overflow-wrap: anywhere;
+        }
+
+        code {
+            font-size: 12px;
+        }
+    }
+
+    &__wrong-asset {
+        color: var(--color-text-critical-default, #de294c);
+    }
+
+    &__problem {
+        color: var(--color-text-secondary-default, #52667a);
+    }
+}
