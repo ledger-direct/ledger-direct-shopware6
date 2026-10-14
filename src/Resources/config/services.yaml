@@ -1,0 +1,183 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/symfony/dependency-injection/7.4/Loader/schema/services.schema.json
+services:
+    Hardcastle\LedgerDirect\Command\XrplTransactionLookupCommand:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+        tags:
+            - console.command
+
+    Hardcastle\LedgerDirect\Command\XrpPriceLookupCommand:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Price\PriceService'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+        tags:
+            - console.command
+
+    Hardcastle\LedgerDirect\Command\XrplTransactionSyncCommand:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncService'
+            - '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+        tags:
+            - console.command
+
+    Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTask:
+        tags:
+            - shopware.scheduled.task
+
+    Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTaskHandler:
+        arguments:
+            - '@scheduled_task.repository'
+            - '@logger'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+        tags:
+            - messenger.message_handler
+
+    Hardcastle\LedgerDirect\Api\PaymentInfoController:
+        public: true
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+        calls:
+            - [setContainer, ['@service_container']]
+
+    Hardcastle\LedgerDirect\Storefront\Controller\XrpPriceAggregatorController:
+        public: true
+        calls:
+            - [setContainer, ['@service_container']]
+
+    Hardcastle\LedgerDirect\Storefront\Controller\XrplPaymentController:
+        public: true
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\SalesChannel\PaymentRoute'
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+            - '@Hardcastle\LedgerDirect\Service\OrderAccessGuard'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentRedirect'
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@Hardcastle\LedgerDirect\Presentation\PageLogo'
+        calls:
+            - [setContainer, ['@service_container']]
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+        tags:
+            - shopware.payment.method
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+        tags:
+            - shopware.payment.method
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+        tags:
+            - shopware.payment.method
+
+    Hardcastle\LedgerDirect\Port\ShopwareConfigProvider:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+
+    Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository:
+        arguments:
+            - '@Doctrine\DBAL\Connection'
+
+    GuzzleHttp\Psr7\HttpFactory: ~
+
+    ledger_direct.rate_cache:
+        class: Symfony\Component\Cache\Psr16Cache
+        arguments:
+            - '@cache.object'
+
+    Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy: ~
+
+    Hardcastle\LedgerDirect\Core\Price\PriceService:
+        arguments:
+            - '@shopware.app_system.guzzle'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+            - '@logger'
+            - '@ledger_direct.rate_cache'
+
+    Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
+
+    Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Price\PriceService'
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+
+    Hardcastle\LedgerDirect\Core\Xrpl\XrplClient:
+        arguments:
+            - '@shopware.app_system.guzzle'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+
+    Hardcastle\LedgerDirect\Core\Xrpl\SyncService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
+            - '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle:
+        arguments:
+            - '@ledger_direct.rate_cache'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\SalesChannel\PaymentRoute:
+        public: true
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\OrderAccessGuard'
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentRedirect'
+
+    Hardcastle\LedgerDirect\Presentation\PageLogo:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@media.repository'
+
+    Hardcastle\LedgerDirect\Service\ConfigurationService:
+        arguments:
+            - '@Shopware\Core\System\SystemConfig\SystemConfigService'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\Service\OrderAccessGuard:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+
+    Hardcastle\LedgerDirect\Service\PaymentStateService:
+        arguments:
+            - '@Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\Service\PaymentRedirect:
+        arguments:
+            - '@router'
+
+    Hardcastle\LedgerDirect\Service\OrderTransactionService:
+        arguments:
+            - '@order.repository'
+            - '@order_transaction.repository'
+            - '@currency.repository'
+            - '@Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService'
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncService'
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle'
+            - '@logger'
