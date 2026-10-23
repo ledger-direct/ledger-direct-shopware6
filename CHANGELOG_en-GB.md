@@ -1,3 +1,10 @@
+# 1.5.1
+- Core 0.9: the synced transactions store the CTID in the column `tx_ctid` instead of `ctid`, the
+  name every LedgerDirect plugin uses from now on (PostgreSQL reserves `ctid` for a system column).
+  A migration renames the column in place on update; nothing changes for customers or merchants
+- Core 0.9: a transaction whose CTID is malformed is skipped during sync, and logged, instead of
+  being stored truncated
+
 # 1.5.0
 - A LedgerDirect card on the order detail (tab Details, under the transaction card): the payment's
   state, what was quoted (asset, amount, rate, receiving account, destination tag, issuer, quote

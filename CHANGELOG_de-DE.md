@@ -1,3 +1,11 @@
+# 1.5.1
+- Core 0.9: Die synchronisierten Transaktionen speichern die CTID in der Spalte `tx_ctid` statt
+  `ctid`, dem Namen, den ab jetzt alle LedgerDirect-Plugins verwenden (PostgreSQL reserviert `ctid`
+  für eine Systemspalte). Eine Migration benennt die Spalte beim Update um; für Kunden und Händler
+  ändert sich nichts
+- Core 0.9: Eine Transaktion mit fehlerhafter CTID wird beim Synchronisieren übersprungen und
+  protokolliert, statt gekürzt gespeichert zu werden
+
 # 1.5.0
 - Eine LedgerDirect-Karte im Bestelldetail (Tab Details, unter der Transaktionskarte): Zustand der
   Zahlung, was quotiert wurde (Asset, Betrag, Kurs, Empfangskonto, Destination Tag, Herausgeber,
