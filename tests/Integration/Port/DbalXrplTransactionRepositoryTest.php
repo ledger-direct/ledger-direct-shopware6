@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Migration\Migration1788801424NetworkColumn;
+use Hardcastle\LedgerDirect\Migration\Migration1792754053RenameCtidColumn;
 use Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -191,6 +192,20 @@ class DbalXrplTransactionRepositoryTest extends TestCase
         $this->assertSame('mainnet', $this->storedNetwork('HASH_CTID_MAINNET'));
     }
 
+    /**
+     * Core 0.9 stores the CTID in `tx_ctid`: PostgreSQL reserves `ctid` as a
+     * system column name. plugin:install has run the rename, so the table is
+     * current here; the migration has to recognise that and leave it alone.
+     */
+    public function testTheCtidColumnIsRenamedOnceAndOnlyOnce(): void
+    {
+        $this->assertSame(['tx_ctid'], $this->ctidColumns());
+
+        (new Migration1792754053RenameCtidColumn())->update($this->connection);
+
+        $this->assertSame(['tx_ctid'], $this->ctidColumns());
+    }
+
     public function testFindExistingHashesReturnsOnlyWhatIsStored(): void
     {
         $this->repository->saveTransactions([$this->givenTransaction('HASH_STORED', '11', 10003)]);
@@ -254,7 +269,7 @@ class DbalXrplTransactionRepositoryTest extends TestCase
             'network' => '',
             'ledger_index' => 42,
             'hash' => $hash,
-            'ctid' => $ctid,
+            'tx_ctid' => $ctid,
             'account' => 'rSenderAccount',
             'destination' => self::DESTINATION_ACCOUNT,
             'destination_tag' => 10005,
@@ -262,6 +277,18 @@ class DbalXrplTransactionRepositoryTest extends TestCase
             'meta' => '{}',
             'tx' => '{}',
         ]);
+    }
+
+    /**
+     * @return string[] the CTID column(s) the table carries, old name and new
+     */
+    private function ctidColumns(): array
+    {
+        $columns = $this->connection->fetchFirstColumn(
+            'SHOW COLUMNS FROM `ledger_direct_xrpl_tx` WHERE `Field` IN (\'ctid\', \'tx_ctid\')'
+        );
+
+        return array_map('strval', $columns);
     }
 
     private function storedNetwork(string $hash): string

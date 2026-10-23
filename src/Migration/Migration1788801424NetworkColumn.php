@@ -48,15 +48,21 @@ class Migration1788801424NetworkColumn extends MigrationStep
          * The CTID is 'C' + 7 hex ledger index + 4 hex transaction index +
          * 4 hex network id, so the last four characters are the network:
          * 0 is mainnet, 1 is testnet.
+         *
+         * The column is `ctid` when this runs during an upgrade and `tx_ctid`
+         * once Migration1792754053 has renamed it; a re-run on a current
+         * table (the integration test does that) has to read the new name.
          */
+        $ctidColumn = $this->columnExists($connection, self::TABLE, 'tx_ctid') ? 'tx_ctid' : 'ctid';
+
         $connection->executeStatement("
             UPDATE `" . self::TABLE . "`
-               SET `network` = CASE CONV(RIGHT(`ctid`, 4), 16, 10)
+               SET `network` = CASE CONV(RIGHT(`{$ctidColumn}`, 4), 16, 10)
                                  WHEN 0 THEN 'mainnet'
                                  WHEN 1 THEN 'testnet'
                                  ELSE ''
                                END
-             WHERE `network` = '' AND CHAR_LENGTH(`ctid`) = 16
+             WHERE `network` = '' AND CHAR_LENGTH(`{$ctidColumn}`) = 16
         ");
 
         if (!$this->indexExists($connection, self::TABLE, self::INDEX)) {
