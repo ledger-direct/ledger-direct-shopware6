@@ -1,3 +1,7 @@
+# 1.5.2
+- Store validation: a migration no longer reads a column name through a Doctrine DBAL class that
+  Shopware 6.8 marks as deprecated. No change in behaviour
+
 # 1.5.1
 - Core 0.9: the synced transactions store the CTID in the column `tx_ctid` instead of `ctid`, the
   name every LedgerDirect plugin uses from now on (PostgreSQL reserves `ctid` for a system column).

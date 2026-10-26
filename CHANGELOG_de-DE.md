@@ -1,3 +1,7 @@
+# 1.5.2
+- Store-Validierung: Eine Migration liest einen Spaltennamen nicht mehr über eine Doctrine-DBAL-Klasse,
+  die Shopware 6.8 als veraltet markiert. Keine Verhaltensänderung
+
 # 1.5.1
 - Core 0.9: Die synchronisierten Transaktionen speichern die CTID in der Spalte `tx_ctid` statt
   `ctid`, dem Namen, den ab jetzt alle LedgerDirect-Plugins verwenden (PostgreSQL reserviert `ctid`
