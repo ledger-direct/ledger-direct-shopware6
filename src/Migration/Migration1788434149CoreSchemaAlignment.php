@@ -83,12 +83,9 @@ class Migration1788434149CoreSchemaAlignment extends MigrationStep
             return false;
         }
 
-        foreach ($schemaManager->listTableColumns($table) as $column) {
-            if ($column->getName() === 'sequence') {
-                return true;
-            }
-        }
-
-        return false;
+        // Keyed by column name; the Column objects themselves inherit from
+        // a DBAL class Shopware 6.8 marks as deprecated, so the keys are
+        // what the store validation lets us read.
+        return array_key_exists('sequence', $schemaManager->listTableColumns($table));
     }
 }
