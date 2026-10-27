@@ -22,21 +22,21 @@ class ConfigurationServiceTest extends TestCase
         Mockery::close();
     }
 
-    public function testIsTest(): void
+    public function testIsTestnet(): void
     {
-        $this->assertTrue($this->configurationService->isTest());
+        $this->assertTrue($this->configurationService->isTestnet('XRPL'));
     }
 
     public function testGetNetwork(): void
     {
-        $this->assertSame('testnet', $this->configurationService->getNetwork());
+        $this->assertSame('testnet', $this->configurationService->getNetwork('XRPL'));
     }
 
     public function testGetDestinationAccount(): void
     {
         $this->assertSame(
             'rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr',
-            $this->configurationService->getDestinationAccount()
+            $this->configurationService->getDestinationAccount('XRPL')
         );
     }
 
@@ -53,11 +53,11 @@ class ConfigurationServiceTest extends TestCase
 
         $configurationService = ConfigurationServiceMock::createInstance($configuration);
 
-        $this->assertFalse($configurationService->isTest());
-        $this->assertSame('mainnet', $configurationService->getNetwork());
+        $this->assertFalse($configurationService->isTestnet('XRPL'));
+        $this->assertSame('mainnet', $configurationService->getNetwork('XRPL'));
         $this->assertSame(
             'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-            $configurationService->getDestinationAccount()
+            $configurationService->getDestinationAccount('XRPL')
         );
     }
 
@@ -67,16 +67,58 @@ class ConfigurationServiceTest extends TestCase
      */
     public function testStoredFalseWins(): void
     {
-        $this->assertTrue($this->configurationService->isRlusdEnabled());
-        $this->assertFalse($this->configurationService->isUsdcEnabled());
+        $this->assertTrue($this->configurationService->isAssetEnabled('XRPL', 'RLUSD'));
+        $this->assertFalse($this->configurationService->isAssetEnabled('XRPL', 'USDC'));
     }
 
     public function testAssetTogglesDefaultToEnabledWhenUnconfigured(): void
     {
         $configurationService = ConfigurationServiceMock::createInstance([]);
 
-        $this->assertTrue($configurationService->isRlusdEnabled());
-        $this->assertTrue($configurationService->isUsdcEnabled());
+        $this->assertTrue($configurationService->isAssetEnabled('XRPL', 'RLUSD'));
+        $this->assertTrue($configurationService->isAssetEnabled('XRPL', 'USDC'));
+    }
+
+    /**
+     * The keys follow the chain's name — `xrplIsRlusdEnabled`,
+     * `stellarIsUsdcEnabled`, `useStellarTestnet` — so a second chain's card
+     * is read without this class knowing the chain.
+     */
+    public function testASecondChainIsReadFromItsOwnKeys(): void
+    {
+        $configurationService = ConfigurationServiceMock::createInstance([
+            'LedgerDirect.config.stellarEnabled' => true,
+            'LedgerDirect.config.useStellarTestnet' => false,
+            'LedgerDirect.config.stellarMainnetDestinationAccount' => ' GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA ',
+            'LedgerDirect.config.stellarIsEurcEnabled' => false,
+        ]);
+
+        $this->assertTrue($configurationService->isChainEnabled('STELLAR'));
+        $this->assertSame('mainnet', $configurationService->getNetwork('STELLAR'));
+        $this->assertSame('GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA', $configurationService->getDestinationAccount('STELLAR'), 'trimmed');
+        $this->assertSame('', $configurationService->getAccount('STELLAR', 'testnet'));
+        $this->assertFalse($configurationService->isAssetEnabled('STELLAR', 'EURC'));
+        $this->assertTrue($configurationService->isAssetEnabled('STELLAR', 'USDC'), 'on by default');
+    }
+
+    /**
+     * The chain switch did not exist before 1.6.0. An installation with a
+     * receiving account configured keeps working as it did; one without has
+     * nothing to switch on; a stored value wins either way. A chain the
+     * merchant never touched is off.
+     */
+    public function testTheChainSwitchDefaultsToOnWhenAnAccountIsConfigured(): void
+    {
+        $this->assertTrue($this->configurationService->isChainEnabled('XRPL'), 'testnet account set, switch never stored');
+
+        $withoutAccount = ConfigurationServiceMock::createInstance(['LedgerDirect.config.useXrplTestnet' => true]);
+        $this->assertFalse($withoutAccount->isChainEnabled('XRPL'));
+
+        $switchedOff = Fixtures::getStaticConfiguration();
+        $switchedOff['LedgerDirect.config.xrplEnabled'] = false;
+        $this->assertFalse(ConfigurationServiceMock::createInstance($switchedOff)->isChainEnabled('XRPL'), 'a stored false wins over the account');
+
+        $this->assertFalse($this->configurationService->isChainEnabled('STELLAR'));
     }
 
     public function testGetQuoteExpirySeconds(): void

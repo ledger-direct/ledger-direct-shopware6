@@ -148,7 +148,7 @@ class PaymentStateServiceTest extends TestCase
         $before = $this->transaction('open');
         $after = $this->transaction('paid');
 
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')
             ->once()->with($before, $this->context, true)->andReturn($this->settled());
         $this->stateHandler->shouldReceive('paid')->once();
         $this->orderTransactionService->shouldReceive('getOrderTransactionById')
@@ -161,7 +161,7 @@ class PaymentStateServiceTest extends TestCase
     {
         $transaction = $this->transaction('open');
 
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
         $this->orderTransactionService->shouldReceive('getOrderTransactionById')->never();
 
         $this->assertSame($transaction, $this->service()->syncAndApply($transaction, $this->context, throttled: false));
@@ -171,7 +171,7 @@ class PaymentStateServiceTest extends TestCase
     {
         $transaction = $this->transaction('cancelled');
 
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->never();
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
 
         $this->assertSame($transaction, $this->service()->syncAndApply($transaction, $this->context, throttled: true));
     }

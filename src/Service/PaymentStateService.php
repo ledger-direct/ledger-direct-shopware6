@@ -99,7 +99,7 @@ final class PaymentStateService
 
         return $this->applyAndReload(
             $orderTransaction,
-            $this->orderTransactionService->syncOrderTransactionWithXrpl($orderTransaction, $context, $throttled),
+            $this->orderTransactionService->syncOrderTransaction($orderTransaction, $context, $throttled),
             $context
         );
     }

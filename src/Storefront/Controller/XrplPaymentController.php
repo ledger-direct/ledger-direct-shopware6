@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
+use Hardcastle\LedgerDirect\Core\AssetDescriptor;
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -110,12 +112,11 @@ class XrplPaymentController extends StorefrontController
             return new RedirectResponse($this->paymentRedirect->target($order, $returnUrl));
         }
 
-        return match ($orderTransaction->getPaymentMethodId()) {
-            PaymentMethodInstaller::XRP_PAYMENT_ID => $this->renderXrpPaymentPage($order, $orderTransaction, $returnUrl, $context),
-            PaymentMethodInstaller::RLUSD_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'rlusd', $returnUrl, $context),
-            PaymentMethodInstaller::USDC_PAYMENT_ID => $this->renderStablecoinPaymentPage($order, $orderTransaction, 'usdc', $returnUrl, $context),
-            default => $this->redirectToRoute('frontend.checkout.cart.page'),
-        };
+        if (PaymentMethodInstaller::chainAndAssetFor($orderTransaction->getPaymentMethodId()) === null) {
+            return $this->redirectToRoute('frontend.checkout.cart.page');
+        }
+
+        return $this->renderPaymentPage($order, $orderTransaction, $returnUrl, $context);
     }
 
     #[Route(path: '/ledger-direct/payment/check/{orderId}', name: 'frontend.checkout.ledger-direct.check-payment', methods: ['GET', 'POST'], defaults: ['XmlHttpRequest' => true])]
@@ -130,7 +131,7 @@ class XrplPaymentController extends StorefrontController
      * in the wrong asset, is matched against the quote it was made for, and
      * a refresh would re-quote an order that is already partly paid. The
      * destination account and tag stay the same either way
-     * (see OrderTransactionService::prepareOrderTransactionForXrpl()).
+     * (see OrderTransactionService::prepareOrderTransaction()).
      */
     #[Route(path: '/ledger-direct/payment/refresh/{orderId}', name: 'frontend.checkout.ledger-direct.refresh-quote', methods: ['POST'], options: ['seo' => 'false'])]
     public function refreshQuote(SalesChannelContext $context, string $orderId, Request $request): Response
@@ -158,15 +159,18 @@ class XrplPaymentController extends StorefrontController
             return $backToPaymentPage;
         }
 
-        $this->orderTransactionService->prepareOrderTransactionForXrpl($order, $orderTransaction, $context->getContext());
+        $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
 
         return $backToPaymentPage;
     }
 
     /**
-     * Renders the payment page for XRP payments.
+     * The one payment page, for every chain and asset: what differs is read
+     * from the intent — its `type` names chain and asset in the core's
+     * catalogue (ChainCatalog::forType()), and from there come the label,
+     * whether the asset is native or issued, and the decimals.
      */
-    private function renderXrpPaymentPage(
+    private function renderPaymentPage(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
         string $returnUrl,
@@ -174,37 +178,16 @@ class XrplPaymentController extends StorefrontController
     ): Response
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
+        $chainAndAsset = $intent === null ? null : ChainCatalog::forType($intent->type);
 
-        if ($intent === null) {
-            // Redirect to the checkout page with an error message stating that this message cannot be paid in XRP
-            $this->addFlash('danger', 'This order cannot be paid with XRP. Please contact support.');
+        if ($intent === null || $chainAndAsset === null) {
+            $this->addFlash('danger', 'This order cannot be paid with LedgerDirect. Please contact support.');
             return $this->redirectToRoute('frontend.checkout.cart.page');
         }
 
         return $this->renderStorefront(
             '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, 'xrp', $returnUrl, $context)
-        );
-    }
-
-    private function renderStablecoinPaymentPage(
-        OrderEntity $order,
-        OrderTransactionEntity $orderTransaction,
-        string $type,
-        string $returnUrl,
-        SalesChannelContext $context,
-    ): Response
-    {
-        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
-
-        if ($intent === null) {
-            $this->addFlash('danger', 'This order cannot be paid with ' . strtoupper($type) . '. Please contact support.');
-            return $this->redirectToRoute('frontend.checkout.cart.page');
-        }
-
-        return $this->renderStorefront(
-            '@Storefront/storefront/ledger-direct/payment.html.twig',
-            $this->paymentPageParameters($order, $orderTransaction, $intent, $type, $returnUrl, $context)
+            $this->paymentPageParameters($order, $orderTransaction, $intent, $chainAndAsset[1], $returnUrl, $context)
         );
     }
 
@@ -215,7 +198,7 @@ class XrplPaymentController extends StorefrontController
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
         PaymentIntent $intent,
-        string $mode,
+        AssetDescriptor $asset,
         string $returnUrl,
         SalesChannelContext $context,
     ): array {
@@ -232,12 +215,13 @@ class XrplPaymentController extends StorefrontController
         $amountRequested = AmountFormatter::amountRequested($intent);
         $amountPaid = AmountFormatter::amountPaid($intent);
         $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
-        $isToken = is_array($intent->amountRequested);
+        $isToken = !$asset->native;
         $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
 
         return [
-            'mode' => $mode,
-            'assetLabel' => strtoupper($mode),
+            'chain' => $intent->chain,
+            'mode' => strtolower($asset->code),
+            'assetLabel' => $asset->code,
             // The merchant's part of the design: one accent colour and the logo, see AccentColor and PageLogo.
             'accentColor' => AccentColor::sanitize($this->configuration->getPaymentPageAccentColor()),
             'logo' => $this->pageLogo->forShop($shopName, $context->getContext()),

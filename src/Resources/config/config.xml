@@ -3,8 +3,17 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>LedgerDirect - XRPL Settings</title>
-        <title lang="de-DE">LedgerDirect - XRPL Einstellungen</title>
+        <title>LedgerDirect - XRP Ledger</title>
+        <title lang="de-DE">LedgerDirect - XRP Ledger</title>
+
+        <input-field type="bool">
+            <name>xrplEnabled</name>
+            <label>Accept payments on the XRP Ledger</label>
+            <label lang="de-DE">Zahlungen über das XRP Ledger annehmen</label>
+            <helpText>Switches the XRP Ledger payment methods on or off as a whole. Off, none of them is offered at checkout, whatever the settings below say.</helpText>
+            <helpText lang="de-DE">Schaltet die Zahlarten des XRP Ledger als Ganzes an oder aus. Aus: keine davon erscheint im Checkout, unabhängig von den Einstellungen darunter.</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
 
         <input-field type="bool">
             <name>useXrplTestnet</name>
@@ -21,7 +30,7 @@
 
         <input-field type="text">
             <name>xrplTestnetDestinationAccount</name>
-            <label>XRPL Merchant Wallet Address (Testnet)</label>
+            <label>Merchant Wallet Address (Testnet)</label>
             <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
         </input-field>
 

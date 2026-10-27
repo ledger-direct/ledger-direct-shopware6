@@ -67,7 +67,7 @@ class PaymentRouteTest extends TestCase
     public function testWaitingCarriesTheSecondsLeftAndNoRedirect(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote(expiry: time() + 250)));
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $payload = $this->check();
 
@@ -89,7 +89,7 @@ class PaymentRouteTest extends TestCase
     public function testExpiredOnceTheQuoteHasPassedWithNothingPaid(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote(expiry: time() - 1)));
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $payload = $this->check();
 
@@ -110,7 +110,7 @@ class PaymentRouteTest extends TestCase
         $after = $this->transaction('paid_partially', $partial);
 
         $this->givenAuthorisedOrder($before);
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')
             ->once()->with($before, $this->context, true)->andReturn($partial);
         $this->stateHandler->shouldReceive('paidPartially')->once()->with(self::TX_ID, $this->context);
         $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->andReturn($after);
@@ -132,7 +132,7 @@ class PaymentRouteTest extends TestCase
         $after = $this->transaction('paid_partially', $wrong);
 
         $this->givenAuthorisedOrder($before);
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->once()->andReturn($wrong);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn($wrong);
         $this->stateHandler->shouldReceive('paidPartially')->once();
         $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->andReturn($after);
 
@@ -151,7 +151,7 @@ class PaymentRouteTest extends TestCase
         $after = $this->transaction('paid', $settled);
 
         $this->givenAuthorisedOrder($before);
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->once()->andReturn($settled);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn($settled);
         $this->stateHandler->shouldReceive('paid')->once()->with(self::TX_ID, $this->context);
         $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->andReturn($after);
         $this->router->shouldReceive('generate')->andReturn('https://shop.example/account/order/the-code');
@@ -172,7 +172,7 @@ class PaymentRouteTest extends TestCase
     {
         $settled = $this->xrpQuote()->withFulfillment('HASH', 40.0, 'CTID');
         $this->givenAuthorisedOrder($this->transaction('paid', $settled));
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->never();
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
         $this->stateHandler->shouldReceive('paid')->never();
         $this->router->shouldReceive('generate')->andReturn('https://shop.example/account/order/the-code');
 
@@ -189,7 +189,7 @@ class PaymentRouteTest extends TestCase
     public function testATransactionClosedByTheMerchantRedirectsWhateverTheContractState(): void
     {
         $this->givenAuthorisedOrder($this->transaction('cancelled', $this->xrpQuote(expiry: time() + 250)));
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->never();
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
         $this->router->shouldReceive('generate')->andReturn('https://shop.example/account/order/the-code');
 
         $payload = $this->check();
@@ -201,7 +201,7 @@ class PaymentRouteTest extends TestCase
     public function testAnUnauthorisedRequestIsForbidden(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote()), deepLinkCode: 'another-code');
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->never();
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
 
         try {
             $this->check();

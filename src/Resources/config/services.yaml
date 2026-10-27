@@ -32,7 +32,7 @@ services:
             - '@logger'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
-            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
         tags:
             - messenger.message_handler
 
@@ -63,6 +63,15 @@ services:
         calls:
             - [setContainer, ['@service_container']]
 
+    Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+        tags:
+            - shopware.payment.method
+
+    # The three XRPL methods keep their original handler identifiers; the classes are the chain handler.
     Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler:
         arguments:
             - '@router'
@@ -90,6 +99,21 @@ services:
     Hardcastle\LedgerDirect\Port\ShopwareConfigProvider:
         arguments:
             - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+
+    # Keeps a payment method whose chain or asset is switched off out of the checkout.
+    Hardcastle\LedgerDirect\Checkout\PaymentMethodRouteDecorator:
+        decorates: Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute
+        arguments:
+            - '@.inner'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+
+    # Refuses a receiving account that is not one, the moment it is saved.
+    Hardcastle\LedgerDirect\Service\ConfigurationValidator:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@logger'
+        tags:
+            - kernel.event_subscriber
 
     Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository:
         arguments:

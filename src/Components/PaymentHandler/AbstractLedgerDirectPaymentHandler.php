@@ -14,8 +14,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
- * What the XRP, RLUSD and USDC payment handlers have in common - which is everything: which
- * asset an order is quoted in is decided by the payment method, not by the handler.
+ * What every LedgerDirect payment handler does - which is everything: which chain and asset an
+ * order is quoted in is decided by the payment method (PaymentMethodInstaller::chainAndAssetFor()),
+ * not by the handler. One concrete handler per chain gives each chain's methods their own
+ * handler identifier.
  *
  * pay() prepares the order transaction (destination tag, requested amount, exchange rate) and
  * redirects to the LedgerDirect payment page. finalize() runs when the customer comes back over
@@ -62,7 +64,7 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
             throw new \RuntimeException('LedgerDirect: order transaction not found for ' . $transaction->getOrderTransactionId());
         }
 
-        $this->transactionService->prepareOrderTransactionForXrpl($order, $orderTransaction, $context);
+        $this->transactionService->prepareOrderTransaction($order, $orderTransaction, $context);
 
         // The deepLinkCode is the order secret the payment page and the status
         // endpoint accept instead of a login — a guest has no other way in.

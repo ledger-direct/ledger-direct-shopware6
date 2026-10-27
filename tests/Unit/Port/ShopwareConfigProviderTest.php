@@ -5,7 +5,6 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Port;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
-use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -63,13 +62,47 @@ class ShopwareConfigProviderTest extends TestCase
     }
 
     /**
-     * A chain this plugin does not speak must fail loudly instead of being
-     * answered with XRPL's wallet address.
+     * A chain the catalogue knows but the merchant has not switched on, and
+     * one the catalogue does not know at all, are both answered the way the
+     * port expresses "not available": no account, no asset, testnet.
      */
-    public function testAnotherChainIsRejected(): void
+    public function testAChainThatIsOffOrUnknownHasNoAccountAndNoAsset(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->assertSame('', $this->configProvider->getDestinationAccount('STELLAR'), 'never switched on');
+        $this->assertFalse($this->configProvider->isAssetEnabled('STELLAR', 'XLM'));
+        $this->assertSame('testnet', $this->configProvider->getNetwork('STELLAR'));
 
-        $this->configProvider->getDestinationAccount('STELLAR');
+        $this->assertSame('', $this->configProvider->getDestinationAccount('DOGECHAIN'));
+        $this->assertFalse($this->configProvider->isAssetEnabled('DOGECHAIN', 'DOGE'));
+        $this->assertSame('testnet', $this->configProvider->getNetwork('DOGECHAIN'));
+    }
+
+    public function testAChainSwitchedOffOffersNothingEvenWithAnAccount(): void
+    {
+        $configuration = Fixtures::getStaticConfiguration();
+        $configuration['LedgerDirect.config.xrplEnabled'] = false;
+        $provider = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration));
+
+        $this->assertSame('', $provider->getDestinationAccount('XRPL'));
+        $this->assertFalse($provider->isAssetEnabled('XRPL', 'XRP'), 'not even the native asset');
+        $this->assertSame('testnet', $provider->getNetwork('XRPL'), 'the network is still answered: open orders keep syncing');
+    }
+
+    public function testASecondChainIsAnsweredFromItsOwnCard(): void
+    {
+        $configuration = Fixtures::getStaticConfiguration() + [
+            'LedgerDirect.config.stellarEnabled' => true,
+            'LedgerDirect.config.useStellarTestnet' => true,
+            'LedgerDirect.config.stellarTestnetDestinationAccount' => 'GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA',
+            'LedgerDirect.config.stellarIsUsdcEnabled' => false,
+        ];
+        $provider = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration));
+
+        $this->assertSame('GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA', $provider->getDestinationAccount('STELLAR'));
+        $this->assertTrue($provider->isAssetEnabled('STELLAR', 'XLM'), 'native: on with the chain');
+        $this->assertFalse($provider->isAssetEnabled('STELLAR', 'USDC'), 'toggle off');
+        $this->assertTrue($provider->isAssetEnabled('STELLAR', 'EURC'), 'toggle never stored: on');
+        $this->assertFalse($provider->isAssetEnabled('STELLAR', 'RLUSD'), 'not a Stellar asset');
+        $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $provider->getDestinationAccount('XRPL'), 'the other chain is untouched');
     }
 }

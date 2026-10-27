@@ -2,9 +2,6 @@
 
 namespace Hardcastle\LedgerDirect\Api;
 
-use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
-use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
-use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Presentation\PaymentInfoPresenter;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -26,7 +23,8 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route(defaults: ['_routeScope' => ['api']])]
 class PaymentInfoController extends AbstractController
 {
-    private const HANDLERS = [XrpPaymentHandler::class, RlusdPaymentHandler::class, UsdcPaymentHandler::class];
+    /** Every LedgerDirect handler lives in this namespace — one per chain, plus the pre-1.6 per-asset ones. */
+    private const HANDLER_NAMESPACE = 'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\';
 
     public function __construct(
         private readonly OrderTransactionService $orderTransactionService,
@@ -44,7 +42,7 @@ class PaymentInfoController extends AbstractController
     {
         $orderTransaction = $this->orderTransactionService->getOrderTransactionById($orderTransactionId, $context);
 
-        if ($orderTransaction === null || !in_array($orderTransaction->getPaymentMethod()?->getHandlerIdentifier(), self::HANDLERS, true)) {
+        if ($orderTransaction === null || !str_starts_with((string) $orderTransaction->getPaymentMethod()?->getHandlerIdentifier(), self::HANDLER_NAMESPACE)) {
             return new JsonResponse(['error' => 'not_a_ledger_direct_transaction'], Response::HTTP_NOT_FOUND);
         }
 

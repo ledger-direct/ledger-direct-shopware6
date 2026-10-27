@@ -1,3 +1,21 @@
+# 1.6.0
+- Die Konfiguration ist auf mehrere Chains ausgelegt. Die Karte „XRP Ledger" bekommt den Schalter
+  „Zahlungen über das XRP Ledger annehmen" (an bei jeder Installation mit hinterlegter
+  Empfangsadresse); eine zweite Chain bekommt eine eigene Karte gleichen Aufbaus. Nichts wurde
+  umbenannt, keine Einstellung muss neu eingetragen werden
+- Zahlarten, deren Chain ausgeschaltet ist, deren Empfangsadresse fehlt oder deren Asset deaktiviert
+  ist, erscheinen nicht mehr im Checkout. Bisher wurde ein deaktivierter Stablecoin weiter angeboten
+  und scheiterte erst, wenn der Kunde ihn wählte
+- Eine Empfangsadresse wird beim Speichern geprüft: eine Adresse, die kein Konto auf dieser Chain
+  ist, wird mit Hinweis abgelehnt; Leerzeichen oder Zeilenumbrüche um eine eingefügte Adresse werden
+  entfernt
+- Core 0.10: Zahlarten, ihre Assets und das Adressformat der Chain kommen aus dem `ChainCatalog` des
+  Cores; das Plugin führt keine eigene Liste mehr. Intern ein Zahlungs-Handler je Chain statt je Asset;
+  die drei XRP-Ledger-Zahlarten behalten IDs, Namen und Handler-Kennungen
+- Core 0.10: eine Zahlung auf dem anderen Netz — eine Testnet-Zahlung für eine Mainnet-Bestellung —
+  begleicht nie eine Bestellung und erscheint nie als Falsch-Token-Zahlung
+- Vorbereitung für Stellar (XLM, USDC, EURC), das mit 1.7.0 folgt
+
 # 1.5.2
 - Store-Validierung: Eine Migration liest einen Spaltennamen nicht mehr über eine Doctrine-DBAL-Klasse,
   die Shopware 6.8 als veraltet markiert. Keine Verhaltensänderung
