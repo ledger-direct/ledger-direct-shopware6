@@ -1,3 +1,19 @@
+# 1.7.0
+- Stellar als zweite Chain (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per Memo-ID, über Horizon
+  synchronisiert, nach denselben Regeln abgewickelt wie auf dem XRP Ledger. Eine Karte „LedgerDirect –
+  Stellar" in der Konfiguration, standardmäßig aus; die Zahlarten erscheinen im Checkout, sobald sie an
+  ist und ein Empfangskonto hinterlegt ist
+- Ein herausgegebenes Stellar-Asset (USDC, EURC) wird im Checkout nur angeboten, solange das Empfangskonto
+  eine Trustline zu seinem Herausgeber hat; ohne sie würde die Zahlung in der Wallet des Kunden scheitern
+- Die Zahlungsseite sagt auf Stellar „Memo-ID" statt „Destination Tag", der QR-Code trägt eine
+  SEP-7-Zahlungsanfrage, die Transaktion verlinkt auf stellar.expert. Die Browser-Wallet-Sektion gibt es
+  nur auf dem XRPL (Zahlungsseiten-Paket 0.2.0)
+- Die LedgerDirect-Karte in der Bestelldetailansicht zeigt bei einer Stellar-Bestellung Memo-ID und
+  stellar.expert-Link
+- Konsolenbefehle nehmen `--chain XRPL|STELLAR`; die Preisabfrage nimmt `--asset`
+- Zwei neue Tabellen, `ledger_direct_stellar_payment` und `ledger_direct_stellar_memo`, werden beim Update
+  angelegt
+
 # 1.6.0
 - Die Konfiguration ist auf mehrere Chains ausgelegt. Die Karte „XRP Ledger" bekommt den Schalter
   „Zahlungen über das XRP Ledger annehmen" (an bei jeder Installation mit hinterlegter

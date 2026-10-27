@@ -13,6 +13,8 @@ use Hardcastle\LedgerDirect\Core\Presentation\AccentColor;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\Presentation\PageLogo;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentUri;
+use Hardcastle\LedgerDirect\Core\Stellar\PaymentUri as StellarPaymentUri;
+use Hardcastle\LedgerDirect\Presentation\Explorer;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
@@ -216,6 +218,7 @@ class XrplPaymentController extends StorefrontController
         $amountPaid = AmountFormatter::amountPaid($intent);
         $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
         $isToken = !$asset->native;
+        $isXrpl = $intent->chain === ChainCatalog::XRPL;
         $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
 
         return [
@@ -256,18 +259,17 @@ class XrplPaymentController extends StorefrontController
             'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()->getSymbol(),
             'network' => $intent->network,
-            'explorerBase' => $intent->network === 'mainnet'
-                ? 'https://livenet.xrpl.org/transactions/'
-                : 'https://testnet.xrpl.org/transactions/',
+            'explorerBase' => Explorer::transactionBase($intent->chain, $intent->network),
             'destinationAccount' => $intent->destinationAccount,
+            // The order identifier as shown: the destination tag on the XRPL, the memo id on Stellar.
             'destinationTag' => $intent->destinationTag,
             // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
             'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
-            'currencyHex' => $isToken ? (string) $intent->amountRequested['currency'] : null,
-            // For a browser wallet: the amount in drops, converted by the core, never in the browser.
-            'amountDrops' => $isToken ? null : XrplAmount::xrpToDrops($amountDue),
-            // The payment request behind the QR code; see PaymentUri for what it carries.
-            'paymentUri' => PaymentUri::forIntent($intent, $amountDue),
+            // XRPL only, read by the browser-wallet module alone: the token's hex code and, for XRP, the amount in drops.
+            'currencyHex' => $isXrpl && $isToken ? (string) $intent->amountRequested['currency'] : null,
+            'amountDrops' => $isXrpl && !$isToken ? XrplAmount::xrpToDrops($amountDue) : null,
+            // The payment request behind the QR code: the XRPL one or the SEP-0007 one, built by the core.
+            'paymentUri' => $isXrpl ? PaymentUri::forIntent($intent, $amountDue) : StellarPaymentUri::forIntent($intent, $amountDue),
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
             'returnUrl' => $returnUrl,

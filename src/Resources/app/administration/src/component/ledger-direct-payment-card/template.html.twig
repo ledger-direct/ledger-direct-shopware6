@@ -34,7 +34,7 @@
             <dt>{{ $tc('ledger-direct.paymentCard.destinationAccount') }}</dt>
             <dd><code>{{ display.destinationAccount }}</code></dd>
 
-            <dt>{{ $tc('ledger-direct.paymentCard.destinationTag') }}</dt>
+            <dt>{{ $tc('ledger-direct.paymentCard.identifier.' + display.chain) }}</dt>
             <dd><code>{{ display.destinationTag }}</code></dd>
 
             <template v-if="display.issuer">

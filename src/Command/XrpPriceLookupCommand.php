@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Command;
 
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Symfony\Component\Console\Command\Command;
@@ -31,8 +32,10 @@ class XrpPriceLookupCommand extends Command
     {
         parent::configure();
 
-        $this->setDescription('XRP price lookup against the core price oracles');
+        $this->setDescription('Price lookup against the core price oracles');
         $this->addOption('iso', null, InputOption::VALUE_REQUIRED, 'Quote currency ISO code, e.g. EUR');
+        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL or STELLAR', ChainCatalog::XRPL);
+        $this->addOption('asset', null, InputOption::VALUE_OPTIONAL, 'The asset; the chain\'s native one by default');
     }
 
     /**
@@ -41,12 +44,21 @@ class XrpPriceLookupCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $quoteCurrency = (string) $input->getOption('iso');
-        $network = $this->configProvider->getNetwork(ShopwareConfigProvider::CHAIN);
+        $chain = strtoupper((string) $input->getOption('chain'));
 
-        // A total of 1.0 makes the returned quote's exchange rate the price of one XRP.
-        $quote = $this->priceService->getCryptoPriceForOrder(1.0, $quoteCurrency, 'XRP', $network);
+        if (!ChainCatalog::has($chain)) {
+            $output->writeln('Unknown chain ' . $chain);
 
-        $output->writeln('Current XRP price: ' . $quote->exchangeRate);
+            return Command::FAILURE;
+        }
+
+        $asset = strtoupper((string) ($input->getOption('asset') ?: ChainCatalog::chain($chain)->nativeAsset));
+        $network = $this->configProvider->getNetwork($chain);
+
+        // A total of 1.0 makes the returned quote's exchange rate the price of one unit.
+        $quote = $this->priceService->quoteAmount(1.0, $quoteCurrency, $asset, $network);
+
+        $output->writeln('Current ' . $asset . ' price: ' . $quote->exchangeRate . ' ' . $quoteCurrency);
 
         return Command::SUCCESS;
     }

@@ -6,6 +6,8 @@ use Exception;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
+use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
+use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
@@ -44,28 +46,42 @@ class OrderTransactionService
 
     private EntityRepository $currencyRepository;
 
-    private PaymentIntentService $paymentIntentService;
+    private PaymentIntentService $xrplIntents;
 
-    private SyncService $syncService;
+    private SyncService $xrplSync;
+
+    private StellarPaymentIntentService $stellarIntents;
+
+    private StellarSyncService $stellarSync;
 
     private SyncThrottle $syncThrottle;
 
     private LoggerInterface $logger;
 
+    /**
+     * One intent service and one sync per chain; which pair serves an order
+     * is decided by its payment method (a fresh quote) or by the chain the
+     * stored intent names (everything after). One throttle for both: its
+     * keys are (network, account), and an `r…` and a `G…` never collide.
+     */
     public function __construct(
         EntityRepository $orderRepository,
         EntityRepository $orderTransactionRepository,
         EntityRepository $currencyRepository,
-        PaymentIntentService $paymentIntentService,
-        SyncService $syncService,
+        PaymentIntentService $xrplIntents,
+        SyncService $xrplSync,
+        StellarPaymentIntentService $stellarIntents,
+        StellarSyncService $stellarSync,
         SyncThrottle $syncThrottle,
         LoggerInterface $logger
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->currencyRepository = $currencyRepository;
-        $this->paymentIntentService = $paymentIntentService;
-        $this->syncService = $syncService;
+        $this->xrplIntents = $xrplIntents;
+        $this->xrplSync = $xrplSync;
+        $this->stellarIntents = $stellarIntents;
+        $this->stellarSync = $stellarSync;
         $this->syncThrottle = $syncThrottle;
         $this->logger = $logger;
     }
@@ -132,14 +148,7 @@ class OrderTransactionService
 
         [$chain, $asset] = $chainAndAsset;
 
-        if ($chain->chain !== ChainCatalog::XRPL) {
-            // The catalogue may know more chains than this plugin has services
-            // for; the installer only creates methods for chains it can handle,
-            // so this is a wiring mistake, not a merchant's configuration.
-            throw new Exception('No payment services for chain ' . $chain->chain);
-        }
-
-        $intent = $this->paymentIntentService->quoteForOrder(
+        $intent = $this->intentServiceFor($chain->chain)->quoteForOrder(
             $order->getAmountTotal(),
             $this->getQuoteCurrency($order, $context),
             $asset->code,
@@ -150,8 +159,8 @@ class OrderTransactionService
     }
 
     /**
-     * Syncs the merchant's incoming XRPL transactions and, when they pay
-     * this order, records the settlement on the intent.
+     * Syncs the merchant's incoming payments on the order's chain and, when
+     * they pay this order, records the settlement on the intent.
      *
      * What pays is the core's decision: every payment in the quoted asset on
      * the tag counts and they add up, so a top-up of a shortfall settles; a
@@ -183,7 +192,7 @@ class OrderTransactionService
             return null;
         }
 
-        $this->syncLedger($intent->destinationAccount, $intent->network, $throttled);
+        $this->syncLedger($intent->chain, $intent->destinationAccount, $intent->network, $throttled);
 
         return $this->matchOrderTransaction($orderTransaction, $context);
     }
@@ -205,7 +214,7 @@ class OrderTransactionService
             return null;
         }
 
-        $fulfilledIntent = $this->syncService->findFulfillmentFor($intent)?->applyTo($intent);
+        $fulfilledIntent = $this->syncFor($intent->chain)->findFulfillmentFor($intent)?->applyTo($intent);
 
         if ($fulfilledIntent === null) {
             return null;
@@ -228,7 +237,7 @@ class OrderTransactionService
      * A failed sync is logged, not thrown: the checkout must not go down
      * with the node, and matching still runs against what is stored.
      */
-    public function syncLedger(string $destinationAccount, string $network, bool $throttled): void
+    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): void
     {
         if ($throttled) {
             if (!$this->syncThrottle->shouldSync($network, $destinationAccount)) {
@@ -239,22 +248,44 @@ class OrderTransactionService
         }
 
         try {
-            $this->syncService->syncTransactions($destinationAccount, $network);
+            $this->syncFor($chain)->sync($destinationAccount, $network);
 
             // One line per node request, at debug level: it is what shows whether the
             // throttle holds — two status calls inside the window must leave one line.
             $this->logger->debug('LedgerDirect: ledger synced', [
+                'chain' => $chain,
                 'destination_account' => $destinationAccount,
                 'network' => $network,
                 'throttled' => $throttled,
             ]);
         } catch (Exception $exception) {
             $this->logger->error('LedgerDirect: ledger sync failed, matching against stored transactions', [
+                'chain' => $chain,
                 'destination_account' => $destinationAccount,
                 'network' => $network,
                 'exception' => $exception->getMessage(),
             ]);
         }
+    }
+
+    private function intentServiceFor(string $chain): PaymentIntentService|StellarPaymentIntentService
+    {
+        return match ($chain) {
+            ChainCatalog::XRPL => $this->xrplIntents,
+            ChainCatalog::STELLAR => $this->stellarIntents,
+            // The installer only creates methods for chains in HANDLER_BY_CHAIN,
+            // so this is a wiring mistake, not a merchant's configuration.
+            default => throw new Exception('No payment services for chain ' . $chain),
+        };
+    }
+
+    private function syncFor(string $chain): SyncService|StellarSyncService
+    {
+        return match ($chain) {
+            ChainCatalog::XRPL => $this->xrplSync,
+            ChainCatalog::STELLAR => $this->stellarSync,
+            default => throw new Exception('No payment services for chain ' . $chain),
+        };
     }
 
     /**

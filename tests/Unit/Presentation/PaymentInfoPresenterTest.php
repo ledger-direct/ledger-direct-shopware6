@@ -105,12 +105,52 @@ class PaymentInfoPresenterTest extends TestCase
         self::assertSame('0000000000000000000000000000000000000000', PaymentInfoPresenter::currencyName('0000000000000000000000000000000000000000'));
     }
 
-    public function testTheExplorerKnowsTwoNetworksAndNothingElse(): void
+    public function testTheExplorerKnowsTwoChainsWithTwoNetworksEachAndNothingElse(): void
     {
-        self::assertSame('https://testnet.xrpl.org/transactions/ABC', Explorer::transactionUrl('testnet', 'ABC'));
-        self::assertSame('https://livenet.xrpl.org/transactions/ABC', Explorer::transactionUrl('mainnet', 'ABC'));
-        self::assertNull(Explorer::transactionUrl('devnet', 'ABC'));
-        self::assertNull(Explorer::transactionUrl('testnet', null));
+        self::assertSame('https://testnet.xrpl.org/transactions/ABC', Explorer::transactionUrl('XRPL', 'testnet', 'ABC'));
+        self::assertSame('https://livenet.xrpl.org/transactions/ABC', Explorer::transactionUrl('XRPL', 'mainnet', 'ABC'));
+        self::assertSame('https://stellar.expert/explorer/testnet/tx/ABC', Explorer::transactionUrl('STELLAR', 'testnet', 'ABC'));
+        self::assertSame('https://stellar.expert/explorer/public/tx/ABC', Explorer::transactionUrl('STELLAR', 'mainnet', 'ABC'));
+        self::assertSame('https://stellar.expert/explorer/public/tx/', Explorer::transactionBase('STELLAR', 'mainnet'));
+        self::assertNull(Explorer::transactionUrl('XRPL', 'devnet', 'ABC'));
+        self::assertNull(Explorer::transactionUrl('XAHAU', 'testnet', 'ABC'));
+        self::assertNull(Explorer::transactionUrl('XRPL', 'testnet', null));
+    }
+
+    /**
+     * A Stellar order: the memo id in the identifier slot, the stellar.expert
+     * link, no CTID - and when XLM was sent for a USDC order, the native asset
+     * the card names is the chain's, not XRP.
+     */
+    public function testAStellarOrderIsPresentedWithItsOwnExplorerAndNativeAsset(): void
+    {
+        $settled = $this->xlmQuote()->withFulfillment('STELLARHASH', 250.0);
+        $view = PaymentInfoPresenter::present($settled, new SettlementPolicy());
+
+        self::assertSame('settled', $view['status']['state']);
+        self::assertSame('STELLAR', $view['display']['chain']);
+        self::assertSame(123456, $view['display']['destinationTag']);
+        self::assertNull($view['display']['ctid']);
+        self::assertSame('https://stellar.expert/explorer/testnet/tx/STELLARHASH', $view['display']['explorerUrl']);
+
+        $usdcPaidInXlm = PaymentIntent::quote(
+            type: 'stellar-usdc-payment', chain: 'STELLAR', network: 'testnet', baseAsset: 'USDC', quoteCurrency: 'USD',
+            pairing: 'USDC/USD', exchangeRate: 1.0, amountRequested: ['currency' => 'USDC', 'value' => '40', 'issuer' => 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5'],
+            destinationAccount: 'GMERCHANT', destinationTag: 123456, expiry: time() + 300,
+        )->withFulfillment('XLMHASH', 100.0);
+        $view = PaymentInfoPresenter::present($usdcPaidInXlm, new SettlementPolicy());
+
+        self::assertSame('wrong_asset', $view['status']['state']);
+        self::assertSame(['currency' => 'XLM', 'issuer' => null], $view['display']['paidAsset']);
+    }
+
+    private function xlmQuote(): PaymentIntent
+    {
+        return PaymentIntent::quote(
+            type: 'stellar-xlm-payment', chain: 'STELLAR', network: 'testnet', baseAsset: 'XLM', quoteCurrency: 'EUR',
+            pairing: 'XLM/EUR', exchangeRate: 0.4, amountRequested: 250.0, destinationAccount: 'GMERCHANT', destinationTag: 123456,
+            expiry: time() + 300,
+        );
     }
 
     private function xrpQuote(?int $expiry = null): PaymentIntent

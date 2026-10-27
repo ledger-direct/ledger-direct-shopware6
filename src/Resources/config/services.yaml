@@ -4,6 +4,7 @@ services:
         arguments:
             - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
         tags:
             - console.command
 
@@ -19,6 +20,8 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncService'
             - '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - '@Hardcastle\LedgerDirect\Core\Stellar\SyncService'
+            - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
         tags:
             - console.command
 
@@ -106,6 +109,8 @@ services:
         arguments:
             - '@.inner'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - '@Hardcastle\LedgerDirect\Core\Stellar\AccountInspector'
+            - '@logger'
 
     # Refuses a receiving account that is not one, the moment it is saved.
     Hardcastle\LedgerDirect\Service\ConfigurationValidator:
@@ -118,6 +123,47 @@ services:
     Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository:
         arguments:
             - '@Doctrine\DBAL\Connection'
+
+    Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository:
+        arguments:
+            - '@Doctrine\DBAL\Connection'
+
+    # Stellar: the sibling stack of the XRPL services below, wired the same way.
+    Hardcastle\LedgerDirect\Core\Stellar\HorizonClient:
+        arguments:
+            - '@shopware.app_system.guzzle'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+
+    Hardcastle\LedgerDirect\Core\Stellar\SyncService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Stellar\HorizonClient'
+            - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\Core\Stellar\MemoIdService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
+
+    Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Price\PriceService'
+            - '@Hardcastle\LedgerDirect\Core\Stellar\MemoIdService'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+
+    # The cache is not optional here: without it every checkout asks Horizon for the trust line (3600 requests/h/IP).
+    Hardcastle\LedgerDirect\Core\Stellar\AccountInspector:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Stellar\HorizonClient'
+            - '@logger'
+            - '@ledger_direct.rate_cache'
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+        tags:
+            - shopware.payment.method
 
     GuzzleHttp\Psr7\HttpFactory: ~
 
@@ -203,5 +249,7 @@ services:
             - '@currency.repository'
             - '@Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService'
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncService'
+            - '@Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService'
+            - '@Hardcastle\LedgerDirect\Core\Stellar\SyncService'
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle'
             - '@logger'

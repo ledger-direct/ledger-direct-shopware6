@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Presentation;
 
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -18,7 +19,7 @@ use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
  *
  * The rows are the Magento plugin's Payment Information, so the four
  * plugins tell the merchant the same thing: asset and network, requested
- * amount, rate, receiving account, destination tag, issuer for a token,
+ * amount, rate, receiving account, destination tag or memo id, issuer for a token,
  * quote validity while nothing has arrived, what arrived - naming the other
  * token and its issuer when it is the wrong one -, what is still due, the
  * transaction with its explorer link, the CTID.
@@ -39,7 +40,7 @@ final class PaymentInfoPresenter
             // with its issuer, or the native asset when a token order was paid with XRP.
             $paidAsset = is_array($intent->amountPaid)
                 ? ['currency' => self::currencyName((string) ($intent->amountPaid['currency'] ?? '')), 'issuer' => (string) ($intent->amountPaid['issuer'] ?? '')]
-                : ['currency' => 'XRP', 'issuer' => null];
+                : ['currency' => ChainCatalog::has($intent->chain) ? ChainCatalog::chain($intent->chain)->nativeAsset : $intent->chain, 'issuer' => null];
         }
 
         return [
@@ -62,7 +63,7 @@ final class PaymentInfoPresenter
                 'paidAsset' => $paidAsset,
                 'hash' => $intent->hash,
                 'ctid' => $intent->ctid,
-                'explorerUrl' => Explorer::transactionUrl($intent->network, $intent->hash),
+                'explorerUrl' => Explorer::transactionUrl($intent->chain, $intent->network, $intent->hash),
             ],
         ];
     }

@@ -35,6 +35,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
     /** The configured receiving account; empty means none. */
     private string $configuredAccount = '';
 
+    private string $configuredStellarAccount = '';
+
     protected function setUp(): void
     {
         $this->orderTransactionService = Mockery::mock(OrderTransactionService::class);
@@ -60,8 +62,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($onMainnet)->andReturn($this->quote('mainnet'));
 
         // Two orders on the testnet account, one on the mainnet account: two syncs, both unthrottled.
-        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('rMerchant', 'testnet', false);
-        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('rMerchant', 'mainnet', false);
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XRPL', 'rMerchant', 'testnet', false);
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XRPL', 'rMerchant', 'mainnet', false);
         $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
 
         // The first settles, the second is topped up to paid, the third is still waiting.
@@ -120,9 +122,48 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
             ->once()->andReturn(new OrderTransactionCollection([]));
         $this->orderTransactionService->shouldReceive('syncLedger')
-            ->once()->with('rConfiguredAccount', 'testnet', false);
+            ->once()->with('XRPL', 'rConfiguredAccount', 'testnet', false);
 
         $this->handler()->run();
+    }
+
+    /**
+     * Two chains, two syncs: the configured Stellar account and an open Stellar
+     * order's account are synced through the Stellar sync, keyed by chain.
+     */
+    public function testEveryEnabledChainIsSyncedWithItsOwnSync(): void
+    {
+        $this->configuredAccount = 'rConfiguredAccount';
+        $this->configuredStellarAccount = 'GCONFIGURED';
+        $stellarOrder = $this->transaction('tx-stellar', 'open');
+
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([$stellarOrder]));
+        $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($stellarOrder)->andReturn($this->stellarQuote('GORDERACCOUNT'));
+
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XRPL', 'rConfiguredAccount', 'testnet', false);
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('STELLAR', 'GCONFIGURED', 'testnet', false);
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('STELLAR', 'GORDERACCOUNT', 'testnet', false);
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->with($stellarOrder, Mockery::any())->andReturn(null);
+
+        $this->handler()->run();
+    }
+
+    private function stellarQuote(string $account): PaymentIntent
+    {
+        return PaymentIntent::quote(
+            type: 'stellar-xlm-payment',
+            chain: 'STELLAR',
+            network: 'testnet',
+            baseAsset: 'XLM',
+            quoteCurrency: 'EUR',
+            pairing: 'XLM/EUR',
+            exchangeRate: 0.4,
+            amountRequested: 250.0,
+            destinationAccount: $account,
+            destinationTag: 123456,
+            expiry: time() + 300,
+        );
     }
 
     private function handler(): SettleOpenTransactionsTaskHandler
@@ -141,6 +182,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $configuration = Mockery::mock(ShopwareConfigProvider::class);
         $configuration->shouldReceive('getDestinationAccount')->with('XRPL')->andReturn($this->configuredAccount);
         $configuration->shouldReceive('getNetwork')->with('XRPL')->andReturn('testnet');
+        $configuration->shouldReceive('getDestinationAccount')->with('STELLAR')->andReturn($this->configuredStellarAccount);
+        $configuration->shouldReceive('getNetwork')->with('STELLAR')->andReturn('testnet');
 
         return $configuration;
     }

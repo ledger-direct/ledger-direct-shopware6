@@ -10,24 +10,18 @@
       "copied": "Kopiert",
       "copyAmount": "Betrag kopieren",
       "copyAccount": "Adresse kopieren",
-      "copyTag": "Destination Tag kopieren",
       "copyIssuer": "Herausgeber kopieren",
       "fiatEquivalent": "entspricht %fiat%",
       "fiatOfTotal": "von insgesamt %total% %asset% (%fiat%)",
       "quoteValidFor": "Betrag garantiert für %countdown% Minuten",
       "stepAccount": "Empfängeradresse",
-      "stepTag": "Destination Tag",
       "requiredBadge": "Pflicht",
-      "tagHint": "Ohne diesen Tag können wir die Zahlung nicht Ihrer Bestellung zuordnen.",
       "stepIssuer": "Token und Herausgeber",
       "issuerHint": "Nur %asset% genau dieses Herausgebers wird angerechnet. Ihre Wallet braucht eine Trustline dafür.",
       "exchangeSummary": "Zahlen Sie von einer Börse?",
-      "exchangeHint": "Der Destination Tag ist Pflicht, und der Betrag muss nach Abzug der Börsengebühr noch vollständig ankommen.",
       "asideLabel": "Mit Wallet bezahlen",
       "qrOpen": "Mit Wallet-App scannen",
       "qrClosed": "QR-Code anzeigen ▾",
-      "qrCaption": "Mit Xaman oder einer anderen XRPL-Wallet scannen. Adresse, Destination Tag und Betrag werden übernommen – bitte vor dem Senden prüfen.",
-      "qrLabel": "QR-Code mit Adresse, Destination Tag und Betrag",
       "qrVoid": "Abgelaufen – bitte neuen Betrag anfordern",
       "walletOr": "oder",
       "walletButton": "Mit Browser-Wallet bezahlen",
@@ -46,10 +40,6 @@
       "detailRate": "Kurs",
       "detailNetwork": "Netzwerk",
       "rateSentence": "1 %asset% = %rate% %currency%",
-      "network": {
-        "mainnet": "XRPL Mainnet",
-        "testnet": "XRPL Testnet"
-      },
       "statusWaiting": "Wir warten auf Ihre Zahlung. Die Seite aktualisiert sich von selbst.",
       "statusPartial": "Teilzahlung erhalten. Wir warten auf den Rest.",
       "statusWrongAsset": "Zahlung im falschen Token erhalten. Wir warten auf den richtigen Betrag.",
@@ -71,7 +61,38 @@
       "successRedirect": "Weiter zur Bestellung in %seconds% s",
       "successButton": "Weiter zur Bestellung",
       "backToCart": "Zurück zum Warenkorb",
-      "poweredBy": "Zahlung direkt auf dem XRP Ledger, ohne Zwischenhändler."
+      "identifier": {
+        "XRPL": {
+          "step": "Destination Tag",
+          "copy": "Destination Tag kopieren",
+          "hint": "Ohne dieses Tag können wir die Zahlung nicht Ihrer Bestellung zuordnen.",
+          "exchangeHint": "Das Destination Tag ist Pflicht, und der Betrag muss nach der Gebühr der Börse noch vollständig ankommen.",
+          "qrCaption": "Mit Xaman oder einer anderen XRPL-Wallet scannen. Adresse, Destination Tag und Betrag sind vorausgefüllt – bitte vor dem Senden prüfen.",
+          "qrLabel": "QR-Code mit Adresse, Destination Tag und Betrag"
+        },
+        "STELLAR": {
+          "step": "Memo-ID",
+          "copy": "Memo-ID kopieren",
+          "hint": "Ohne dieses Memo können wir die Zahlung nicht Ihrer Bestellung zuordnen. Memo-Typ: ID.",
+          "exchangeHint": "Die Memo-ID ist Pflicht, und der Betrag muss nach der Gebühr der Börse noch vollständig ankommen.",
+          "qrCaption": "Mit einer Stellar-Wallet scannen, die Zahlungslinks (SEP-7) unterstützt. Konto, Memo und Betrag sind vorausgefüllt – bitte vor dem Senden prüfen.",
+          "qrLabel": "QR-Code mit Konto, Memo-ID und Betrag"
+        }
+      },
+      "network": {
+        "XRPL": {
+          "mainnet": "XRPL Mainnet",
+          "testnet": "XRPL Testnet"
+        },
+        "STELLAR": {
+          "mainnet": "Stellar Mainnet",
+          "testnet": "Stellar Testnet"
+        }
+      },
+      "poweredBy": {
+        "XRPL": "Zahlung direkt auf dem XRP Ledger, ohne Zwischenhändler.",
+        "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler."
+      }
     }
   }
 }

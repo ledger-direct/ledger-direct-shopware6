@@ -104,9 +104,20 @@ Settings → Extensions → My extensions → LedgerDirect → Configure. One ca
 | Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods are offered; the receiving account needs the trustline first. XRP needs no switch. |
 | Quote validity in seconds | How long a quoted amount stays fixed, on every chain. Default 300. |
 
+**LedgerDirect – Stellar**
+
+| Setting | |
+|---|---|
+| Accept payments on Stellar | Off by default. On, with a receiving account, the XLM, USDC and EURC payment methods are offered. |
+| Use testnet | On by default. |
+| Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
+| Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
+
 A payment method is offered at checkout only while its chain is on, has a receiving address and the
-asset is enabled. The assets, the payment methods and the address format come from the core's
-`ChainCatalog`; a second chain (Stellar, 1.7.0) gets a card of the same shape.
+asset is enabled — and, for a Stellar issued asset, while the receiving account has its trust line.
+The assets, the payment methods and the address format come from the core's `ChainCatalog`. On
+Stellar the customer puts the order's **memo id** (memo type ID) on the payment where the XRPL uses a
+destination tag; the QR code carries a SEP-7 payment request.
 
 **LedgerDirect – Payment page**
 

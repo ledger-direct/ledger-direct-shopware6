@@ -52,11 +52,64 @@
             <name>xrplQuoteExpiry</name>
             <label>Quote validity in seconds</label>
             <label lang="de-DE">Gültigkeit eines Kursangebots in Sekunden</label>
-            <helpText>How long the exchange rate quoted at checkout stays valid.</helpText>
-            <helpText lang="de-DE">Wie lange der beim Checkout ermittelte Wechselkurs gültig bleibt.</helpText>
+            <helpText>How long the exchange rate quoted at checkout stays valid, on every chain.</helpText>
+            <helpText lang="de-DE">Wie lange der beim Checkout ermittelte Wechselkurs gültig bleibt, auf jeder Chain.</helpText>
             <defaultValue>300</defaultValue>
             <min>60</min>
             <max>3600</max>
+        </input-field>
+    </card>
+
+    <card>
+        <title>LedgerDirect - Stellar</title>
+        <title lang="de-DE">LedgerDirect - Stellar</title>
+
+        <input-field type="bool">
+            <name>stellarEnabled</name>
+            <label>Accept payments on Stellar</label>
+            <label lang="de-DE">Zahlungen über Stellar annehmen</label>
+            <helpText>XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; the payment methods appear at checkout only when this is on and a receiving account is set.</helpText>
+            <helpText lang="de-DE">XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; die Zahlarten erscheinen im Checkout nur, wenn dies an ist und ein Empfangskonto hinterlegt ist.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>useStellarTestnet</name>
+            <label>Use Testnet</label>
+            <label lang="de-DE">Testnet verwenden</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>stellarMainnetDestinationAccount</name>
+            <label>Receiving account (Mainnet)</label>
+            <label lang="de-DE">Empfangskonto (Mainnet)</label>
+            <helpText>The public key of your Stellar account, starting with G. Checked when saved.</helpText>
+            <helpText lang="de-DE">Der öffentliche Schlüssel Ihres Stellar-Kontos, beginnt mit G. Wird beim Speichern geprüft.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>stellarTestnetDestinationAccount</name>
+            <label>Receiving account (Testnet)</label>
+            <label lang="de-DE">Empfangskonto (Testnet)</label>
+        </input-field>
+
+        <input-field type="bool">
+            <name>stellarIsUsdcEnabled</name>
+            <label>Enable USDC payments</label>
+            <label lang="de-DE">Zahlungen mit USDC aktivieren</label>
+            <helpText>USDC by Circle. Offered at checkout only while the receiving account has a trust line to the issuer.</helpText>
+            <helpText lang="de-DE">USDC von Circle. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>stellarIsEurcEnabled</name>
+            <label>Enable EURC payments</label>
+            <label lang="de-DE">Zahlungen mit EURC aktivieren</label>
+            <helpText>EURC by Circle, pegged to the euro. Offered at checkout only while the receiving account has a trust line to the issuer.</helpText>
+            <helpText lang="de-DE">EURC von Circle, an den Euro gebunden. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <defaultValue>true</defaultValue>
         </input-field>
     </card>
 

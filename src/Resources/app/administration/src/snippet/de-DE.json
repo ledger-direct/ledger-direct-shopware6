@@ -13,7 +13,6 @@
             "amountRequested": "Geforderter Betrag",
             "exchangeRate": "Wechselkurs",
             "destinationAccount": "Empfangskonto",
-            "destinationTag": "Destination Tag",
             "issuer": "Herausgeber",
             "quoteValidUntil": "Kurs gültig bis",
             "amountReceived": "Eingegangen",
@@ -23,7 +22,11 @@
             "transaction": "Transaktion",
             "ctid": "CTID",
             "unreadable": "Der Zahlungsdatensatz dieser Transaktion ist nicht lesbar.",
-            "unavailable": "Die Zahlungsinformationen konnten nicht geladen werden."
+            "unavailable": "Die Zahlungsinformationen konnten nicht geladen werden.",
+            "identifier": {
+                "XRPL": "Destination Tag",
+                "STELLAR": "Memo-ID"
+            }
         }
     }
 }

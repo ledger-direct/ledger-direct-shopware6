@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Checkout;
 
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Core\Stellar\AccountInspector;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
@@ -9,12 +11,15 @@ use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Throwable;
 
 /**
  * A LedgerDirect payment method is offered only while its chain is switched
  * on, has a receiving account, and the asset is enabled — the same question
- * the core asks before it quotes (ConfigProviderInterface::isAssetEnabled()).
+ * the core asks before it quotes (ConfigProviderInterface::isAssetEnabled()) —
+ * and, for a Stellar issued asset, while the receiving account has its trust line.
  * Asked here, at the list of payment methods, it keeps a method the merchant
  * turned off out of the checkout instead of failing when the customer has
  * already chosen it. Methods that are not ours pass through untouched.
@@ -24,6 +29,8 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
     public function __construct(
         private readonly AbstractPaymentMethodRoute $decorated,
         private readonly ShopwareConfigProvider $configProvider,
+        private readonly AccountInspector $accountInspector,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -60,6 +67,38 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 
         [$chain, $asset] = $chainAndAsset;
 
-        return $this->configProvider->isAssetEnabled($chain->chain, $asset->code);
+        if (!$this->configProvider->isAssetEnabled($chain->chain, $asset->code)) {
+            return false;
+        }
+
+        if ($chain->chain !== ChainCatalog::STELLAR || $asset->native) {
+            return true;
+        }
+
+        // A Stellar issued asset arrives only over a trust line on the receiving
+        // account. Without one the payment fails in the customer's wallet, so the
+        // method is not offered. Cached in the inspector; when Horizon cannot be
+        // asked the method stays offered and the reason is logged - the checkout
+        // must not go down with Horizon.
+        $network = $this->configProvider->getNetwork($chain->chain);
+        $account = $this->configProvider->getDestinationAccount($chain->chain);
+        $issuer = $asset->issuer($network);
+
+        if ($issuer === null) {
+            return false;
+        }
+
+        try {
+            return $this->accountInspector->canReceive($account, $asset->code, $issuer, $network);
+        } catch (Throwable $exception) {
+            $this->logger->warning('LedgerDirect: could not check the trust line for a Stellar asset, offering it anyway', [
+                'account' => $account,
+                'asset' => $asset->code,
+                'network' => $network,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return true;
+        }
     }
 }
