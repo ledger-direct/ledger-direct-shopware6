@@ -8,10 +8,12 @@ use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigChangedEvent;
+use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigMultipleChangedEvent;
 
 /**
  * A receiving account is checked against the core's format rule the moment
@@ -71,6 +73,7 @@ class ConfigurationValidatorTest extends TestCase
      */
     public function testTheSameAccountOnTwoChainsIsLoggedNotRefused(): void
     {
+        /** @var LoggerInterface&MockInterface $logger */
         $logger = Mockery::mock(LoggerInterface::class);
         $logger->shouldReceive('warning')->once()->with('LedgerDirect: the same receiving account is configured on two chains', Mockery::type('array'));
 
@@ -83,6 +86,35 @@ class ConfigurationValidatorTest extends TestCase
         $validator->onBeforeChange($event);
 
         $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $event->getValue());
+    }
+
+    /**
+     * The administration saves a card as one batch; the batch is checked
+     * before anything is written, so a bad account in the middle of it does
+     * not leave the keys before it stored. Valid accounts come out trimmed,
+     * other keys untouched.
+     */
+    public function testABatchIsCheckedAsAWholeBeforeAnythingIsWritten(): void
+    {
+        $validator = $this->validator();
+
+        $clean = new BeforeSystemConfigMultipleChangedEvent([
+            'LedgerDirect.config.useXrplTestnet' => false,
+            'LedgerDirect.config.xrplMainnetDestinationAccount' => ' rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De ',
+            'LedgerDirect.config.xrplIsUsdcEnabled' => true,
+        ], null);
+        $validator->onBeforeMultipleChange($clean);
+        $this->assertSame([
+            'LedgerDirect.config.useXrplTestnet' => false,
+            'LedgerDirect.config.xrplMainnetDestinationAccount' => 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+            'LedgerDirect.config.xrplIsUsdcEnabled' => true,
+        ], $clean->getConfig());
+
+        $this->expectException(InvalidConfigurationException::class);
+        $validator->onBeforeMultipleChange(new BeforeSystemConfigMultipleChangedEvent([
+            'LedgerDirect.config.useXrplTestnet' => false,
+            'LedgerDirect.config.xrplMainnetDestinationAccount' => 'not an account',
+        ], null));
     }
 
     private function validator(): ConfigurationValidator

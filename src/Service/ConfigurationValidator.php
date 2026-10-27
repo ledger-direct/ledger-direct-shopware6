@@ -6,6 +6,7 @@ use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Exception\InvalidConfigurationException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigChangedEvent;
+use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigMultipleChangedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -35,29 +36,56 @@ class ConfigurationValidator implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        return [BeforeSystemConfigChangedEvent::class => 'onBeforeChange'];
+        return [
+            BeforeSystemConfigMultipleChangedEvent::class => 'onBeforeMultipleChange',
+            BeforeSystemConfigChangedEvent::class => 'onBeforeChange',
+        ];
     }
 
+    /**
+     * The administration saves a card as one batch. SystemConfigService
+     * dispatches this event once, before it writes anything, and the
+     * per-key event only inside its write loop — a refusal there would leave
+     * the keys before the bad one already stored. So the whole batch is
+     * checked here first; the per-key handler below then sees clean values.
+     */
+    public function onBeforeMultipleChange(BeforeSystemConfigMultipleChangedEvent $event): void
+    {
+        foreach ($event->getConfig() as $key => $value) {
+            $normalised = $this->validate($key, $value);
+
+            if ($normalised !== $value) {
+                $event->setValue($key, $normalised);
+            }
+        }
+    }
+
+    /** A single set(), outside a batch. */
     public function onBeforeChange(BeforeSystemConfigChangedEvent $event): void
     {
-        $chainAndNetwork = self::accountKeyFor($event->getKey());
+        $normalised = $this->validate($event->getKey(), $event->getValue());
 
-        if ($chainAndNetwork === null) {
-            return;
+        if ($normalised !== $event->getValue()) {
+            $event->setValue($normalised);
+        }
+    }
+
+    /**
+     * Returns the value to store — trimmed for an account key — or throws.
+     */
+    private function validate(string $key, mixed $value): mixed
+    {
+        $chainAndNetwork = self::accountKeyFor($key);
+
+        if ($chainAndNetwork === null || !is_string($value)) {
+            return $value;
         }
 
         [$chain, $network] = $chainAndNetwork;
-        $value = $event->getValue();
-
-        if (!is_string($value)) {
-            return;
-        }
-
         $account = trim($value);
-        $event->setValue($account);
 
         if ($account === '') {
-            return;
+            return $account;
         }
 
         $descriptor = ChainCatalog::chain($chain);
@@ -83,6 +111,8 @@ class ConfigurationValidator implements EventSubscriberInterface
                 }
             }
         }
+
+        return $account;
     }
 
     /**

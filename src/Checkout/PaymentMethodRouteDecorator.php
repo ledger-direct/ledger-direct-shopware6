@@ -35,13 +35,17 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): PaymentMethodRouteResponse
     {
         $response = $this->decorated->load($request, $context, $criteria);
-        $methods = $response->getPaymentMethods();
+        $methods = $response->getPaymentMethods()->filter(fn (PaymentMethodEntity $method): bool => $this->isOffered($method));
 
-        foreach ($methods as $key => $method) {
-            if (!$this->isOffered($method)) {
-                $methods->remove($key);
-            }
-        }
+        // The response wraps an EntitySearchResult that carries the elements and the
+        // total of its own, next to the entity collection: the Store API serialises
+        // those, the storefront reads the collection. Both have to agree, so this is
+        // assigned the way PaymentMethodRoute itself does after its rule filter.
+        $response->getObject()->assign([
+            'entities' => $methods,
+            'elements' => $methods->getElements(),
+            'total' => $methods->count(),
+        ]);
 
         return $response;
     }

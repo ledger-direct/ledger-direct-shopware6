@@ -77,7 +77,9 @@ class PaymentMethodInstallerTest extends TestCase
         $this->assertSame('XRP on XRPL', $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['en-GB']['name']);
         $this->assertCount(3, $byId);
 
-        $this->assertTrue(is_subclass_of(XrpPaymentHandler::class, XrplPaymentHandler::class), 'the legacy handlers are the chain handler');
+        foreach ([XrpPaymentHandler::class, RlusdPaymentHandler::class, UsdcPaymentHandler::class] as $legacy) {
+            $this->assertContains(XrplPaymentHandler::class, (array) class_parents($legacy), "{$legacy} is the chain handler under its old name");
+        }
     }
 
     /**

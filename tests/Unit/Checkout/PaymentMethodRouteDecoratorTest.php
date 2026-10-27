@@ -9,11 +9,13 @@ use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -64,14 +66,22 @@ class PaymentMethodRouteDecoratorTest extends TestCase
             $this->method(PaymentMethodInstaller::USDC_PAYMENT_ID),
             $this->method(self::OTHER_METHOD),
         ]);
-        $response = new PaymentMethodRouteResponse(new EntitySearchResult('payment_method', 4, $collection, null, new Criteria(), Mockery::mock(\Shopware\Core\Framework\Context::class)));
+        $response = new PaymentMethodRouteResponse(new EntitySearchResult('payment_method', 4, $collection, null, new Criteria(), Context::createDefaultContext()));
 
+        /** @var AbstractPaymentMethodRoute&MockInterface $inner */
         $inner = Mockery::mock(AbstractPaymentMethodRoute::class);
         $inner->shouldReceive('load')->once()->andReturn($response);
+        /** @var SalesChannelContext&MockInterface $salesChannelContext */
+        $salesChannelContext = Mockery::mock(SalesChannelContext::class);
 
         $decorator = new PaymentMethodRouteDecorator($inner, new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration)));
+        $filtered = $decorator->load(new Request(), $salesChannelContext, new Criteria());
 
-        return $decorator->load(new Request(), Mockery::mock(SalesChannelContext::class), new Criteria())->getPaymentMethods();
+        // The Store API serialises the search result, the storefront reads the collection: same answer.
+        $this->assertSame(array_values($filtered->getPaymentMethods()->getIds()), array_values($filtered->getObject()->getIds()));
+        $this->assertSame($filtered->getPaymentMethods()->count(), $filtered->getObject()->getTotal());
+
+        return $filtered->getPaymentMethods();
     }
 
     private function method(string $id): PaymentMethodEntity
