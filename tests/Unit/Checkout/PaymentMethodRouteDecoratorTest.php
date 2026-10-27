@@ -76,7 +76,8 @@ class PaymentMethodRouteDecoratorTest extends TestCase
     /**
      * Stellar: XLM needs nothing but the chain; an issued asset needs the
      * receiving account's trust line to its issuer, read from Horizon's
-     * account record. When Horizon cannot be asked, the method stays offered.
+     * account record. When Horizon cannot be asked, the issued asset is not
+     * offered - fail closed; XLM stays.
      */
     public function testAStellarIssuedAssetIsOfferedOnlyWithATrustLine(): void
     {
@@ -95,7 +96,9 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $this->assertContains($usdc, $this->load($configuration)->getIds(), 'with the trust line USDC is offered');
 
         $this->horizon->queueResponse('/accounts/' . Fixtures::STELLAR_ACCOUNT, new \RuntimeException('Horizon 503'));
-        $this->assertContains($usdc, $this->load($configuration)->getIds(), 'Horizon down: offered, logged');
+        $ids = $this->load($configuration)->getIds();
+        $this->assertNotContains($usdc, $ids, 'Horizon down: the issued asset is not offered, logged');
+        $this->assertContains($xlm, $ids, 'XLM needs no trust line and stays');
     }
 
     /** @param list<array<string, mixed>> $balances */

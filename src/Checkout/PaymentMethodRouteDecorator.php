@@ -19,7 +19,7 @@ use Throwable;
  * A LedgerDirect payment method is offered only while its chain is switched
  * on, has a receiving account, and the asset is enabled — the same question
  * the core asks before it quotes (ConfigProviderInterface::isAssetEnabled()) —
- * and, for a Stellar issued asset, while the receiving account has its trust line.
+ * and, for a Stellar issued asset, while the receiving account provably has its trust line.
  * Asked here, at the list of payment methods, it keeps a method the merchant
  * turned off out of the checkout instead of failing when the customer has
  * already chosen it. Methods that are not ours pass through untouched.
@@ -77,9 +77,10 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 
         // A Stellar issued asset arrives only over a trust line on the receiving
         // account. Without one the payment fails in the customer's wallet, so the
-        // method is not offered. Cached in the inspector; when Horizon cannot be
-        // asked the method stays offered and the reason is logged - the checkout
-        // must not go down with Horizon.
+        // method is not offered - and when Horizon cannot be asked, it is not
+        // offered either: a method the shop cannot vouch for is worse than one
+        // missing for a moment. XLM stays, the inspector caches good answers, and
+        // the reason is logged.
         $network = $this->configProvider->getNetwork($chain->chain);
         $account = $this->configProvider->getDestinationAccount($chain->chain);
         $issuer = $asset->issuer($network);
@@ -91,14 +92,14 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         try {
             return $this->accountInspector->canReceive($account, $asset->code, $issuer, $network);
         } catch (Throwable $exception) {
-            $this->logger->warning('LedgerDirect: could not check the trust line for a Stellar asset, offering it anyway', [
+            $this->logger->warning('LedgerDirect: could not check the trust line for a Stellar asset, not offering it', [
                 'account' => $account,
                 'asset' => $asset->code,
                 'network' => $network,
                 'exception' => $exception->getMessage(),
             ]);
 
-            return true;
+            return false;
         }
     }
 }

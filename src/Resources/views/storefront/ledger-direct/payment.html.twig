@@ -70,7 +70,7 @@
                                         "%shortfall%": '<strong><span data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</span> ' ~ assetLabel ~ '</strong>'
                                     })|raw }}</p>
                                     <div class="ld-progress" aria-hidden="true"><span data-ld-progress style="width: {{ paidShare }}%"></span></div>
-                                    <p>{{ "LedgerDirect.paymentPage.partialSendRest"|trans }}</p>
+                                    <p>{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".partialSendRest")|trans }}</p>
                                 </div>
                             </div>
 
