@@ -1,3 +1,21 @@
+# 1.6.0
+- The configuration is built for more than one chain. The XRP Ledger card gets a switch "Accept
+  payments on the XRP Ledger" (on for every installation that has a receiving account configured); a
+  second chain gets a card of its own with the same shape. Nothing was renamed, no setting has to be
+  entered again
+- Payment methods whose chain is switched off, whose receiving account is missing or whose asset is
+  disabled no longer appear at checkout. Until now a disabled stablecoin was still offered and failed
+  when the customer chose it
+- A receiving address is checked the moment it is saved: an address that is not an account on that
+  chain is refused with a message; a stray space or line break around a pasted address is removed
+- Core 0.10: the payment methods, their assets and the chain's address format come from the core's
+  `ChainCatalog`; the plugin no longer carries its own list. Under the hood one payment handler per
+  chain instead of one per asset; the three XRP Ledger payment methods keep their ids, names and
+  handler identifiers
+- Core 0.10: a payment on the other network — a testnet payment for a mainnet order — never settles
+  an order and never shows as a wrong-token payment
+- Groundwork for Stellar (XLM, USDC, EURC), which follows in 1.7.0
+
 # 1.5.2
 - Store validation: a migration no longer reads a column name through a Doctrine DBAL class that
   Shopware 6.8 marks as deprecated. No change in behaviour

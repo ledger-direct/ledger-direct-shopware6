@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Tests\Unit\Components\PaymentHandler;
 
-use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -26,7 +26,7 @@ use Symfony\Component\Routing\RouterInterface;
  * The handler reads the stored PaymentIntent and lets the core's SettlementPolicy decide; what
  * is asserted here is the mapping of that decision onto Shopware's transaction states.
  */
-class XrpPaymentHandlerTest extends TestCase
+class XrplPaymentHandlerTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
@@ -38,7 +38,7 @@ class XrpPaymentHandlerTest extends TestCase
 
     private OrderTransactionService $transactionService;
 
-    private XrpPaymentHandler $handler;
+    private XrplPaymentHandler $handler;
 
     private Context $context;
 
@@ -48,7 +48,7 @@ class XrpPaymentHandlerTest extends TestCase
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new XrpPaymentHandler($this->router, $this->transactionService, $this->paymentStateService());
+        $this->handler = new XrplPaymentHandler($this->router, $this->transactionService, $this->paymentStateService());
         $this->context = new Context(new SystemSource());
     }
 
@@ -74,7 +74,7 @@ class XrpPaymentHandlerTest extends TestCase
         $this->transactionService->shouldReceive('getOrderTransactionById')
             ->with(self::TX_ID, $this->context)
             ->andReturn($orderTransaction);
-        $this->transactionService->shouldReceive('prepareOrderTransactionForXrpl')
+        $this->transactionService->shouldReceive('prepareOrderTransaction')
             ->once()
             ->with($order, $orderTransaction, $this->context);
         $this->router->shouldReceive('generate')

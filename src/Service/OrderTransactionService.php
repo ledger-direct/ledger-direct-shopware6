@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
@@ -36,12 +37,6 @@ class OrderTransactionService
      * as it was.
      */
     public const CUSTOM_FIELDS_KEY = 'ledger_direct';
-
-    private const BASE_ASSET_BY_PAYMENT_METHOD = [
-        PaymentMethodInstaller::XRP_PAYMENT_ID => 'XRP',
-        PaymentMethodInstaller::RLUSD_PAYMENT_ID => 'RLUSD',
-        PaymentMethodInstaller::USDC_PAYMENT_ID => 'USDC',
-    ];
 
     private EntityRepository $orderRepository;
 
@@ -104,7 +99,7 @@ class OrderTransactionService
         $criteria->addAssociation('orderCustomer');
         $criteria->addAssociation('transactions');
         $criteria->addAssociation('transactions.stateMachineState');
-        // prepareOrderTransactionForXrpl() quotes by payment method.
+        // prepareOrderTransaction() quotes by payment method.
         $criteria->addAssociation('transactions.paymentMethod');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
@@ -123,22 +118,31 @@ class OrderTransactionService
      *
      * @throws Exception
      */
-    public function prepareOrderTransactionForXrpl(
+    public function prepareOrderTransaction(
         OrderEntity $order,
         OrderTransactionEntity $orderTransaction,
         Context $context
     ): void {
         $paymentMethodId = $orderTransaction->getPaymentMethod()?->getId();
-        $baseAsset = self::BASE_ASSET_BY_PAYMENT_METHOD[$paymentMethodId] ?? null;
+        $chainAndAsset = PaymentMethodInstaller::chainAndAssetFor($paymentMethodId);
 
-        if ($baseAsset === null) {
+        if ($chainAndAsset === null) {
             throw new Exception('Unsupported payment method: ' . (string) $paymentMethodId);
+        }
+
+        [$chain, $asset] = $chainAndAsset;
+
+        if ($chain->chain !== ChainCatalog::XRPL) {
+            // The catalogue may know more chains than this plugin has services
+            // for; the installer only creates methods for chains it can handle,
+            // so this is a wiring mistake, not a merchant's configuration.
+            throw new Exception('No payment services for chain ' . $chain->chain);
         }
 
         $intent = $this->paymentIntentService->quoteForOrder(
             $order->getAmountTotal(),
             $this->getQuoteCurrency($order, $context),
-            $baseAsset,
+            $asset->code,
             $this->readReusablePaymentIntent($orderTransaction)
         );
 
@@ -168,7 +172,7 @@ class OrderTransactionService
      *     skips those.
      * @throws Exception
      */
-    public function syncOrderTransactionWithXrpl(
+    public function syncOrderTransaction(
         OrderTransactionEntity $orderTransaction,
         Context $context,
         bool $throttled = false
@@ -185,13 +189,13 @@ class OrderTransactionService
     }
 
     /**
-     * The "match" half of syncOrderTransactionWithXrpl(): what the local
+     * The "match" half of syncOrderTransaction(): what the local
      * transaction table holds for this order's tag, and whether it pays.
      * The scheduled task syncs each receiving account once and then
      * matches every open order against the table — one node request per
      * account, not one per order.
      *
-     * @return PaymentIntent|null as syncOrderTransactionWithXrpl()
+     * @return PaymentIntent|null as syncOrderTransaction()
      */
     public function matchOrderTransaction(OrderTransactionEntity $orderTransaction, Context $context): ?PaymentIntent
     {
@@ -261,7 +265,7 @@ class OrderTransactionService
     public function findOpenLedgerDirectTransactions(Context $context, int $limit = 500): OrderTransactionCollection
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', array_keys(self::BASE_ASSET_BY_PAYMENT_METHOD)));
+        $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', PaymentMethodInstaller::paymentMethodIds()));
         $criteria->addFilter(new EqualsAnyFilter('stateMachineState.technicalName', PaymentStateService::OPEN_STATES));
         $criteria->addAssociation('stateMachineState');
         $criteria->addSorting(new FieldSorting('createdAt'));

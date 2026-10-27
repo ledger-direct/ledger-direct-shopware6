@@ -92,16 +92,21 @@ Updates run the plugin's migrations through Shopware's usual `plugin:update`.
 
 ## Configuration
 
-Settings → Extensions → My extensions → LedgerDirect → Configure. Two cards.
+Settings → Extensions → My extensions → LedgerDirect → Configure. One card per chain, plus the payment page.
 
-**LedgerDirect – XRPL settings**
+**LedgerDirect – XRP Ledger**
 
 | Setting | |
 |---|---|
+| Accept payments on the XRP Ledger | The chain as a whole. Off, none of its payment methods is offered at checkout. On for every installation that has a receiving address configured. |
 | Use testnet | On by default. The receiving address must belong to the selected network. |
-| Merchant wallet address, mainnet and testnet | The shop's receiving account on each network; the one for the selected network is used. |
-| Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods can be used; the receiving account needs the trustline first. |
-| Quote validity in seconds | How long a quoted amount stays fixed. Default 300. |
+| Merchant wallet address, mainnet and testnet | The shop's receiving account on each network; the one for the selected network is used. Checked when saved: an address that is not an XRPL account is refused. |
+| Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods are offered; the receiving account needs the trustline first. XRP needs no switch. |
+| Quote validity in seconds | How long a quoted amount stays fixed, on every chain. Default 300. |
+
+A payment method is offered at checkout only while its chain is on, has a receiving address and the
+asset is enabled. The assets, the payment methods and the address format come from the core's
+`ChainCatalog`; a second chain (Stellar, 1.7.0) gets a card of the same shape.
 
 **LedgerDirect – Payment page**
 

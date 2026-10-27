@@ -83,7 +83,7 @@ class OrderTransactionServiceTest extends TestCase
         $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID);
         $this->expectUpsertCapturing($customFields);
 
-        $this->createService()->prepareOrderTransactionForXrpl(
+        $this->createService()->prepareOrderTransaction(
             $this->givenOrder(),
             $orderTransaction,
             $this->context
@@ -118,7 +118,7 @@ class OrderTransactionServiceTest extends TestCase
         $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::RLUSD_PAYMENT_ID);
         $this->expectUpsertCapturing($customFields);
 
-        $this->createService()->prepareOrderTransactionForXrpl(
+        $this->createService()->prepareOrderTransaction(
             $this->givenOrder(),
             $orderTransaction,
             $this->context
@@ -148,7 +148,7 @@ class OrderTransactionServiceTest extends TestCase
         );
         $this->expectUpsertCapturing($customFields);
 
-        $this->createService()->prepareOrderTransactionForXrpl(
+        $this->createService()->prepareOrderTransaction(
             $this->givenOrder(),
             $orderTransaction,
             $this->context
@@ -167,7 +167,7 @@ class OrderTransactionServiceTest extends TestCase
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Unsupported payment method');
 
-        $this->createService()->prepareOrderTransactionForXrpl(
+        $this->createService()->prepareOrderTransaction(
             $this->givenOrder(),
             $orderTransaction,
             $this->context
@@ -189,7 +189,7 @@ class OrderTransactionServiceTest extends TestCase
 
         $this->expectUpsertCapturing($customFields);
 
-        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $fulfilledIntent = $this->createService()->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNotNull($fulfilledIntent);
         $this->assertSame('HASH', $fulfilledIntent->hash);
@@ -221,7 +221,7 @@ class OrderTransactionServiceTest extends TestCase
 
         $this->orderTransactionRepository->shouldReceive('upsert')->never();
 
-        $this->assertNull($this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context));
+        $this->assertNull($this->createService()->syncOrderTransaction($orderTransaction, $this->context));
     }
 
     /**
@@ -260,7 +260,7 @@ class OrderTransactionServiceTest extends TestCase
         $this->transactionRepository->shouldReceive('findTransactions')->andReturn($candidates);
         $this->expectUpsertCapturing($customFields);
 
-        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $fulfilledIntent = $this->createService()->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNotNull($fulfilledIntent);
         $this->assertSame('HASH_XRP', $fulfilledIntent->hash);
@@ -300,7 +300,7 @@ class OrderTransactionServiceTest extends TestCase
         ]);
         $this->expectUpsertCapturing($customFields);
 
-        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $fulfilledIntent = $this->createService()->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNotNull($fulfilledIntent, 'the payment attempt is recorded');
         $this->assertSame('HASH_WRONG_ISSUER', $fulfilledIntent->hash);
@@ -336,7 +336,7 @@ class OrderTransactionServiceTest extends TestCase
         ]);
         $this->expectUpsertCapturing($customFields);
 
-        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $fulfilledIntent = $this->createService()->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNotNull($fulfilledIntent);
         $this->assertSame(40.0, $fulfilledIntent->amountPaid, '25 + 15 XRP');
@@ -379,7 +379,7 @@ class OrderTransactionServiceTest extends TestCase
         ]);
         $this->expectUpsertCapturing($customFields);
 
-        $fulfilledIntent = $this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $fulfilledIntent = $this->createService()->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNotNull($fulfilledIntent);
         $this->assertSame('HASH_RIGHT_ISSUER', $fulfilledIntent->hash);
@@ -405,14 +405,14 @@ class OrderTransactionServiceTest extends TestCase
         $this->transactionRepository->shouldReceive('findTransactions')->times(3)->andReturn([]);
 
         $service = $this->createService();
-        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
-        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+        $service->syncOrderTransaction($orderTransaction, $this->context, throttled: true);
+        $service->syncOrderTransaction($orderTransaction, $this->context, throttled: true);
 
         $this->assertSame(1, $this->httpClient->ledgerRequests);
 
         // The window has passed: the next call syncs again.
         $this->throttleStore->advance(6);
-        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context, throttled: true);
+        $service->syncOrderTransaction($orderTransaction, $this->context, throttled: true);
 
         $this->assertSame(2, $this->httpClient->ledgerRequests);
     }
@@ -430,8 +430,8 @@ class OrderTransactionServiceTest extends TestCase
         $this->transactionRepository->shouldReceive('findTransactions')->andReturn([]);
 
         $service = $this->createService();
-        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
-        $service->syncOrderTransactionWithXrpl($orderTransaction, $this->context);
+        $service->syncOrderTransaction($orderTransaction, $this->context);
+        $service->syncOrderTransaction($orderTransaction, $this->context);
 
         $this->assertSame(2, $this->httpClient->ledgerRequests);
     }
@@ -442,7 +442,7 @@ class OrderTransactionServiceTest extends TestCase
 
         $this->orderTransactionRepository->shouldReceive('upsert')->never();
 
-        $this->assertNull($this->createService()->syncOrderTransactionWithXrpl($orderTransaction, $this->context));
+        $this->assertNull($this->createService()->syncOrderTransaction($orderTransaction, $this->context));
     }
 
     private function createService(): OrderTransactionService

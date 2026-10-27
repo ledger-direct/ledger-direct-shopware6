@@ -39,10 +39,20 @@ class LedgerDirect extends Plugin
         $pmi->install($installContext);
     }
 
+    /**
+     * Writes the payment methods again on every update: a new chain or asset
+     * in the core's catalogue gets its method, an existing one its current
+     * handler identifier. Active flags stay as the merchant set them.
+     */
     public function update(UpdateContext $updateContext): void
     {
-        /** @var EntityRepository  $paymentMethodRepository */
+        /** @var EntityRepository $paymentMethodRepository */
         $paymentMethodRepository = $this->container->get('payment_method.repository');
+
+        /** @var PluginIdProvider $pluginIdProvider */
+        $pluginIdProvider = $this->container->get(PluginIdProvider::class);
+
+        (new PaymentMethodInstaller($paymentMethodRepository, $pluginIdProvider))->update($updateContext);
     }
 
     public function deactivate(DeactivateContext $deactivateContext): void

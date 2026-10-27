@@ -2,7 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\ScheduledTask;
 
-use Hardcastle\LedgerDirect\Service\ConfigurationService;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Psr\Log\LoggerInterface;
@@ -15,7 +16,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
 /**
- * The configured receiving account is synced on every run, then one node
+ * The configured receiving account of every enabled chain is synced on every run, then one node
  * request per further receiving account and network of the open orders,
  * then every open order matched against the local transaction table — not one sync per
  * order. Unthrottled: this is the safety net on its own schedule, the
@@ -34,7 +35,7 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
         LoggerInterface $logger,
         private readonly OrderTransactionService $orderTransactionService,
         private readonly PaymentStateService $paymentState,
-        private readonly ConfigurationService $configuration,
+        private readonly ShopwareConfigProvider $configProvider,
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
     }
@@ -49,10 +50,12 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
         // reach the transaction table until some other order on the account happened to
         // trigger a sync. One node request.
         $accounts = [];
-        $configuredAccount = $this->configuration->getDestinationAccount();
-        if ($configuredAccount !== '') {
-            $configuredNetwork = $this->configuration->getNetwork();
-            $accounts[$configuredNetwork . '|' . $configuredAccount] = [$configuredAccount, $configuredNetwork];
+        foreach (PaymentMethodInstaller::supportedChains() as $chain) {
+            $configuredAccount = $this->configProvider->getDestinationAccount($chain->chain);
+            if ($configuredAccount !== '') {
+                $configuredNetwork = $this->configProvider->getNetwork($chain->chain);
+                $accounts[$configuredNetwork . '|' . $configuredAccount] = [$configuredAccount, $configuredNetwork];
+            }
         }
         $matchable = [];
 

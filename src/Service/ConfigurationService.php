@@ -9,16 +9,10 @@ class ConfigurationService
 {
     private const CONFIG_DOMAIN = 'LedgerDirect';
 
-    private const CONFIG_KEY_USE_TESTNET = 'useXrplTestnet';
-
-    private const CONFIG_KEY_MAINNET_ACCOUNT = 'xrplMainnetDestinationAccount';
-
-    private const CONFIG_KEY_TESTNET_ACCOUNT = 'xrplTestnetDestinationAccount';
-
-    private const CONFIG_KEY_RLUSD_ENABLED = 'xrplIsRlusdEnabled';
-
-    private const CONFIG_KEY_USDC_ENABLED = 'xrplIsUsdcEnabled';
-
+    /**
+     * The quote validity is global — one value for every chain — but keeps
+     * the key it has always had, so no installation has to migrate it.
+     */
     private const CONFIG_KEY_QUOTE_EXPIRY = 'xrplQuoteExpiry';
 
     // Payment page card — keys as in config.xml, checked there, not against the code.
@@ -98,48 +92,83 @@ class ConfigurationService
         return is_numeric($value) ? (int) $value : $defaultValue;
     }
 
-    /**
-     * Whether the plugin operates against the XRPL testnet (true) or mainnet (false).
+    /*
+     * Per-chain settings. One card per chain in config.xml, its keys named
+     * after the chain in lower case, the way the XRPL keys always were:
+     * `xrplEnabled`, `useXrplTestnet`, `xrplMainnetDestinationAccount`,
+     * `xrplTestnetDestinationAccount`, `xrplIsRlusdEnabled`. A second chain
+     * follows the same pattern (`stellarEnabled`, `useStellarTestnet`, …),
+     * so nothing here knows a chain by name. The chain names themselves come
+     * from the core's ChainCatalog; see ShopwareConfigProvider.
      */
-    public function isTest(): bool
-    {
-        return $this->getBool(self::CONFIG_KEY_USE_TESTNET, true);
-    }
 
     /**
-     * Returns the active XRPL network identifier: "testnet" or "mainnet".
+     * Whether the merchant accepts payments on this chain at all. The XRPL
+     * switch did not exist before 1.6.0: an installation that has a receiving
+     * account configured keeps working as before, one without has nothing
+     * to switch on. Any other chain is off until the merchant turns it on.
      */
-    public function getNetwork(): string
+    public function isChainEnabled(string $chain): bool
     {
-        return $this->isTest() ? 'testnet' : 'mainnet';
-    }
+        $stored = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $this->chainKey($chain, 'Enabled'));
 
-    /**
-     * Returns the configured merchant receiving wallet address for the active network.
-     */
-    public function getDestinationAccount(): string
-    {
-        if ($this->isTest()) {
-            return (string) $this->get(self::CONFIG_KEY_TESTNET_ACCOUNT);
+        if ($stored !== null) {
+            return (bool) $stored;
         }
 
-        return (string) $this->get(self::CONFIG_KEY_MAINNET_ACCOUNT);
+        return $this->getAccount($chain, $this->getNetwork($chain)) !== '';
     }
 
     /**
-     * Whether RLUSD payments are enabled in the plugin configuration.
+     * Whether this chain runs against its testnet (true) or mainnet (false).
+     * Testnet by default, as the XRPL toggle always was: a fresh installation
+     * must not quote real money before the merchant has looked at it.
      */
-    public function isRlusdEnabled(): bool
+    public function isTestnet(string $chain): bool
     {
-        return $this->getBool(self::CONFIG_KEY_RLUSD_ENABLED, true);
+        return $this->getBool('use' . ucfirst(strtolower($chain)) . 'Testnet', true);
     }
 
     /**
-     * Whether USDC payments are enabled in the plugin configuration.
+     * The active network of this chain: "testnet" or "mainnet".
      */
-    public function isUsdcEnabled(): bool
+    public function getNetwork(string $chain): string
     {
-        return $this->getBool(self::CONFIG_KEY_USDC_ENABLED, true);
+        return $this->isTestnet($chain) ? 'testnet' : 'mainnet';
+    }
+
+    /**
+     * The merchant's receiving account on this chain for its active network;
+     * '' when none is configured.
+     */
+    public function getDestinationAccount(string $chain): string
+    {
+        return $this->getAccount($chain, $this->getNetwork($chain));
+    }
+
+    /**
+     * The receiving account configured for one network of a chain, '' when
+     * none. Trimmed: an account is copied from a wallet, and a stray space or
+     * line break around it is not part of it.
+     */
+    public function getAccount(string $chain, string $network): string
+    {
+        return $this->getString($this->chainKey($chain, ucfirst($network) . 'DestinationAccount'));
+    }
+
+    /**
+     * The per-asset toggle (`xrplIsRlusdEnabled`), on by default as the XRPL
+     * toggles always were. Whether the asset exists on the chain, or is the
+     * native one that has no toggle, is the config provider's business.
+     */
+    public function isAssetEnabled(string $chain, string $assetCode): bool
+    {
+        return $this->getBool($this->chainKey($chain, 'Is' . ucfirst(strtolower($assetCode)) . 'Enabled'), true);
+    }
+
+    private function chainKey(string $chain, string $suffix): string
+    {
+        return strtolower($chain) . $suffix;
     }
 
     /**

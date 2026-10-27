@@ -15,3 +15,4 @@ NOTES.md
 # Handover documents: working input for coding sessions, not part of the plugin
 /Handover-*.md
 /CLAUDE.md
+/var/

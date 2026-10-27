@@ -2,17 +2,14 @@
 
 {#
     The LedgerDirect payment methods carry no media logo in the database; the
-    icons ship with the plugin and are chosen by handler. Every other method
-    keeps the storefront's rendering.
+    icons ship with the plugin and are chosen by the method's technical name,
+    `ledgerdirect_<chain>_<asset>` — the asset names the file. Every other
+    method keeps the storefront's rendering.
 #}
 {% block component_payment_method_image %}
     {% set ledgerDirectIcon = null %}
-    {% if 'XrpPaymentHandler' in payment.handlerIdentifier %}
-        {% set ledgerDirectIcon = 'xrp' %}
-    {% elseif 'RlusdPaymentHandler' in payment.handlerIdentifier %}
-        {% set ledgerDirectIcon = 'rlusd' %}
-    {% elseif 'UsdcPaymentHandler' in payment.handlerIdentifier %}
-        {% set ledgerDirectIcon = 'usdc' %}
+    {% if payment.technicalName starts with 'ledgerdirect_' %}
+        {% set ledgerDirectIcon = payment.technicalName|split('_')|last %}
     {% endif %}
 
     {% if ledgerDirectIcon %}

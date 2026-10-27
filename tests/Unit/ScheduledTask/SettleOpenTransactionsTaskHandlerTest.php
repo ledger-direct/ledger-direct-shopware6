@@ -6,7 +6,7 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTask;
 use Hardcastle\LedgerDirect\ScheduledTask\SettleOpenTransactionsTaskHandler;
-use Hardcastle\LedgerDirect\Service\ConfigurationService;
+use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Mockery;
@@ -62,7 +62,7 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         // Two orders on the testnet account, one on the mainnet account: two syncs, both unthrottled.
         $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('rMerchant', 'testnet', false);
         $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('rMerchant', 'mainnet', false);
-        $this->orderTransactionService->shouldReceive('syncOrderTransactionWithXrpl')->never();
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->never();
 
         // The first settles, the second is topped up to paid, the third is still waiting.
         $this->orderTransactionService->shouldReceive('matchOrderTransaction')->with($first, Mockery::type(Context::class))
@@ -136,11 +136,11 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         );
     }
 
-    private function configuration(): ConfigurationService
+    private function configuration(): ShopwareConfigProvider
     {
-        $configuration = Mockery::mock(ConfigurationService::class);
-        $configuration->shouldReceive('getDestinationAccount')->andReturn($this->configuredAccount);
-        $configuration->shouldReceive('getNetwork')->andReturn('testnet');
+        $configuration = Mockery::mock(ShopwareConfigProvider::class);
+        $configuration->shouldReceive('getDestinationAccount')->with('XRPL')->andReturn($this->configuredAccount);
+        $configuration->shouldReceive('getNetwork')->with('XRPL')->andReturn('testnet');
 
         return $configuration;
     }
