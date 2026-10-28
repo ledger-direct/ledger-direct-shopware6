@@ -68,8 +68,8 @@
             <name>stellarEnabled</name>
             <label>Accept payments on Stellar (preview)</label>
             <label lang="de-DE">Zahlungen über Stellar annehmen (Vorschau)</label>
-            <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods, which appear at checkout once a receiving account is set.</helpText>
-            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an, die im Checkout erscheinen, sobald ein Empfangskonto hinterlegt ist.</helpText>
+            <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods. They appear at checkout once a receiving account is set and the methods are assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
+            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an. Sie erscheinen im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlarten unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen sind.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 

@@ -21,6 +21,7 @@ class PreviewChainActivatorTest extends TestCase
 
     public function testSwitchingThePreviewChainOnInstallsItsMethods(): void
     {
+        /** @var PaymentMethodInstaller&Mockery\MockInterface $installer */
         $installer = Mockery::mock(PaymentMethodInstaller::class);
         $installer->shouldReceive('installChain')->once()->with(ChainCatalog::STELLAR, Mockery::type(Context::class));
 
@@ -30,6 +31,7 @@ class PreviewChainActivatorTest extends TestCase
 
     public function testNothingElseDoes(): void
     {
+        /** @var PaymentMethodInstaller&Mockery\MockInterface $installer */
         $installer = Mockery::mock(PaymentMethodInstaller::class);
         $installer->shouldReceive('installChain')->never();
         $activator = new PreviewChainActivator($installer, new NullLogger());

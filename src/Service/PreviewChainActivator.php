@@ -44,7 +44,9 @@ class PreviewChainActivator implements EventSubscriberInterface
             return;
         }
 
-        $this->installer->installChain($chain, Context::createDefaultContext());
+        // The event carries no context, and the write is the system's, not a user's:
+        // the installer wraps it in SYSTEM_SCOPE as plugin:install does.
+        $this->installer->installChain($chain, Context::createCLIContext());
         $this->logger->info('LedgerDirect: preview chain switched on, its payment methods are in place', ['chain' => $chain]);
     }
 

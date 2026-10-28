@@ -239,15 +239,20 @@ class PaymentMethodInstaller
     }
 
     /**
-     * Creates and activates one chain's payment methods - how a preview
-     * chain's methods come into being, the moment the merchant switches the
-     * chain on. Idempotent: an upsert, then active.
+     * Creates one chain's payment methods, active - how a preview chain's
+     * methods come into being, the moment the merchant switches the chain
+     * on. A method that already exists is only written current: its active
+     * flag stays as the merchant set it, so switching the chain off and on
+     * again does not undo a deactivation made in between.
      */
     public function installChain(string $chain, Context $context): void
     {
         foreach (self::paymentMethodsFor($chain) as $paymentMethod) {
+            if (!$this->exists($paymentMethod, $context)) {
+                $paymentMethod['active'] = true;
+            }
+
             $this->upsertPaymentMethod($paymentMethod, $context);
-            $this->setPaymentMethodStatus($paymentMethod, true, $context);
         }
     }
 
