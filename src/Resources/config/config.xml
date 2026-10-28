@@ -61,15 +61,15 @@
     </card>
 
     <card>
-        <title>LedgerDirect - Stellar</title>
-        <title lang="de-DE">LedgerDirect - Stellar</title>
+        <title>LedgerDirect - Stellar (Preview)</title>
+        <title lang="de-DE">LedgerDirect - Stellar (Vorschau)</title>
 
         <input-field type="bool">
             <name>stellarEnabled</name>
-            <label>Accept payments on Stellar</label>
-            <label lang="de-DE">Zahlungen über Stellar annehmen</label>
-            <helpText>XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; the payment methods appear at checkout only when this is on and a receiving account is set.</helpText>
-            <helpText lang="de-DE">XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; die Zahlarten erscheinen im Checkout nur, wenn dies an ist und ein Empfangskonto hinterlegt ist.</helpText>
+            <label>Accept payments on Stellar (preview)</label>
+            <label lang="de-DE">Zahlungen über Stellar annehmen (Vorschau)</label>
+            <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods, which appear at checkout once a receiving account is set.</helpText>
+            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an, die im Checkout erscheinen, sobald ein Empfangskonto hinterlegt ist.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 

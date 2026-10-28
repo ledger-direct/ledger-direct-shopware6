@@ -120,6 +120,18 @@ services:
         tags:
             - kernel.event_subscriber
 
+    Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller:
+        arguments:
+            - '@payment_method.repository'
+            - '@Shopware\Core\Framework\Plugin\Util\PluginIdProvider'
+
+    Hardcastle\LedgerDirect\Service\PreviewChainActivator:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller'
+            - '@logger'
+        tags:
+            - kernel.event_subscriber
+
     Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository:
         arguments:
             - '@Doctrine\DBAL\Connection'

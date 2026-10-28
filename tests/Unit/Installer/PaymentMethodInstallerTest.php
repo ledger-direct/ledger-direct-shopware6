@@ -9,7 +9,19 @@ use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\LedgerDirect;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopware\Core\Framework\Migration\MigrationCollection;
+use Shopware\Core\Framework\Plugin\Context\InstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
+use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 
 /**
  * The payment methods are derived from the core's ChainCatalog; the plugin
@@ -19,6 +31,8 @@ use PHPUnit\Framework\TestCase;
  */
 class PaymentMethodInstallerTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     /**
      * Every chain in the catalogue is either handled here or named below as
      * pending. A third entry in the catalogue fails this test on purpose.
@@ -100,6 +114,100 @@ class PaymentMethodInstallerTest extends TestCase
 
         [$chain, $asset] = PaymentMethodInstaller::chainAndAssetFor(md5('stellar-usdc-payment'));
         $this->assertSame(['STELLAR', 'USDC'], [$chain->chain, $asset->code]);
+    }
+
+    /**
+     * Stellar ships as a preview: install creates the three XRPL methods and
+     * none of Stellar's, so a merchant who never switches the chain on never
+     * sees it in Settings > Payment methods.
+     */
+    public function testInstallCreatesTheReleasedChainsMethodsOnly(): void
+    {
+        $this->assertSame(['STELLAR'], PaymentMethodInstaller::PREVIEW_CHAINS);
+        $repository = Mockery::mock(EntityRepository::class);
+        $written = [];
+        $repository->shouldReceive('upsert')->andReturnUsing(function (array $rows) use (&$written) {
+            foreach ($rows as $row) {
+                $written[] = $row['technicalName'];
+            }
+
+            return Mockery::mock(EntityWrittenContainerEvent::class);
+        });
+
+        $this->installer($repository)->install(new InstallContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class)));
+
+        sort($written);
+        $this->assertSame(['ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $written);
+    }
+
+    /**
+     * Switching a preview chain on creates its methods and activates them;
+     * that is the one way they come into being.
+     */
+    public function testInstallChainCreatesAndActivatesOneChainsMethods(): void
+    {
+        $repository = Mockery::mock(EntityRepository::class);
+        $written = [];
+        $repository->shouldReceive('upsert')->andReturnUsing(function (array $rows) use (&$written) {
+            foreach ($rows as $row) {
+                $written[] = isset($row['technicalName']) ? 'create ' . $row['technicalName'] : 'active=' . var_export($row['active'], true) . ' ' . $row['id'];
+            }
+
+            return Mockery::mock(EntityWrittenContainerEvent::class);
+        });
+        $found = Mockery::mock(IdSearchResult::class);
+        $found->shouldReceive('getTotal')->andReturn(1);
+        $repository->shouldReceive('searchIds')->andReturn($found);
+
+        $this->installer($repository)->installChain(ChainCatalog::STELLAR, Context::createDefaultContext());
+
+        $this->assertCount(6, $written, 'three methods created, three activated');
+        $this->assertContains('create ledgerdirect_stellar_xlm', $written);
+        $this->assertContains('create ledgerdirect_stellar_eurc', $written);
+        $this->assertContains('active=true ' . md5('stellar-usdc-payment'), $written);
+        $this->assertNotContains('create ledgerdirect_xrpl_xrp', $written);
+    }
+
+    /**
+     * An update keeps a preview chain's methods current where they exist
+     * and creates none where they do not.
+     */
+    public function testUpdateWritesPreviewMethodsOnlyWhereTheyAlreadyExist(): void
+    {
+        $repository = Mockery::mock(EntityRepository::class);
+        $written = [];
+        $repository->shouldReceive('upsert')->andReturnUsing(function (array $rows) use (&$written) {
+            foreach ($rows as $row) {
+                $written[] = $row['technicalName'];
+            }
+
+            return Mockery::mock(EntityWrittenContainerEvent::class);
+        });
+        $repository->shouldReceive('searchIds')->andReturnUsing(function (Criteria $criteria) {
+            $result = Mockery::mock(IdSearchResult::class);
+            // Only XLM was switched on earlier; USDC and EURC on Stellar never existed.
+            $result->shouldReceive('getTotal')->andReturn($criteria->getIds() === [md5('stellar-xlm-payment')] ? 1 : 0);
+
+            return $result;
+        });
+
+        $this->installer($repository)->update(new UpdateContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class), '1.6.0'));
+
+        sort($written);
+        $this->assertSame(['ledgerdirect_stellar_xlm', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $written);
+    }
+
+    private function installer(EntityRepository $repository): PaymentMethodInstaller
+    {
+        $pluginIdProvider = Mockery::mock(PluginIdProvider::class);
+        $pluginIdProvider->shouldReceive('getPluginIdByBaseClass')->andReturn('0190c1d8a0e24c2b9c1e1a7b1d2e3f40');
+
+        return new PaymentMethodInstaller($repository, $pluginIdProvider);
+    }
+
+    private function plugin(): LedgerDirect
+    {
+        return new LedgerDirect(true, '/plugin');
     }
 
     /**
