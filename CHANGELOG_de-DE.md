@@ -2,7 +2,7 @@
 - Store-API für Headless-Frontends, erster Teil: `GET /store-api/ledger-direct/payment/quote/{orderId}`
   antwortet einem Gast mit dem `deepLinkCode` der Bestellung, wie `check` es immer getan hat, statt einen
   angemeldeten Kunden zu verlangen. Ein falscher Code und die Bestellung eines anderen Kunden bekommen
-  dasselbe 403, eine nie mit LedgerDirect quotierte Bestellung 404, ein abgelaufenes Angebot 410 (bisher 500)
+  dasselbe 403, eine nie mit LedgerDirect quotierte Bestellung 404, ein abgelaufenes Angebot oder eine Bestellung, die nicht mehr auf eine Zahlung wartet, 410 (bisher 500)
 - Die `quote`-Nutzlast bekommt `page` (`schema_version` 1): jeden Wert, aus dem die Zahlungsseite
   aufgebaut wird, für XRP, RLUSD, USDC und die Stellar-Assets gleichermaßen — Zustand, Restlaufzeit, Beträge
   wie die Seite sie zeigt, Konto, Tag bzw. Memo, Herausgeber und Währungscode, die Zahlungsanfrage für den

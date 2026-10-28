@@ -114,7 +114,9 @@ class PaymentRoute
      * has the code; so has anyone opening the confirmation mail hours later.
      * Nothing becomes visible that the storefront's payment page does not
      * show for the same code. 403 for anything else, without telling whether
-     * the order exists; 404 for an order never quoted with LedgerDirect.
+     * the order exists; 404 for an order never quoted with LedgerDirect;
+     * 410 for a quote that has expired or an order that no longer waits for
+     * a payment — in both cases `check` is the route to poll.
      *
      * The payload has two layers. The flat fields are the Store API contract
      * from the first release and stay as they are. `page` is the complete
@@ -139,6 +141,17 @@ class PaymentRoute
 
         if ($orderTransaction === null || $intent === null || ChainCatalog::forType($intent->type) === null) {
             throw new NoPaymentIntentException($orderId);
+        }
+
+        /*
+         * No payment instructions for an order that no longer waits for a
+         * payment — settled, or cancelled or paid by hand in the
+         * administration: nothing sent now would be applied to it. The
+         * storefront page redirects in that case; a front end polls `check`,
+         * whose `redirect` says where to go.
+         */
+        if (!$this->paymentState->isOpen($orderTransaction)) {
+            throw new TransactionLifetimeException('This order no longer waits for a payment');
         }
 
         /*

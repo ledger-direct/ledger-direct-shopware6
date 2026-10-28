@@ -334,6 +334,28 @@ class PaymentRouteTest extends TestCase
         $this->assertSame('10', $payload['page']['amountDueDisplay']);
     }
 
+    /**
+     * Closed by the merchant or paid: no payment instructions, whatever the
+     * intent says — nothing sent now would be applied. `check` carries the
+     * redirect for that case.
+     */
+    public function testAClosedTransactionGetsNoQuote(): void
+    {
+        $partial = $this->xrpQuote()->withFulfillment('HASH', 30.0, 'CTID');
+
+        foreach (['cancelled' => $partial, 'paid' => $this->xrpQuote()->withFulfillment('HASH', 40.0, 'CTID')] as $state => $intent) {
+            $this->setUp();
+            $this->givenAuthorisedOrder($this->transaction($state, $intent));
+
+            try {
+                $this->quote(['deepLinkCode' => 'the-code']);
+                $this->fail("expected a 410 for a {$state} transaction");
+            } catch (TransactionLifetimeException $exception) {
+                $this->assertSame(410, $exception->getStatusCode());
+            }
+        }
+    }
+
     public function testQuoteOfAnOrderNeverQuotedIsNotFound(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', null));

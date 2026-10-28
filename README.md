@@ -225,8 +225,9 @@ answer it, under the sales channel's `sw-access-key` like every Store API call:
 
 Access is the order's `deepLinkCode` — the code behind the guest order link in the confirmation mail —
 or the customer of the session, no login. A wrong code and another customer's order are answered
-alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` for an expired quote 410
-(`check` reports it as the state `expired` instead). The Store API answers cross-origin requests with
+alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` for an expired quote, or
+for an order that no longer waits for a payment, 410 (`check` reports the former as the state
+`expired` and carries a `redirect` for the latter). The Store API answers cross-origin requests with
 Shopware's CORS headers, on these routes as on the core's.
 
 The payment page package renders from `page` and polls `check`; pass the access key with

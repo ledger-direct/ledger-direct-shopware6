@@ -2,7 +2,7 @@
 - Store API for headless front ends, first part: `GET /store-api/ledger-direct/payment/quote/{orderId}`
   answers a guest who sends the order's `deepLinkCode`, the way `check` always has, instead of
   requiring a logged-in customer. A wrong code and another customer's order get the same 403, an
-  order never quoted with LedgerDirect 404, an expired quote 410 (was 500)
+  order never quoted with LedgerDirect 404, an expired quote or an order that no longer waits for a payment 410 (was 500)
 - The `quote` payload gains `page` (`schema_version` 1): every value the payment page is built from,
   for XRP, RLUSD, USDC and the Stellar assets alike — state, seconds left, amounts as the page shows
   them, account, tag or memo, issuer and currency code, the payment request for the QR code, explorer
