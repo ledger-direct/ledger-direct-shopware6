@@ -89,10 +89,20 @@ Updates are `composer update hardcastle/ledger-direct-sw6` followed by `bin/cons
 from the [GitHub releases](https://github.com/ledger-direct/ledger-direct-shopware6/releases). Installing
 then installs the core from Packagist into the shop — the plugin asks Shopware to run Composer for it
 (`executeComposerCommands()`), because Shopware never loads a vendor directory shipped inside a
-plugin — so the shop needs to reach the network during that step.
+plugin — so the shop needs to reach the network during that step. In a **cluster setup**
+(`shopware.deployment.cluster_setup: true`) Shopware skips that Composer step for every plugin;
+there, install through Composer as above, or require `hardcastle/ledger-direct-core` in the shop's
+root `composer.json` before uploading the zip.
 
-**From a checkout**, for development: clone this repository into `custom/plugins/LedgerDirect` and
-run the same three console commands as for the zip. The storefront and administration bundles are
+**From a checkout**, for development: clone this repository into `custom/plugins/LedgerDirect`, then
+
+```
+bin/console plugin:refresh
+bin/console plugin:install LedgerDirect --activate
+bin/console cache:clear
+```
+
+The core is installed into the shop as for the zip. The storefront and administration bundles are
 committed, no build is needed.
 
 Installing creates the three payment methods and two tables for ledger data (synced transactions
