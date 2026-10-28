@@ -1,6 +1,20 @@
 {
     "name": "hardcastle/ledger-direct-sw6",
     "description": "LedgerDirect - Shopware6 Ledger & Blockchain Connector",
+    "homepage": "https://www.ledger-direct.com",
+    "keywords": [
+        "shopware",
+        "shopware-platform-plugin",
+        "payment",
+        "xrp",
+        "xrpl",
+        "rlusd",
+        "usdc",
+        "crypto",
+        "cryptocurrency",
+        "blockchain",
+        "stablecoin"
+    ],
     "version": "1.7.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
@@ -11,6 +25,11 @@
             "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/ledger-direct/ledger-direct-shopware6/issues",
+        "source": "https://github.com/ledger-direct/ledger-direct-shopware6",
+        "docs": "https://github.com/ledger-direct/ledger-direct-shopware6#readme"
+    },
     "extra": {
         "shopware-plugin-class": "Hardcastle\\LedgerDirect\\LedgerDirect",
         "author": "Hardcastle Technologies | Alexander Busse",
