@@ -4,6 +4,9 @@ namespace Hardcastle\LedgerDirect\Tests\Fixtures;
 
 class Fixtures
 {
+    /** A testnet Stellar account (the core's recorded merchant account). */
+    public const STELLAR_ACCOUNT = 'GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA';
+
     public static function getIntegrationTestConfiguration(): array
     {
         return [
@@ -24,6 +27,18 @@ class Fixtures
             'LedgerDirect.config.xrplIsRlusdEnabled' => true,
             'LedgerDirect.config.xrplIsUsdcEnabled' => false,
             'LedgerDirect.config.xrplQuoteExpiry' => 600,
+        ];
+    }
+
+    /** The static configuration plus a switched-on Stellar card on the testnet. */
+    public static function getStaticMultiChainConfiguration(): array
+    {
+        return self::getStaticConfiguration() + [
+            'LedgerDirect.config.stellarEnabled' => true,
+            'LedgerDirect.config.useStellarTestnet' => true,
+            'LedgerDirect.config.stellarTestnetDestinationAccount' => self::STELLAR_ACCOUNT,
+            'LedgerDirect.config.stellarIsUsdcEnabled' => true,
+            'LedgerDirect.config.stellarIsEurcEnabled' => false,
         ];
     }
 

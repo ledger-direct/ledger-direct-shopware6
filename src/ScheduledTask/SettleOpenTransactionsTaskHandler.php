@@ -54,7 +54,7 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
             $configuredAccount = $this->configProvider->getDestinationAccount($chain->chain);
             if ($configuredAccount !== '') {
                 $configuredNetwork = $this->configProvider->getNetwork($chain->chain);
-                $accounts[$configuredNetwork . '|' . $configuredAccount] = [$configuredAccount, $configuredNetwork];
+                $accounts[$chain->chain . '|' . $configuredNetwork . '|' . $configuredAccount] = [$chain->chain, $configuredAccount, $configuredNetwork];
             }
         }
         $matchable = [];
@@ -67,12 +67,12 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            $accounts[$intent->network . '|' . $intent->destinationAccount] = [$intent->destinationAccount, $intent->network];
+            $accounts[$intent->chain . '|' . $intent->network . '|' . $intent->destinationAccount] = [$intent->chain, $intent->destinationAccount, $intent->network];
             $matchable[] = $transaction;
         }
 
-        foreach ($accounts as [$account, $network]) {
-            $this->orderTransactionService->syncLedger($account, $network, throttled: false);
+        foreach ($accounts as [$chain, $account, $network]) {
+            $this->orderTransactionService->syncLedger($chain, $account, $network, throttled: false);
         }
 
         $settled = 0;

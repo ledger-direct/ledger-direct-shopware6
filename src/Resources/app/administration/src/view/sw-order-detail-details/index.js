@@ -2,11 +2,8 @@ import template from './template.html.twig';
 
 const { Component } = Shopware;
 
-const LEDGER_DIRECT_HANDLERS = [
-    'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\XrpPaymentHandler',
-    'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\RlusdPaymentHandler',
-    'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\UsdcPaymentHandler',
-];
+/** Every LedgerDirect handler lives in this namespace: one per chain, plus the pre-1.6 per-asset ones. */
+const LEDGER_DIRECT_HANDLER_NAMESPACE = 'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\';
 
 /**
  * Hangs the LedgerDirect card under Shopware's transaction card on the
@@ -22,7 +19,7 @@ Component.override('sw-order-detail-details', {
             const transaction = this.transaction;
             const handler = transaction && transaction.paymentMethod ? transaction.paymentMethod.handlerIdentifier : null;
 
-            return LEDGER_DIRECT_HANDLERS.includes(handler);
+            return typeof handler === 'string' && handler.startsWith(LEDGER_DIRECT_HANDLER_NAMESPACE);
         },
     },
 });

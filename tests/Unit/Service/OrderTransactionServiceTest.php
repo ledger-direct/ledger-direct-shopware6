@@ -9,6 +9,11 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Core\Port\XrplTransactionRepositoryInterface;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
+use Hardcastle\LedgerDirect\Core\Stellar\HorizonClient;
+use Hardcastle\LedgerDirect\Core\Stellar\MemoIdService;
+use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
+use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
+use Hardcastle\LedgerDirect\Core\Testing\InMemoryStellarPaymentRepository;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
@@ -445,15 +450,54 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertNull($this->createService()->syncOrderTransaction($orderTransaction, $this->context));
     }
 
-    private function createService(): OrderTransactionService
+    /**
+     * Stellar: the order is quoted in XLM through the same oracles (the stub
+     * answers Coingecko's `stellar` and Kraken alike), gets a memo id from the
+     * in-memory counter and is stored as a `stellar-xlm-payment` intent on the
+     * Stellar receiving account.
+     */
+    public function testPrepareQuotesAStellarOrderInXlmWithAMemoId(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::paymentMethodIdFor('stellar-xlm-payment'));
+        $this->expectUpsertCapturing($customFields);
+
+        $this->createService(Fixtures::getStaticMultiChainConfiguration())->prepareOrderTransaction(
+            $this->givenOrder(),
+            $orderTransaction,
+            $this->context
+        );
+
+        $intent = $customFields[0]['customFields'][OrderTransactionService::CUSTOM_FIELDS_KEY];
+
+        $this->assertSame('stellar-xlm-payment', $intent['type']);
+        $this->assertSame('STELLAR', $intent['chain']);
+        $this->assertSame('testnet', $intent['network']);
+        $this->assertSame('XLM', $intent['base_asset']);
+        $this->assertSame('XLM/EUR', $intent['pairing']);
+        $this->assertSame(2.5, $intent['exchange_rate']);
+        $this->assertSame(40.0, $intent['amount_requested']);
+        $this->assertSame(Fixtures::STELLAR_ACCOUNT, $intent['destination_account']);
+        $this->assertGreaterThan(0, $intent['destination_tag'], 'a memo id from the counter');
+        $this->assertNull($intent['hash']);
+    }
+
+    private function createService(?array $configuration = null): OrderTransactionService
     {
         $httpClient = $this->httpClient;
         $httpFactory = new HttpFactory();
         $logger = new NullLogger();
 
         $configProvider = new ShopwareConfigProvider(
-            ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration())
+            ConfigurationServiceMock::createInstance($configuration ?? Fixtures::getStaticConfiguration())
         );
+
+        $stellarRepository = new InMemoryStellarPaymentRepository();
+        $stellarIntents = new StellarPaymentIntentService(
+            new PriceService($httpClient, $httpFactory, $logger),
+            new MemoIdService($stellarRepository),
+            $configProvider
+        );
+        $stellarSync = new StellarSyncService(new HorizonClient($httpClient, $httpFactory), $stellarRepository, $logger);
 
         $paymentIntentService = new PaymentIntentService(
             new PriceService($httpClient, $httpFactory, $logger),
@@ -473,6 +517,8 @@ class OrderTransactionServiceTest extends TestCase
             $this->givenCurrencyRepository(),
             $paymentIntentService,
             $syncService,
+            $stellarIntents,
+            $stellarSync,
             new SyncThrottle($this->throttleStore, $logger),
             $logger
         );

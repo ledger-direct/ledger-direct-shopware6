@@ -2,7 +2,9 @@
 
 namespace Hardcastle\LedgerDirect\Command;
 
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
+use Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,8 +19,11 @@ class XrplTransactionLookupCommand extends Command
 
     private ShopwareConfigProvider $configProvider;
 
-    public function __construct(XrplClient $xrplClient, ShopwareConfigProvider $configProvider)
-    {
+    public function __construct(
+        XrplClient $xrplClient,
+        ShopwareConfigProvider $configProvider,
+        private readonly DbalStellarPaymentRepository $stellarRepository,
+    ) {
         parent::__construct(self::$defaultName);
         $this->xrplClient = $xrplClient;
         $this->configProvider = $configProvider;
@@ -31,9 +36,12 @@ class XrplTransactionLookupCommand extends Command
     {
         parent::configure();
 
-        $this->setDescription('XRPL transaction lookup');
-        $this->addOption('hash', null, InputOption::VALUE_OPTIONAL, 'Hash identifying a tx');
-        $this->addOption('ctid', null, InputOption::VALUE_OPTIONAL, 'CTID identifying a validated tx');
+        $this->setDescription('Transaction lookup: XRPL on the ledger by --hash or --ctid; Stellar in the synced table by --account and --id');
+        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL or STELLAR', ChainCatalog::XRPL);
+        $this->addOption('hash', null, InputOption::VALUE_OPTIONAL, 'XRPL: hash identifying a tx');
+        $this->addOption('ctid', null, InputOption::VALUE_OPTIONAL, 'XRPL: CTID identifying a validated tx');
+        $this->addOption('account', null, InputOption::VALUE_OPTIONAL, 'Stellar: the receiving account');
+        $this->addOption('id', null, InputOption::VALUE_OPTIONAL, 'Stellar: the memo id shown on the payment page');
     }
 
     /**
@@ -42,6 +50,37 @@ class XrplTransactionLookupCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $chain = strtoupper((string) $input->getOption('chain'));
+
+        if (!in_array($chain, [ChainCatalog::XRPL, ChainCatalog::STELLAR], true)) {
+            $output->writeln('Unknown chain ' . $chain . '; one of XRPL, STELLAR');
+
+            return Command::FAILURE;
+        }
+
+        if ($chain === ChainCatalog::STELLAR) {
+            $account = (string) $input->getOption('account');
+            $memoId = (string) $input->getOption('id');
+
+            if ($account === '' || $memoId === '') {
+                $output->writeln('Stellar: --account and --id are required');
+
+                return Command::FAILURE;
+            }
+
+            $payments = array_map(static fn ($p): array => get_object_vars($p), $this->stellarRepository->findPayments($account, $memoId));
+
+            if ($payments === []) {
+                $output->writeln('No synced payment on this account and memo id.');
+
+                return Command::FAILURE;
+            }
+
+            $output->writeln(json_encode($payments, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+            return Command::SUCCESS;
+        }
+
         $hash = $input->getOption('hash');
         $ctid = $input->getOption('ctid');
 

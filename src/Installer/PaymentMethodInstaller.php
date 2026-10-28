@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Installer;
 
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
@@ -45,6 +46,7 @@ class PaymentMethodInstaller
      */
     public const HANDLER_BY_CHAIN = [
         ChainCatalog::XRPL => XrplPaymentHandler::class,
+        ChainCatalog::STELLAR => StellarPaymentHandler::class,
     ];
 
     /** Ids from before the catalogue, kept for the orders that carry them. */

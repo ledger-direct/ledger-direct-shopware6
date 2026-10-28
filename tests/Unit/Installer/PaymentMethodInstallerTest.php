@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Installer;
 
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
@@ -24,7 +25,7 @@ class PaymentMethodInstallerTest extends TestCase
      */
     public function testEveryCatalogueChainIsHandledOrExplicitlyPending(): void
     {
-        $pending = ['STELLAR']; // Stellar follows in 1.7.0 with its own repository, services and handler.
+        $pending = []; // Every chain the core 0.10 catalogue lists is handled: XRPL since 1.0, Stellar since 1.7.0.
 
         foreach (ChainCatalog::chains() as $chain) {
             $handled = isset(PaymentMethodInstaller::HANDLER_BY_CHAIN[$chain->chain]);
@@ -75,11 +76,30 @@ class PaymentMethodInstallerTest extends TestCase
         $this->assertSame(['ledgerdirect_xrpl_rlusd', RlusdPaymentHandler::class], [$byId[PaymentMethodInstaller::RLUSD_PAYMENT_ID]['technicalName'], $byId[PaymentMethodInstaller::RLUSD_PAYMENT_ID]['handlerIdentifier']]);
         $this->assertSame(['ledgerdirect_xrpl_usdc', UsdcPaymentHandler::class], [$byId[PaymentMethodInstaller::USDC_PAYMENT_ID]['technicalName'], $byId[PaymentMethodInstaller::USDC_PAYMENT_ID]['handlerIdentifier']]);
         $this->assertSame('XRP on XRPL', $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['en-GB']['name']);
-        $this->assertCount(3, $byId);
+        $this->assertCount(6, $byId, 'three XRPL methods, three Stellar ones');
 
         foreach ([XrpPaymentHandler::class, RlusdPaymentHandler::class, UsdcPaymentHandler::class] as $legacy) {
             $this->assertContains(XrplPaymentHandler::class, (array) class_parents($legacy), "{$legacy} is the chain handler under its old name");
         }
+    }
+
+    /**
+     * The Stellar methods: id from the type, the chain handler, a technical
+     * name and a name built from the catalogue - no constant per asset.
+     */
+    public function testTheStellarMethodsAreDerivedFromTheCatalogue(): void
+    {
+        $byId = array_column(PaymentMethodInstaller::paymentMethods(), null, 'id');
+        $xlm = $byId[md5('stellar-xlm-payment')];
+
+        $this->assertSame(StellarPaymentHandler::class, $xlm['handlerIdentifier']);
+        $this->assertSame('ledgerdirect_stellar_xlm', $xlm['technicalName']);
+        $this->assertSame('XLM on Stellar', $xlm['translations']['en-GB']['name']);
+        $this->assertSame('XLM (Stellar)', $xlm['translations']['de-DE']['name']);
+        $this->assertSame('ledgerdirect_stellar_eurc', $byId[md5('stellar-eurc-payment')]['technicalName']);
+
+        [$chain, $asset] = PaymentMethodInstaller::chainAndAssetFor(md5('stellar-usdc-payment'));
+        $this->assertSame(['STELLAR', 'USDC'], [$chain->chain, $asset->code]);
     }
 
     /**

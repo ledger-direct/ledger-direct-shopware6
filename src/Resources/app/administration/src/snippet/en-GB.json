@@ -13,7 +13,6 @@
             "amountRequested": "Amount requested",
             "exchangeRate": "Exchange rate",
             "destinationAccount": "Receiving account",
-            "destinationTag": "Destination tag",
             "issuer": "Issuer",
             "quoteValidUntil": "Quote valid until",
             "amountReceived": "Amount received",
@@ -23,7 +22,11 @@
             "transaction": "Transaction",
             "ctid": "CTID",
             "unreadable": "The payment record on this transaction cannot be read.",
-            "unavailable": "The payment information could not be loaded."
+            "unavailable": "The payment information could not be loaded.",
+            "identifier": {
+                "XRPL": "Destination tag",
+                "STELLAR": "Memo ID"
+            }
         }
     }
 }

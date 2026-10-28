@@ -15,7 +15,7 @@
         "blockchain",
         "stablecoin"
     ],
-    "version": "1.6.0",
+    "version": "1.7.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
@@ -46,8 +46,8 @@
             "en-GB": "https://www.ledger-direct.com/contact/"
         },
         "description": {
-            "de-DE": "LedgerDirect nimmt XRP-, RLUSD- und USDC-Zahlungen direkt über das XRP Ledger in Ihre eigene Wallet an, ohne Mittelsmann, ohne Gebühren und ohne externen Zahlungsdienstleister.",
-            "en-GB": "LedgerDirect lets your Shopware store accept XRP, RLUSD and USDC directly on the XRP Ledger, into a wallet you control, without middlemen, fees or an external provider."
+            "de-DE": "LedgerDirect nimmt XRP-, RLUSD- und USDC-Zahlungen über das XRP Ledger sowie XLM-, USDC- und EURC-Zahlungen über Stellar direkt in Ihre eigene Wallet an, ohne Mittelsmann.",
+            "en-GB": "LedgerDirect lets your Shopware store accept XRP, RLUSD and USDC on the XRP Ledger and XLM, USDC and EURC on Stellar, directly into a wallet you control, with no middleman."
         }
     },
     "require": {

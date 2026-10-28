@@ -19,6 +19,7 @@
     <div class="ld-page"
          data-ld-page="true"
          data-ld-state="{{ state }}"
+         data-ld-chain="{{ chain }}"
          data-ld-poll-url="{{ pollUrl }}"
          data-ld-asset="{{ assetLabel }}"
          data-ld-network="{{ network }}"
@@ -69,7 +70,7 @@
                                         "%shortfall%": '<strong><span data-ld-shortfall>' ~ (shortfallDisplay ?? '') ~ '</span> ' ~ assetLabel ~ '</strong>'
                                     })|raw }}</p>
                                     <div class="ld-progress" aria-hidden="true"><span data-ld-progress style="width: {{ paidShare }}%"></span></div>
-                                    <p>{{ "LedgerDirect.paymentPage.partialSendRest"|trans }}</p>
+                                    <p>{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".partialSendRest")|trans }}</p>
                                 </div>
                             </div>
 
@@ -133,14 +134,14 @@
                                     </div>
                                 </li>
                                 <li>
-                                    <div class="ld-field-label"><span class="ld-step-no">2</span> {{ "LedgerDirect.paymentPage.stepTag"|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
+                                    <div class="ld-field-label"><span class="ld-step-no">2</span> {{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".step")|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
                                     <div class="ld-field ld-field--key">
                                         <span class="ld-field-value" data-ld-tag data-value="{{ destinationTag }}">{{ destinationTag }}</span>
-                                        <button type="button" class="ld-copy" data-copy="tag" aria-label="{{ "LedgerDirect.paymentPage.copyTag"|trans|striptags }}">
+                                        <button type="button" class="ld-copy" data-copy="tag" aria-label="{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".copy")|trans|striptags }}">
                                             {{ copyIcon }}<span data-ld-copy-label="idle">{{ "LedgerDirect.paymentPage.copy"|trans }}</span><span data-ld-copy-label="done" hidden>{{ "LedgerDirect.paymentPage.copied"|trans }}</span>
                                         </button>
                                     </div>
-                                    <p class="ld-hint">{{ "LedgerDirect.paymentPage.tagHint"|trans }}</p>
+                                    <p class="ld-hint">{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".hint")|trans }}</p>
                                 </li>
                                 {% if issuer %}
                                     <li>
@@ -158,7 +159,7 @@
 
                             <details class="ld-exchange">
                                 <summary>{{ "LedgerDirect.paymentPage.exchangeSummary"|trans }}</summary>
-                                <p>{{ "LedgerDirect.paymentPage.exchangeHint"|trans }}</p>
+                                <p>{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".exchangeHint")|trans }}</p>
                             </details>
                         </section>
 
@@ -167,10 +168,10 @@
                                 <details class="ld-qr" data-ld-qr-details open>
                                     <summary><span class="ld-qr-sum-open">{{ "LedgerDirect.paymentPage.qrOpen"|trans }}</span><span class="ld-qr-sum-closed">{{ "LedgerDirect.paymentPage.qrClosed"|trans }}</span></summary>
                                     <div class="ld-qr-box{% if state == 'expired' %} is-void{% endif %}" data-ld-qr-box>
-                                        <div data-ld-qr data-ld-qr-label="{{ "LedgerDirect.paymentPage.qrLabel"|trans|striptags }}"></div>
+                                        <div data-ld-qr data-ld-qr-label="{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".qrLabel")|trans|striptags }}"></div>
                                         <div class="ld-qr-void" data-ld-qr-void {% if state != 'expired' %}hidden{% endif %}>{{ "LedgerDirect.paymentPage.qrVoid"|trans }}</div>
                                     </div>
-                                    <p class="ld-qr-caption">{{ "LedgerDirect.paymentPage.qrCaption"|trans }}</p>
+                                    <p class="ld-qr-caption">{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".qrCaption")|trans }}</p>
                                 </details>
                             {% endif %}
 
@@ -204,14 +205,14 @@
                                 <span hidden data-ld-wallet-text="error-network">{{ "LedgerDirect.paymentPage.walletErrorNetwork"|trans }}</span>
                                 <span hidden data-ld-wallet-text="error-mismatch">{{ "LedgerDirect.paymentPage.walletErrorMismatch"|trans }}</span>
                                 <span hidden data-ld-wallet-text="error-other">{{ "LedgerDirect.paymentPage.walletErrorOther"|trans }}</span>
-                                <span hidden data-ld-wallet-text="network-mainnet">{{ "LedgerDirect.paymentPage.network.mainnet"|trans }}</span>
-                                <span hidden data-ld-wallet-text="network-testnet">{{ "LedgerDirect.paymentPage.network.testnet"|trans }}</span>
+                                <span hidden data-ld-wallet-text="network-mainnet">{{ ("LedgerDirect.paymentPage.network." ~ chain ~ ".mainnet")|trans }}</span>
+                                <span hidden data-ld-wallet-text="network-testnet">{{ ("LedgerDirect.paymentPage.network." ~ chain ~ ".testnet")|trans }}</span>
                             </div>
 
                             <dl class="ld-details">
                                 <dt>{{ "LedgerDirect.paymentPage.detailTotal"|trans }}</dt><dd>{{ total|currency }}</dd>
                                 <dt>{{ "LedgerDirect.paymentPage.detailRate"|trans }}</dt><dd>{{ "LedgerDirect.paymentPage.rateSentence"|trans({"%asset%": assetLabel, "%rate%": exchangeRateDisplay, "%currency%": currencyCode}) }}</dd>
-                                <dt>{{ "LedgerDirect.paymentPage.detailNetwork"|trans }}</dt><dd>{{ ("LedgerDirect.paymentPage.network." ~ network)|trans }}</dd>
+                                <dt>{{ "LedgerDirect.paymentPage.detailNetwork"|trans }}</dt><dd>{{ ("LedgerDirect.paymentPage.network." ~ chain ~ "." ~ network)|trans }}</dd>
                             </dl>
                         </aside>
                     </div>
@@ -252,7 +253,7 @@
 
         <footer class="ld-foot">
             <a href="{{ path('frontend.checkout.cart.page') }}">{{ "LedgerDirect.paymentPage.backToCart"|trans }}</a>
-            <span>{{ "LedgerDirect.paymentPage.poweredBy"|trans }}</span>
+            <span>{{ ("LedgerDirect.paymentPage.poweredBy." ~ chain)|trans }}</span>
         </footer>
     </div>
 {% endblock %}
