@@ -186,6 +186,7 @@ class PaymentMethodInstallerTest extends TestCase
      * A repository whose upsert records every row it is given into $written.
      *
      * @param list<array<string, mixed>>|null $written
+     * @param-out list<array<string, mixed>> $written
      *
      * @return EntityRepository&Mockery\MockInterface
      */
