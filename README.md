@@ -247,11 +247,14 @@ suites in a dockware container with Shopware 6.7. `e2e.yml` runs the end-to-end 
 fresh dockware shop and the XRPL testnet every night; it is not a merge gate, it detects drift.
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field
-for a plugin under `custom/plugins`; Packagist reads the tag). The store zip is built from the tag
-with `shopware-cli extension zip` and attached to the GitHub release. `.shopware-extension.yml`
-tells shopware-cli to ship the committed bundles as they are rather than building the assets again,
-and leaves tests and tooling out; `.gitattributes` does the same for the Composer dist archive.
-`CHANGELOG_en-GB.md` and `CHANGELOG_de-DE.md` are the changelogs the store shows.
+for a plugin under `custom/plugins`; Packagist reads the tag). Pushing the tag runs `release.yml`:
+it refuses a tag that does not match `composer.json`, builds the store zip from that commit with
+`shopware-cli extension zip`, validates it, and publishes a GitHub release with the zip as its asset
+and the tag's section of `CHANGELOG_en-GB.md` as its notes. Packagist picks the tag up on its own.
+`.shopware-extension.yml` tells shopware-cli to ship the committed bundles as they are rather than
+building the assets again, and leaves tests and tooling out; `.gitattributes` does the same for the
+Composer dist archive. `CHANGELOG_en-GB.md` and `CHANGELOG_de-DE.md` are the changelogs the store
+shows, so the English one needs its `# <version>` section before the tag.
 
 ## Translations
 

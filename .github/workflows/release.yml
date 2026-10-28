@@ -1,0 +1,61 @@
+# A release is a git tag that matches the version in composer.json. Pushing the
+# tag builds the store zip from exactly that commit with shopware-cli, as the
+# local release did until now, and publishes a GitHub release with the zip as
+# its one asset and the tag's section of CHANGELOG_en-GB.md as its notes - the
+# shape FriendsOfShopware, Mollie and Shopware's own plugins use. Packagist
+# picks the tag up on its own; the zip is for the upload in the administration.
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Zip and GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the zip is built from the tag, not from the checkout as it is
+
+      - name: Setup shopware-cli
+        uses: shopware/shopware-cli-action@v1
+
+      # The tag is the version everywhere - Packagist, the plugin list, the zip
+      # name. A composer.json that says something else is a release that would
+      # install as one version and be listed as another; refuse it.
+      - name: The tag matches composer.json
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="$(jq -r .version composer.json)"
+          echo "tag $TAG, composer.json $VERSION"
+          [ "$TAG" = "$VERSION" ] || { echo "::error::tag $TAG does not match composer.json version $VERSION"; exit 1; }
+
+      - name: Build the store zip from the tag
+        run: |
+          shopware-cli extension zip . --git-commit "${GITHUB_REF_NAME}" --release --output-directory dist
+          ls -la dist
+          unzip -p "dist/LedgerDirect-${GITHUB_REF_NAME}.zip" LedgerDirect/composer.json | jq -r '"zip carries version " + .version'
+
+      - name: Validate the zip
+        run: shopware-cli extension validate "dist/LedgerDirect-${GITHUB_REF_NAME}.zip"
+
+      # The tag's section of the English changelog, which is also what the
+      # store shows, taken as it is - blank lines separate paragraphs and code
+      # blocks in Markdown. An empty section is a mistake worth stopping for.
+      - name: Release notes from the changelog
+        run: |
+          awk -v v="# ${GITHUB_REF_NAME}" '$0==v{f=1;next} /^# /{f=0} f' CHANGELOG_en-GB.md > notes.md
+          grep -q '[^[:space:]]' notes.md || { echo "::error::CHANGELOG_en-GB.md has no section '# ${GITHUB_REF_NAME}'"; exit 1; }
+          printf '\n\nInstall: upload the zip in the administration (Extensions → My extensions), or `composer require hardcastle/ledger-direct-sw6:%s`. Requires Shopware 6.6.5+ or 6.7, PHP 8.2+.\n' "${GITHUB_REF_NAME}" >> notes.md
+          cat notes.md
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" "dist/LedgerDirect-${GITHUB_REF_NAME}.zip" --title "${GITHUB_REF_NAME}" --notes-file notes.md --verify-tag
