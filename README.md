@@ -66,6 +66,8 @@ code, the same one Shopware uses for its guest order links, and no login is requ
 - PHP 8.2 or newer
 - An XRP Ledger account. Accepting RLUSD or USDC additionally requires a **trustline** to the
   respective issuer on that account, or payments will fail on the ledger.
+- For the Stellar preview (see Configuration): a Stellar account, with a trust line to Circle's
+  issuer for USDC or EURC.
 
 ## Installation
 
@@ -127,11 +129,17 @@ Settings → Extensions → My extensions → LedgerDirect → Configure. One ca
 | Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods are offered; the receiving account needs the trustline first. XRP needs no switch. |
 | Quote validity in seconds | How long a quoted amount stays fixed, on every chain. Default 300. |
 
-**LedgerDirect – Stellar**
+**LedgerDirect – Stellar (Preview)**
+
+Stellar support is complete and tested on the testnet, but shipped as a **preview**: not for
+production use yet. Until the card's switch is on, nothing of it shows anywhere — no payment
+methods under Settings → Payment methods, nothing at checkout. Switching it on creates the XLM, USDC
+and EURC payment methods; switching it off hides them at checkout again. The card can be removed from
+the preview without a change for anyone who never switched it on.
 
 | Setting | |
 |---|---|
-| Accept payments on Stellar | Off by default. On, with a receiving account, XLM is offered; USDC and EURC are offered as well once their switch below is on and the receiving account has a trust line to the issuer. |
+| Accept payments on Stellar (preview) | Off by default. On, with a receiving account, XLM is offered; USDC and EURC are offered as well once their switch below is on and the receiving account has a trust line to the issuer. |
 | Use testnet | On by default. |
 | Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
 | Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
@@ -167,6 +175,11 @@ Leave *Use testnet* on and enter a testnet account as the testnet wallet address
 come from the [XRP Testnet faucet](https://xrpl.org/xrp-testnet-faucet.html) for XRP, the
 [RLUSD faucet](https://tryrlusd.com/) for RLUSD and the [Circle faucet](https://faucet.circle.com/)
 for USDC; the receiving account needs the trustlines, the paying wallet needs the tokens.
+
+For the Stellar preview, a testnet account comes from [Friendbot](https://laboratory.stellar.org/#account-creator?network=test)
+(10 000 XLM); Circle's faucet above also serves USDC and EURC on the Stellar testnet. The customer
+puts the order's **memo id** on the payment where the XRPL uses a destination tag; the QR code is a
+SEP-7 payment request that a Stellar wallet reads with address, memo and amount.
 
 ## The payment page
 

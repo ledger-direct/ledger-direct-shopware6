@@ -49,6 +49,16 @@ class PaymentMethodInstaller
         ChainCatalog::STELLAR => StellarPaymentHandler::class,
     ];
 
+    /**
+     * Chains the plugin ships as a preview: handled, tested on the testnet,
+     * but not yet something a merchant should run into. Their payment
+     * methods are not created on install or update; they appear only when
+     * the merchant switches the chain on in the configuration
+     * (PreviewChainActivator), and their card says "Preview". Removing a
+     * chain from this list is what releases it.
+     */
+    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR];
+
     /** Ids from before the catalogue, kept for the orders that carry them. */
     private const LEGACY_ID_BY_TYPE = [
         'xrp-payment' => self::XRP_PAYMENT_ID,
@@ -152,6 +162,24 @@ class PaymentMethodInstaller
         return array_map(static fn (array $method): string => $method['id'], self::paymentMethods());
     }
 
+    public static function isPreviewChain(string $chain): bool
+    {
+        return in_array($chain, self::PREVIEW_CHAINS, true);
+    }
+
+    /**
+     * The payment methods of one chain, as the repository takes them.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function paymentMethodsFor(string $chain): array
+    {
+        return array_values(array_filter(
+            self::paymentMethods(),
+            static fn (array $method): bool => str_starts_with((string) $method['technicalName'], 'ledgerdirect_' . strtolower($chain) . '_'),
+        ));
+    }
+
     /**
      * The payment methods as the repository takes them.
      *
@@ -179,23 +207,71 @@ class PaymentMethodInstaller
         return $methods;
     }
 
+    /**
+     * Install creates the methods of the released chains. A preview chain's
+     * methods are not created here: a merchant who never switches the chain
+     * on never sees them in Settings > Payment methods.
+     */
     public function install(InstallContext $context): void
     {
         foreach (self::paymentMethods() as $paymentMethod) {
-            $this->upsertPaymentMethod($paymentMethod, $context->getContext());
+            if (!self::isPreviewMethod($paymentMethod)) {
+                $this->upsertPaymentMethod($paymentMethod, $context->getContext());
+            }
         }
     }
 
     /**
-     * An update writes the methods again: a new chain or asset in the
-     * catalogue gets its method, an existing one its current name and
-     * technical name. Active flags are left as the merchant set them.
+     * An update writes the methods again: a new asset of a released chain
+     * gets its method, an existing one its current name and technical name.
+     * Active flags are left as the merchant set them. A preview chain's
+     * methods are written only where they already exist - an installation
+     * that switched the chain on keeps them current, one that did not gets
+     * nothing new.
      */
     public function update(UpdateContext $context): void
     {
         foreach (self::paymentMethods() as $paymentMethod) {
-            $this->upsertPaymentMethod($paymentMethod, $context->getContext());
+            if (!self::isPreviewMethod($paymentMethod) || $this->exists($paymentMethod, $context->getContext())) {
+                $this->upsertPaymentMethod($paymentMethod, $context->getContext());
+            }
         }
+    }
+
+    /**
+     * Creates one chain's payment methods, active - how a preview chain's
+     * methods come into being, the moment the merchant switches the chain
+     * on. A method that already exists is only written current: its active
+     * flag stays as the merchant set it, so switching the chain off and on
+     * again does not undo a deactivation made in between.
+     */
+    public function installChain(string $chain, Context $context): void
+    {
+        foreach (self::paymentMethodsFor($chain) as $paymentMethod) {
+            if (!$this->exists($paymentMethod, $context)) {
+                $paymentMethod['active'] = true;
+            }
+
+            $this->upsertPaymentMethod($paymentMethod, $context);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $paymentMethod
+     */
+    private static function isPreviewMethod(array $paymentMethod): bool
+    {
+        $chainAndAsset = self::chainAndAssetFor((string) $paymentMethod['id']);
+
+        return $chainAndAsset !== null && self::isPreviewChain($chainAndAsset[0]->chain);
+    }
+
+    /**
+     * @param array<string, mixed> $paymentMethod
+     */
+    private function exists(array $paymentMethod, Context $context): bool
+    {
+        return $this->paymentMethodRepository->searchIds(new Criteria([$paymentMethod['id']]), $context)->getTotal() > 0;
     }
 
     public function deactivate(DeactivateContext $context): void
@@ -231,10 +307,7 @@ class PaymentMethodInstaller
 
     private function setPaymentMethodStatus(array $paymentMethod, bool $active, Context $context): void
     {
-        $paymentMethodCriteria = new Criteria([$paymentMethod['id']]);
-        $hasPaymentMethod = $this->paymentMethodRepository->searchIds($paymentMethodCriteria, $context)->getTotal() > 0;
-
-        if (!$hasPaymentMethod) {
+        if (!$this->exists($paymentMethod, $context)) {
             return;
         }
 

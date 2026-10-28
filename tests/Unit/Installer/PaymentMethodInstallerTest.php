@@ -9,7 +9,19 @@ use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\LedgerDirect;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopware\Core\Framework\Migration\MigrationCollection;
+use Shopware\Core\Framework\Plugin\Context\InstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
+use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 
 /**
  * The payment methods are derived from the core's ChainCatalog; the plugin
@@ -19,6 +31,8 @@ use PHPUnit\Framework\TestCase;
  */
 class PaymentMethodInstallerTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     /**
      * Every chain in the catalogue is either handled here or named below as
      * pending. A third entry in the catalogue fails this test on purpose.
@@ -100,6 +114,137 @@ class PaymentMethodInstallerTest extends TestCase
 
         [$chain, $asset] = PaymentMethodInstaller::chainAndAssetFor(md5('stellar-usdc-payment'));
         $this->assertSame(['STELLAR', 'USDC'], [$chain->chain, $asset->code]);
+    }
+
+    /**
+     * Stellar ships as a preview: install creates the three XRPL methods and
+     * none of Stellar's, so a merchant who never switches the chain on never
+     * sees it in Settings > Payment methods.
+     */
+    public function testInstallCreatesTheReleasedChainsMethodsOnly(): void
+    {
+        $this->assertSame(['STELLAR'], PaymentMethodInstaller::PREVIEW_CHAINS);
+        $repository = $this->repositoryRecording($written);
+
+        $this->installer($repository)->install(new InstallContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class)));
+
+        $this->assertSame(['ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+    }
+
+    /**
+     * Switching a preview chain on creates its methods, active; that is the
+     * one way they come into being.
+     */
+    public function testInstallChainCreatesOneChainsMethodsActive(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
+
+        $this->installer($repository)->installChain(ChainCatalog::STELLAR, Context::createDefaultContext());
+
+        $this->assertCount(3, $written);
+        $this->assertSame(['ledgerdirect_stellar_eurc', 'ledgerdirect_stellar_usdc', 'ledgerdirect_stellar_xlm'], $this->sorted(array_column($written, 'technicalName')));
+        $this->assertSame([true, true, true], array_column($written, 'active'));
+    }
+
+    /**
+     * Switching the chain off and on again leaves a method the merchant
+     * deactivated in between as it is: an existing method is written
+     * current, without an active flag.
+     */
+    public function testInstallChainLeavesAnExistingMethodsActiveFlagAlone(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(1));
+
+        $this->installer($repository)->installChain(ChainCatalog::STELLAR, Context::createDefaultContext());
+
+        $this->assertCount(3, $written);
+        foreach ($written as $row) {
+            $this->assertArrayNotHasKey('active', $row, $row['technicalName']);
+        }
+    }
+
+    /**
+     * An update keeps a preview chain's methods current where they exist
+     * and creates none where they do not.
+     */
+    public function testUpdateWritesPreviewMethodsOnlyWhereTheyAlreadyExist(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturnUsing(
+            // Only XLM was switched on earlier; USDC and EURC on Stellar never existed.
+            fn (Criteria $criteria): IdSearchResult => $this->idSearchResultWithTotal($criteria->getIds() === [md5('stellar-xlm-payment')] ? 1 : 0),
+        );
+
+        $this->installer($repository)->update(new UpdateContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class), '1.6.0'));
+
+        $this->assertSame(['ledgerdirect_stellar_xlm', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+    }
+
+    /**
+     * A repository whose upsert records every row it is given into $written.
+     *
+     * @param list<array<string, mixed>>|null $written
+     * @param-out list<array<string, mixed>> $written
+     *
+     * @return EntityRepository&Mockery\MockInterface
+     */
+    private function repositoryRecording(?array &$written): EntityRepository
+    {
+        $written = [];
+        /** @var EntityRepository&Mockery\MockInterface $repository */
+        $repository = Mockery::mock(EntityRepository::class);
+        $repository->shouldReceive('upsert')->andReturnUsing(function (array $rows) use (&$written): EntityWrittenContainerEvent {
+            foreach ($rows as $row) {
+                $written[] = $row;
+            }
+
+            /** @var EntityWrittenContainerEvent&Mockery\MockInterface $event */
+            $event = Mockery::mock(EntityWrittenContainerEvent::class);
+
+            return $event;
+        });
+
+        return $repository;
+    }
+
+    /**
+     * @return IdSearchResult&Mockery\MockInterface
+     */
+    private function idSearchResultWithTotal(int $total): IdSearchResult
+    {
+        /** @var IdSearchResult&Mockery\MockInterface $result */
+        $result = Mockery::mock(IdSearchResult::class);
+        $result->shouldReceive('getTotal')->andReturn($total);
+
+        return $result;
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<string>
+     */
+    private function sorted(array $values): array
+    {
+        sort($values);
+
+        return $values;
+    }
+
+    private function installer(EntityRepository $repository): PaymentMethodInstaller
+    {
+        /** @var PluginIdProvider&Mockery\MockInterface $pluginIdProvider */
+        $pluginIdProvider = Mockery::mock(PluginIdProvider::class);
+        $pluginIdProvider->shouldReceive('getPluginIdByBaseClass')->andReturn('0190c1d8a0e24c2b9c1e1a7b1d2e3f40');
+
+        return new PaymentMethodInstaller($repository, $pluginIdProvider);
+    }
+
+    private function plugin(): LedgerDirect
+    {
+        return new LedgerDirect(true, '/plugin');
     }
 
     /**

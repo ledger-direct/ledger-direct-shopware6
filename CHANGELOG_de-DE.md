@@ -1,8 +1,9 @@
 # 1.7.0
-- Stellar als zweite Chain (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per Memo-ID, über Horizon
-  synchronisiert, nach denselben Regeln abgewickelt wie auf dem XRP Ledger. Eine Karte „LedgerDirect –
-  Stellar" in der Konfiguration, standardmäßig aus; die Zahlarten erscheinen im Checkout, sobald sie an
-  ist und ein Empfangskonto hinterlegt ist
+- Stellar als zweite Chain, **als Vorschau** (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per
+  Memo-ID, über Horizon synchronisiert, nach denselben Regeln abgewickelt wie auf dem XRP Ledger. Eine
+  Karte „LedgerDirect – Stellar (Vorschau)" in der Konfiguration, standardmäßig aus; sonst zeigt sich
+  nichts von Stellar, bis sie an ist. Das Einschalten legt die Stellar-Zahlarten an, die im Checkout
+  erscheinen, sobald ein Empfangskonto hinterlegt ist. Noch nicht für den Produktivbetrieb
 - Ein herausgegebenes Stellar-Asset (USDC, EURC) wird im Checkout nur angeboten, solange das Empfangskonto
   eine Trustline zu seinem Herausgeber hat; ohne sie würde die Zahlung in der Wallet des Kunden scheitern
 - Die Zahlungsseite sagt auf Stellar „Memo-ID" statt „Destination Tag", der QR-Code trägt eine
