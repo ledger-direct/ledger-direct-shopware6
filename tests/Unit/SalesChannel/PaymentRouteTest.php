@@ -252,6 +252,7 @@ class PaymentRouteTest extends TestCase
     {
         $intent = $this->xrpQuote();
         $this->givenAuthorisedOrder($this->transaction('open', $intent));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $payload = $this->quote(['deepLinkCode' => 'the-code']);
 
@@ -279,6 +280,7 @@ class PaymentRouteTest extends TestCase
     {
         $this->salesChannelContext = $this->salesChannelContext($this->customer('the-customer'));
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote()), customerId: 'the-customer');
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $payload = $this->quote([]);
 
@@ -312,6 +314,7 @@ class PaymentRouteTest extends TestCase
     public function testAnExpiredQuoteIsNotHandedOutAgain(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote(expiry: time() - 1)));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $this->expectException(TransactionLifetimeException::class);
 
@@ -327,6 +330,7 @@ class PaymentRouteTest extends TestCase
     {
         $partial = $this->xrpQuote(expiry: time() - 60)->withFulfillment('HASH', 30.0, 'CTID');
         $this->givenAuthorisedOrder($this->transaction('paid_partially', $partial));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
 
         $payload = $this->quote(['deepLinkCode' => 'the-code']);
 
@@ -353,6 +357,30 @@ class PaymentRouteTest extends TestCase
             } catch (TransactionLifetimeException $exception) {
                 $this->assertSame(410, $exception->getStatusCode());
             }
+        }
+    }
+
+    /**
+     * The quote syncs first, as the storefront page does on render: a
+     * payment that arrived since the last poll settles the order here, and
+     * the customer is not handed instructions to pay a second time.
+     */
+    public function testAPaymentFoundOnTheLedgerSettlesTheOrderInsteadOfQuotingIt(): void
+    {
+        $before = $this->transaction('open', $this->xrpQuote());
+        $settled = $this->xrpQuote()->withFulfillment('HASH', 40.0, 'CTID');
+        $after = $this->transaction('paid', $settled);
+
+        $this->givenAuthorisedOrder($before);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->with($before, $this->context, true)->andReturn($settled);
+        $this->stateHandler->shouldReceive('paid')->once()->with(self::TX_ID, $this->context);
+        $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->andReturn($after);
+
+        try {
+            $this->quote(['deepLinkCode' => 'the-code']);
+            $this->fail('expected a 410: the order is paid');
+        } catch (TransactionLifetimeException $exception) {
+            $this->assertSame(410, $exception->getStatusCode());
         }
     }
 

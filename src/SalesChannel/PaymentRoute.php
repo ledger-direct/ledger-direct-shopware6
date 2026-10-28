@@ -137,9 +137,23 @@ class PaymentRoute
         }
 
         $orderTransaction = $order->getTransactions()->first();
-        $intent = $orderTransaction === null ? null : $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
-        if ($orderTransaction === null || $intent === null || ChainCatalog::forType($intent->type) === null) {
+        if ($orderTransaction === null || $this->orderTransactionService->readPaymentIntent($orderTransaction) === null) {
+            throw new NoPaymentIntentException($orderId);
+        }
+
+        /*
+         * Synced before answering, throttled, as the storefront page is on
+         * render: a payment that reached the ledger since the last poll
+         * settles the order right here, and a customer coming back to the
+         * page is not handed instructions to pay a second time.
+         */
+        $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+
+        /** @var \Hardcastle\LedgerDirect\Core\Payment\PaymentIntent $intent the record as the sync left it */
+        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
+
+        if (ChainCatalog::forType($intent->type) === null) {
             throw new NoPaymentIntentException($orderId);
         }
 
