@@ -131,7 +131,7 @@ Settings → Extensions → My extensions → LedgerDirect → Configure. One ca
 
 | Setting | |
 |---|---|
-| Accept payments on Stellar | Off by default. On, with a receiving account, the XLM, USDC and EURC payment methods are offered. |
+| Accept payments on Stellar | Off by default. On, with a receiving account, XLM is offered; USDC and EURC are offered as well once their switch below is on and the receiving account has a trust line to the issuer. |
 | Use testnet | On by default. |
 | Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
 | Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
