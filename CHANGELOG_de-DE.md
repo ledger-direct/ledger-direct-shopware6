@@ -11,7 +11,7 @@
   Felder von `quote` bleiben, wie sie waren
 - Die Route `price` ist entfernt; sie war seit der ersten Version ein Platzhalter mit der Antwort
   `{"todo": "implement"}`. Was sie liefern sollte, liefert `quote`
-- README: ein Abschnitt „Headless / externes Frontend" zur Store-API und zur `headers`-Option des
+- README: ein Abschnitt „Headless / externes Frontend“ zur Store-API und zur `headers`-Option des
   Zahlungsseiten-Pakets
 
 # 1.7.0

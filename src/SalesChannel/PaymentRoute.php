@@ -145,9 +145,13 @@ class PaymentRoute
          * Past the expiry the quoted exchange rate is stale and the amount
          * must not be handed out again as if it were current. The storefront
          * page shows the expired state instead; a front end that wants that
-         * state polls `check`.
+         * state polls `check`. Decided on the computed status, not the raw
+         * timestamp: a short or wrong-asset payment on the tag keeps the
+         * quote it was made for (the status stays `partial` or `wrong_asset`
+         * past the expiry, a late top-up is matched against it), and the
+         * page for that has to be buildable.
          */
-        if ($intent->expiry !== null && $intent->expiry < time()) {
+        if (PaymentStatus::fromIntent($intent, $this->settlementPolicy)->state() === PaymentStatus::EXPIRED) {
             throw new TransactionLifetimeException('This transaction is not valid anymore');
         }
 

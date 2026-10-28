@@ -318,6 +318,22 @@ class PaymentRouteTest extends TestCase
         $this->quote(['deepLinkCode' => 'the-code']);
     }
 
+    /**
+     * A short payment keeps the quote it was made for past the expiry — the
+     * status stays partial — and a front end has to be able to show the
+     * shortfall, so the quote is not refused on the raw timestamp.
+     */
+    public function testAPartiallyPaidQuoteIsHandedOutPastItsExpiry(): void
+    {
+        $partial = $this->xrpQuote(expiry: time() - 60)->withFulfillment('HASH', 30.0, 'CTID');
+        $this->givenAuthorisedOrder($this->transaction('paid_partially', $partial));
+
+        $payload = $this->quote(['deepLinkCode' => 'the-code']);
+
+        $this->assertSame('partial', $payload['page']['state']);
+        $this->assertSame('10', $payload['page']['amountDueDisplay']);
+    }
+
     public function testQuoteOfAnOrderNeverQuotedIsNotFound(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', null));
