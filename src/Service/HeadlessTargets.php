@@ -1,0 +1,128 @@
+<?php declare(strict_types=1);
+
+namespace Hardcastle\LedgerDirect\Service;
+
+use Shopware\Core\Checkout\Order\OrderEntity;
+
+/**
+ * Where an external front end — Shopware Frontends, a React or Nuxt app,
+ * anything that is not the storefront — takes over from the plugin.
+ *
+ * Two URL templates in the configuration, per sales channel, both empty by
+ * default: the payment page the customer is sent to after the order, and
+ * the order page they land on when a payment arrives after Shopware's
+ * payment token has expired. Empty means the storefront's own pages, as
+ * before; a storefront sales channel never notices this class.
+ *
+ * The targets come from the merchant's configuration and from nowhere
+ * else — not from the request, not from the payment token — so the payment
+ * page cannot be turned into an open redirect. Placeholders are filled in
+ * URL-encoded; a template is checked when it is saved (ConfigurationValidator).
+ */
+final class HeadlessTargets
+{
+    public const PAYMENT_PAGE_KEY = 'headlessPaymentPageUrl';
+
+    public const ORDER_PAGE_KEY = 'headlessOrderPageUrl';
+
+    /** What the payment page template may name, and what it must name. */
+    public const PAYMENT_PAGE_PLACEHOLDERS = ['orderId', 'deepLinkCode', 'returnUrl'];
+
+    public const PAYMENT_PAGE_REQUIRED = ['orderId', 'deepLinkCode'];
+
+    /** The order page: the code opens the order for a guest, the id is a convenience. */
+    public const ORDER_PAGE_PLACEHOLDERS = ['orderId', 'deepLinkCode'];
+
+    public const ORDER_PAGE_REQUIRED = ['deepLinkCode'];
+
+    public function __construct(private readonly ConfigurationService $configuration)
+    {
+    }
+
+    /**
+     * The front end's payment page for this order, or null when the order's
+     * sales channel has none configured — then the storefront's page it is.
+     */
+    public function paymentPageUrl(OrderEntity $order, string $returnUrl): ?string
+    {
+        $template = $this->configuration->getStringFor(self::PAYMENT_PAGE_KEY, $order->getSalesChannelId());
+
+        if ($template === '') {
+            return null;
+        }
+
+        return self::render($template, [
+            'orderId' => $order->getId(),
+            'deepLinkCode' => (string) $order->getDeepLinkCode(),
+            'returnUrl' => $returnUrl,
+        ]);
+    }
+
+    /**
+     * The front end's order page, or null when none is configured for the
+     * order's sales channel.
+     */
+    public function orderPageUrl(OrderEntity $order): ?string
+    {
+        $template = $this->configuration->getStringFor(self::ORDER_PAGE_KEY, $order->getSalesChannelId());
+
+        if ($template === '') {
+            return null;
+        }
+
+        return self::render($template, [
+            'orderId' => $order->getId(),
+            'deepLinkCode' => (string) $order->getDeepLinkCode(),
+        ]);
+    }
+
+    /**
+     * `{name}` → the value, URL-encoded, so a returnUrl with its own query
+     * string survives inside the template's.
+     *
+     * @param array<string, string> $values
+     */
+    public static function render(string $template, array $values): string
+    {
+        $replacements = [];
+
+        foreach ($values as $name => $value) {
+            $replacements['{' . $name . '}'] = rawurlencode($value);
+        }
+
+        return strtr($template, $replacements);
+    }
+
+    /**
+     * Why a template cannot be used, or null when it can: an absolute
+     * http(s) URL, every required placeholder present, no unknown one.
+     *
+     * @param list<string> $allowed
+     * @param list<string> $required
+     */
+    public static function problem(string $template, array $allowed, array $required): ?string
+    {
+        $scheme = strtolower((string) parse_url($template, PHP_URL_SCHEME));
+
+        if (!in_array($scheme, ['http', 'https'], true) || parse_url($template, PHP_URL_HOST) === null) {
+            return 'must be an absolute URL starting with https:// or http://';
+        }
+
+        preg_match_all('/\{([^{}]*)\}/', $template, $matches);
+        $named = $matches[1];
+
+        foreach ($required as $placeholder) {
+            if (!in_array($placeholder, $named, true)) {
+                return 'must contain {' . $placeholder . '}';
+            }
+        }
+
+        foreach ($named as $placeholder) {
+            if (!in_array($placeholder, $allowed, true)) {
+                return 'names an unknown placeholder {' . $placeholder . '}; known are {' . implode('}, {', $allowed) . '}';
+            }
+        }
+
+        return null;
+    }
+}

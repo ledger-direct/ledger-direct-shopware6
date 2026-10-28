@@ -184,7 +184,17 @@ class ConfigurationService
      */
     public function getString(string $configName, string $defaultValue = ''): string
     {
-        $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName);
+        return $this->getStringFor($configName, null, $defaultValue);
+    }
+
+    /**
+     * Reads a string setting as it applies to one sales channel: the value
+     * saved for that channel, or the global one where the channel has none —
+     * Shopware's own inheritance. Null reads the global value alone.
+     */
+    public function getStringFor(string $configName, ?string $salesChannelId, string $defaultValue = ''): string
+    {
+        $value = $this->systemConfigService->get(self::CONFIG_DOMAIN . '.config.' . $configName, $salesChannelId);
 
         return is_string($value) ? trim($value) : $defaultValue;
     }

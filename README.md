@@ -234,9 +234,21 @@ The payment page package renders from `page` and polls `check`; pass the access 
 `startPaymentPage(root, { headers: { 'sw-access-key': … } })` (package 0.3.0), because the Store API
 needs it where the storefront route did not.
 
-Not yet in this release: after the order, `handle-payment` still answers the storefront's payment page
-URL, and a payment landing after the checkout session is gone is sent to the storefront's order page.
-A configurable front-end target for both follows.
+**Where the customer is sent.** By default `handle-payment` answers the storefront's payment page
+(`/ledger-direct/payment/{orderId}?returnUrl=…&deepLinkCode=…`, a relative path) and a payment arriving
+after Shopware's payment token has expired lands on the storefront's order page. The card
+"LedgerDirect - External front end" in the configuration moves both to your front end, **per sales
+channel**: two URL templates, filled in URL-encoded, empty by default.
+
+| Setting | Placeholders | Used |
+|---|---|---|
+| Payment page of the external front end | `{orderId}`, `{deepLinkCode}` required, `{returnUrl}` optional | the redirect `handle-payment` answers after the order |
+| Order page of the external front end | `{deepLinkCode}` required, `{orderId}` optional | the `redirect` of `check` once the order no longer waits and the payment token has expired; while the token lives, `redirect` is Shopware's finalize route, which lands on the `finishUrl` you gave `handle-payment`, whatever its origin |
+
+A template that is not an absolute URL or lacks a required placeholder is refused when saved: without
+the code a guest could never open the page. Both targets come from the configuration alone, never from
+the request or the payment token, so the payment page cannot become an open redirect. Set the templates
+on the headless sales channel only; the storefront's channels keep their own pages.
 
 ## External services
 

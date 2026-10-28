@@ -8,6 +8,7 @@ use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
 use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
 use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
@@ -455,7 +456,7 @@ class PaymentRouteTest extends TestCase
             new OrderAccessGuard($this->orderTransactionService),
             $settlementPolicy,
             new PaymentStateService($this->stateHandler, $this->orderTransactionService, $settlementPolicy, new NullLogger()),
-            new PaymentRedirect($this->router),
+            new PaymentRedirect($this->router, new HeadlessTargets(ConfigurationServiceMock::createInstance([]))),
             $this->paymentPageView()
         );
     }
@@ -480,6 +481,7 @@ class PaymentRouteTest extends TestCase
         $order->setId(self::ORDER_ID);
         $order->setOrderNumber('10010');
         $order->setDeepLinkCode($deepLinkCode);
+        $order->setSalesChannelId('sales-channel-id');
         $order->setCurrency($currency);
 
         if ($customerId !== null) {

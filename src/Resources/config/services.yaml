@@ -71,6 +71,7 @@ services:
             - '@router'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
         tags:
             - shopware.payment.method
 
@@ -80,6 +81,7 @@ services:
             - '@router'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
         tags:
             - shopware.payment.method
 
@@ -88,6 +90,7 @@ services:
             - '@router'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
         tags:
             - shopware.payment.method
 
@@ -96,6 +99,7 @@ services:
             - '@router'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
         tags:
             - shopware.payment.method
 
@@ -174,6 +178,7 @@ services:
             - '@router'
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
         tags:
             - shopware.payment.method
 
@@ -259,6 +264,11 @@ services:
     Hardcastle\LedgerDirect\Service\PaymentRedirect:
         arguments:
             - '@router'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
+
+    Hardcastle\LedgerDirect\Service\HeadlessTargets:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
 
     Hardcastle\LedgerDirect\Service\OrderTransactionService:
         arguments:

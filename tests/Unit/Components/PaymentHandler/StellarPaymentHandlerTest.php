@@ -5,8 +5,10 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Components\PaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
@@ -49,7 +51,7 @@ class StellarPaymentHandlerTest extends TestCase
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new StellarPaymentHandler($this->router, $this->transactionService, $this->paymentStateService());
+        $this->handler = new StellarPaymentHandler($this->router, $this->transactionService, $this->paymentStateService(), new HeadlessTargets(ConfigurationServiceMock::createInstance([])));
         $this->context = new Context(new SystemSource());
     }
 
@@ -68,6 +70,7 @@ class StellarPaymentHandlerTest extends TestCase
         $order = new OrderEntity();
         $order->setId('order-id');
         $order->setDeepLinkCode('the-deep-link-code');
+        $order->setSalesChannelId('sales-channel-id');
 
         $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
         $orderTransaction->shouldReceive('getOrder')->andReturn($order);

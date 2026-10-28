@@ -71,10 +71,19 @@ class ConfigurationValidator implements EventSubscriberInterface
     }
 
     /**
-     * Returns the value to store — trimmed for an account key — or throws.
+     * Returns the value to store — trimmed for an account key or a URL
+     * template — or throws.
      */
     private function validate(string $key, mixed $value): mixed
     {
+        if (is_string($value) && str_starts_with($key, self::DOMAIN)) {
+            $template = self::validateTemplate(substr($key, strlen(self::DOMAIN)), $value);
+
+            if ($template !== null) {
+                return $template;
+            }
+        }
+
         $chainAndNetwork = self::accountKeyFor($key);
 
         if ($chainAndNetwork === null || !is_string($value)) {
@@ -113,6 +122,42 @@ class ConfigurationValidator implements EventSubscriberInterface
         }
 
         return $account;
+    }
+
+    /**
+     * The external front end's URL templates (HeadlessTargets): an absolute
+     * URL with the placeholders the target needs — without {deepLinkCode} a
+     * guest could never open the page it points to. Refused on save, like a
+     * malformed account; cleared when emptied. Null for every other key.
+     */
+    private static function validateTemplate(string $short, string $value): ?string
+    {
+        $rules = [
+            HeadlessTargets::PAYMENT_PAGE_KEY => [HeadlessTargets::PAYMENT_PAGE_PLACEHOLDERS, HeadlessTargets::PAYMENT_PAGE_REQUIRED],
+            HeadlessTargets::ORDER_PAGE_KEY => [HeadlessTargets::ORDER_PAGE_PLACEHOLDERS, HeadlessTargets::ORDER_PAGE_REQUIRED],
+        ];
+
+        if (!isset($rules[$short])) {
+            return null;
+        }
+
+        $template = trim($value);
+
+        if ($template === '') {
+            return '';
+        }
+
+        [$allowed, $required] = $rules[$short];
+        $problem = HeadlessTargets::problem($template, $allowed, $required);
+
+        if ($problem !== null) {
+            throw new InvalidConfigurationException(
+                'The URL template "{{ template }}" {{ problem }}.',
+                ['template' => $template, 'problem' => $problem]
+            );
+        }
+
+        return $template;
     }
 
     /**

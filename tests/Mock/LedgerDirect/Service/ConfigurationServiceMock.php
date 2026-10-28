@@ -15,8 +15,10 @@ class ConfigurationServiceMock
         $systemConfigServiceMock = Mockery::mock(SystemConfigService::class);
 
         foreach ($configValues as $key => $value) {
+            // Matched on the key alone: a read for one sales channel sees the
+            // same value, as Shopware's inheritance would hand it out.
             $systemConfigServiceMock->shouldReceive('get')
-                ->with($key)
+                ->withArgs(static fn (string $k, ?string $salesChannelId = null): bool => $k === $key)
                 ->andReturn($value);
         }
 

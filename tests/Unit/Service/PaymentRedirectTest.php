@@ -2,7 +2,9 @@
 
 namespace Hardcastle\LedgerDirect\Tests\Unit\Service;
 
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
@@ -87,6 +89,38 @@ class PaymentRedirectTest extends TestCase
         $this->assertSame($orderPage, $this->redirect()->target($this->order(), 'https://shop.example/x?_sw_payment_token=' . self::jwt(['sub' => 'no-exp']), self::NOW));
     }
 
+    /*
+     * A sales channel with an external front end: the expired-token case goes
+     * to its order page, from the configuration; the live-token case stays
+     * Shopware's finalize route, which redirects to the front end's finishUrl
+     * itself. Without the configuration, character for character as before.
+     */
+
+    public function testWithAnExternalFrontEndAnExpiredTokenLeadsToItsOrderPage(): void
+    {
+        $token = self::jwt(['exp' => self::NOW - 1]);
+        $this->router->shouldReceive('generate')->never();
+
+        $target = $this->redirect(['LedgerDirect.config.headlessOrderPageUrl' => 'https://frontend.example/orders/{orderId}?code={deepLinkCode}'])
+            ->target($this->order(), 'https://shop.example/payment/finalize-transaction?_sw_payment_token=' . $token, self::NOW);
+
+        $this->assertSame('https://frontend.example/orders/order-id?code=the-code', $target);
+    }
+
+    public function testWithAnExternalFrontEndALiveTokenStillLeadsToTheFinalizeRoute(): void
+    {
+        $token = self::jwt(['exp' => self::NOW + 1000]);
+        $this->router->shouldReceive('generate')
+            ->once()
+            ->with('payment.finalize.transaction', ['_sw_payment_token' => $token], UrlGeneratorInterface::ABSOLUTE_URL)
+            ->andReturn('https://shop.example/payment/finalize-transaction?_sw_payment_token=' . $token);
+
+        $target = $this->redirect(['LedgerDirect.config.headlessOrderPageUrl' => 'https://frontend.example/orders/{orderId}?code={deepLinkCode}'])
+            ->target($this->order(), 'https://shop.example/payment/finalize-transaction?_sw_payment_token=' . $token, self::NOW);
+
+        $this->assertStringStartsWith('https://shop.example/payment/finalize-transaction', $target);
+    }
+
     private function expectOrderPage(): void
     {
         $this->router->shouldReceive('generate')
@@ -94,9 +128,12 @@ class PaymentRedirectTest extends TestCase
             ->andReturn('https://shop.example/account/order/the-code');
     }
 
-    private function redirect(): PaymentRedirect
+    /**
+     * @param array<string, string> $config
+     */
+    private function redirect(array $config = []): PaymentRedirect
     {
-        return new PaymentRedirect($this->router);
+        return new PaymentRedirect($this->router, new HeadlessTargets(ConfigurationServiceMock::createInstance($config)));
     }
 
     private function order(): OrderEntity
@@ -104,6 +141,7 @@ class PaymentRedirectTest extends TestCase
         $order = new OrderEntity();
         $order->setId('order-id');
         $order->setDeepLinkCode('the-code');
+        $order->setSalesChannelId('sales-channel-id');
 
         return $order;
     }

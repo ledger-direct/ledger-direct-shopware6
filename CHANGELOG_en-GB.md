@@ -10,8 +10,14 @@
   set (`PaymentPageView`), so the two cannot drift apart. The flat fields of `quote` stay as they were
 - The `price` route is removed; it was a placeholder answering `{"todo": "implement"}` since the first
   release. What it was meant for, `quote` answers
-- README: a section "Headless / external front end" on the Store API and the payment page package's
-  `headers` option
+- A card "LedgerDirect - External front end" in the configuration, per sales channel, empty by default:
+  the URL of the front end's payment page (`{orderId}`, `{deepLinkCode}`, `{returnUrl}`), which
+  `handle-payment` answers instead of the storefront's page, and the URL of its order page
+  (`{orderId}`, `{deepLinkCode}`), where a payment arriving after the payment token has expired lands.
+  Values are inserted URL-encoded; a template without `{deepLinkCode}` or not an absolute URL is refused
+  on save. Nothing changes for a sales channel without the settings
+- README: a section "Headless / external front end" on the Store API, the redirect targets and the
+  payment page package's `headers` option
 
 # 1.7.0
 - Stellar as the second chain, **as a preview** (core 0.10): XLM, USDC and EURC payment methods, paid

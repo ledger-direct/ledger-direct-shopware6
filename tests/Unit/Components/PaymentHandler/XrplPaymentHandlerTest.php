@@ -5,8 +5,10 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Components\PaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
@@ -48,7 +50,7 @@ class XrplPaymentHandlerTest extends TestCase
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new XrplPaymentHandler($this->router, $this->transactionService, $this->paymentStateService());
+        $this->handler = new XrplPaymentHandler($this->router, $this->transactionService, $this->paymentStateService(), new HeadlessTargets(ConfigurationServiceMock::createInstance([])));
         $this->context = new Context(new SystemSource());
     }
 
@@ -67,6 +69,7 @@ class XrplPaymentHandlerTest extends TestCase
         $order = new OrderEntity();
         $order->setId('order-id');
         $order->setDeepLinkCode('the-deep-link-code');
+        $order->setSalesChannelId('sales-channel-id');
 
         $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
         $orderTransaction->shouldReceive('getOrder')->andReturn($order);
@@ -95,6 +98,36 @@ class XrplPaymentHandlerTest extends TestCase
 
         $this->assertNotNull($response);
         $this->assertStringContainsString('deepLinkCode=the-deep-link-code', $response->getTargetUrl());
+    }
+
+    /**
+     * A sales channel with an external front end: the customer is sent to
+     * its payment page, built from the merchant's template with the same
+     * three values, URL-encoded; the storefront route is not generated.
+     */
+    public function testPayRedirectsToTheExternalFrontEndWhereOneIsConfigured(): void
+    {
+        $order = new OrderEntity();
+        $order->setId('order-id');
+        $order->setDeepLinkCode('the-deep-link-code');
+        $order->setSalesChannelId('headless-channel');
+
+        $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
+        $orderTransaction->shouldReceive('getOrder')->andReturn($order);
+        $this->transactionService->shouldReceive('getOrderTransactionById')->andReturn($orderTransaction);
+        $this->transactionService->shouldReceive('prepareOrderTransaction')->once();
+        $this->router->shouldReceive('generate')->never();
+
+        $handler = new XrplPaymentHandler($this->router, $this->transactionService, $this->paymentStateService(), new HeadlessTargets(ConfigurationServiceMock::createInstance([
+            'LedgerDirect.config.headlessPaymentPageUrl' => 'https://frontend.example/pay/{orderId}?code={deepLinkCode}&return={returnUrl}',
+        ])));
+
+        $response = $handler->pay(new Request(), new PaymentTransactionStruct(self::TX_ID, 'https://shop.example/payment/finalize-transaction?_sw_payment_token=t'), $this->context, null);
+
+        $this->assertSame(
+            'https://frontend.example/pay/order-id?code=the-deep-link-code&return=https%3A%2F%2Fshop.example%2Fpayment%2Ffinalize-transaction%3F_sw_payment_token%3Dt',
+            $response?->getTargetUrl()
+        );
     }
 
     public function testFinalizeMarksPaidWhenFullyPaid(): void

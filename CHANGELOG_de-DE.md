@@ -11,8 +11,14 @@
   Felder von `quote` bleiben, wie sie waren
 - Die Route `price` ist entfernt; sie war seit der ersten Version ein Platzhalter mit der Antwort
   `{"todo": "implement"}`. Was sie liefern sollte, liefert `quote`
-- README: ein Abschnitt „Headless / externes Frontend“ zur Store-API und zur `headers`-Option des
-  Zahlungsseiten-Pakets
+- Eine Karte „LedgerDirect – Externes Frontend“ in der Konfiguration, je Verkaufskanal, standardmäßig leer:
+  die URL der Zahlungsseite des Frontends (`{orderId}`, `{deepLinkCode}`, `{returnUrl}`), die
+  `handle-payment` statt der Storefront-Seite liefert, und die URL seiner Bestellseite (`{orderId}`,
+  `{deepLinkCode}`), auf der eine Zahlung nach Ablauf des Zahlungs-Tokens landet. Werte werden URL-kodiert
+  eingesetzt; eine Vorlage ohne `{deepLinkCode}` oder ohne absolute URL wird beim Speichern abgelehnt. Für
+  einen Verkaufskanal ohne die Einstellungen ändert sich nichts
+- README: ein Abschnitt „Headless / externes Frontend“ zur Store-API, zu den Weiterleitungszielen und zur
+  `headers`-Option des Zahlungsseiten-Pakets
 
 # 1.7.0
 - Stellar als zweite Chain, **als Vorschau** (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per
