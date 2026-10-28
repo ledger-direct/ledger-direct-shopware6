@@ -1,0 +1,13 @@
+# What a Composer dist archive of a tag (Packagist, GitHub zipball) leaves out.
+# The same list as the store zip's excludes in .shopware-extension.yml; the
+# committed storefront and administration bundles stay in, so an install
+# needs no build.
+/tests            export-ignore
+/.github          export-ignore
+/.gitattributes   export-ignore
+/.gitignore       export-ignore
+/.shopware-extension.yml export-ignore
+/phpunit.xml      export-ignore
+/phpstan.neon     export-ignore
+/makefile         export-ignore
+/payment_page.png export-ignore
