@@ -1,3 +1,19 @@
+# 1.8.0
+- Store-API für Headless-Frontends, erster Teil: `GET /store-api/ledger-direct/payment/quote/{orderId}`
+  antwortet einem Gast mit dem `deepLinkCode` der Bestellung, wie `check` es immer getan hat, statt einen
+  angemeldeten Kunden zu verlangen. Ein falscher Code und die Bestellung eines anderen Kunden bekommen
+  dasselbe 403, eine nie mit LedgerDirect quotierte Bestellung 404, ein abgelaufenes Angebot oder eine Bestellung, die nicht mehr auf eine Zahlung wartet, 410 (bisher 500)
+- Die `quote`-Nutzlast bekommt `page` (`schema_version` 1): jeden Wert, aus dem die Zahlungsseite
+  aufgebaut wird, für XRP, RLUSD, USDC und die Stellar-Assets gleichermaßen — Zustand, Restlaufzeit, Beträge
+  wie die Seite sie zeigt, Konto, Tag bzw. Memo, Herausgeber und Währungscode, die Zahlungsanfrage für den
+  QR-Code, Explorer-Basis und die Kennungen der Wallet-Apps. Die Zahlungsseite der Storefront rendert aus
+  derselben Wertemenge (`PaymentPageView`), die beiden können also nicht auseinanderlaufen. Die flachen
+  Felder von `quote` bleiben, wie sie waren
+- Die Route `price` ist entfernt; sie war seit der ersten Version ein Platzhalter mit der Antwort
+  `{"todo": "implement"}`. Was sie liefern sollte, liefert `quote`
+- README: ein Abschnitt „Headless / externes Frontend“ zur Store-API und zur `headers`-Option des
+  Zahlungsseiten-Pakets
+
 # 1.7.0
 - Stellar als zweite Chain, **als Vorschau** (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per
   Memo-ID, über Horizon synchronisiert, nach denselben Regeln abgewickelt wie auf dem XRP Ledger. Eine

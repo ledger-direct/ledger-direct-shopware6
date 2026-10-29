@@ -212,6 +212,32 @@ Without JavaScript the page still works: the amount, address and tag are server-
 code is drawn on the server from the same payment request, and the "Check payment now" button is a
 plain form.
 
+## Headless / external front end
+
+A shop whose front end is not Shopware's storefront — Shopware Frontends, a React or Nuxt app, an app —
+places the order through the Store API and renders its own payment page. The plugin's Store API routes
+answer it, under the sales channel's `sw-access-key` like every Store API call:
+
+| Route | Answers |
+|---|---|
+| `GET /store-api/ledger-direct/payment/quote/{orderId}?deepLinkCode=…` | the values the payment page is built from: the flat fields from the first release and, under `page` (`schema_version` 1), the complete set — state, seconds left, the amounts as the page shows them, account, destination tag or memo id, issuer and currency code for a token, the payment request for the QR code, explorer base, accent colour, wallet-app identifiers. The same set the storefront's own page renders from |
+| `GET /store-api/ledger-direct/payment/check/{orderId}?deepLinkCode=…` | the payment status (`INVARIANTS.md` in the core, "Payment status") plus `redirect` once the order no longer waits; polls the ledger, throttled |
+
+Access is the order's `deepLinkCode` — the code behind the guest order link in the confirmation mail —
+or the customer of the session, no login. A wrong code and another customer's order are answered
+alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` for an expired quote, or
+for an order that no longer waits for a payment, 410 (`check` reports the former as the state
+`expired` and carries a `redirect` for the latter). The Store API answers cross-origin requests with
+Shopware's CORS headers, on these routes as on the core's.
+
+The payment page package renders from `page` and polls `check`; pass the access key with
+`startPaymentPage(root, { headers: { 'sw-access-key': … } })` (package 0.3.0), because the Store API
+needs it where the storefront route did not.
+
+Not yet in this release: after the order, `handle-payment` still answers the storefront's payment page
+URL, and a payment landing after the checkout session is gone is sent to the storefront's order page.
+A configurable front-end target for both follows.
+
 ## External services
 
 Exchange rates come from the public APIs of Coingecko, Binance and Kraken, through the core. No

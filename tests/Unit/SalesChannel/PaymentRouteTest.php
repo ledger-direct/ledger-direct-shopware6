@@ -5,23 +5,33 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\SalesChannel;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
+use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
+use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Shopware\Core\Checkout\Cart\CartException;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
@@ -58,10 +68,23 @@ class PaymentRouteTest extends TestCase
         $this->router = Mockery::mock(RouterInterface::class);
         $this->context = new Context(new SystemSource());
 
-        $this->salesChannelContext = Mockery::mock(SalesChannelContext::class);
-        $this->salesChannelContext->shouldReceive('getContext')->andReturn($this->context);
         // No session: the deepLinkCode on the request is what opens the order.
-        $this->salesChannelContext->shouldReceive('getCustomer')->andReturn(null);
+        $this->salesChannelContext = $this->salesChannelContext(customer: null);
+    }
+
+    private function salesChannelContext(?CustomerEntity $customer): SalesChannelContext
+    {
+        $salesChannel = new SalesChannelEntity();
+        $salesChannel->setId('sales-channel-id');
+        $salesChannel->setName('Shop');
+
+        /** @var SalesChannelContext&Mockery\MockInterface $context */
+        $context = Mockery::mock(SalesChannelContext::class);
+        $context->shouldReceive('getContext')->andReturn($this->context);
+        $context->shouldReceive('getCustomer')->andReturn($customer);
+        $context->shouldReceive('getSalesChannel')->andReturn($salesChannel);
+
+        return $context;
     }
 
     public function testWaitingCarriesTheSecondsLeftAndNoRedirect(): void
@@ -220,6 +243,197 @@ class PaymentRouteTest extends TestCase
         $this->check();
     }
 
+    /*
+     * The quote endpoint — what a headless front end builds its payment page
+     * from. Guarded like check: the code, or the session customer.
+     */
+
+    public function testQuoteForAGuestWithTheCodeCarriesTheOldFieldsAndThePage(): void
+    {
+        $intent = $this->xrpQuote();
+        $this->givenAuthorisedOrder($this->transaction('open', $intent));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+
+        $payload = $this->quote(['deepLinkCode' => 'the-code']);
+
+        // The Store API contract from the first release, as it was.
+        $this->assertSame(self::ORDER_ID, $payload['orderId']);
+        $this->assertSame('10010', $payload['orderNumber']);
+        $this->assertSame('EUR', $payload['currencyCode']);
+        $this->assertSame('€', $payload['currencySymbol']);
+        $this->assertSame(10.0, $payload['price']);
+        $this->assertSame('rMerchant', $payload['destinationAccount']);
+        $this->assertSame(114729, $payload['destinationTag']);
+        $this->assertSame(40.0, $payload['xrpAmount']);
+        $this->assertSame('40', $payload['amountRequestedDisplay']);
+
+        // The page: the same values the storefront renders, from the same view.
+        $expected = $this->paymentPageView()->values($this->order(), $this->transaction('open', $intent), $intent, $this->salesChannelContext);
+        $this->assertSame(1, $payload['page']['schema_version']);
+        $this->assertSame(array_merge(['schema_version'], array_keys($expected)), array_keys($payload['page']));
+        $this->assertSame($expected['amountDueDisplay'], $payload['page']['amountDueDisplay']);
+        $this->assertSame($expected['paymentUri'], $payload['page']['paymentUri']);
+        $this->assertSame('waiting', $payload['page']['state']);
+    }
+
+    public function testQuoteForTheSessionCustomerNeedsNoCode(): void
+    {
+        $this->salesChannelContext = $this->salesChannelContext($this->customer('the-customer'));
+        $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote()), customerId: 'the-customer');
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+
+        $payload = $this->quote([]);
+
+        $this->assertSame('waiting', $payload['page']['state']);
+    }
+
+    public function testQuoteWithoutACodeOrASessionIsForbidden(): void
+    {
+        $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote()));
+
+        $this->assertForbidden(fn () => $this->quote([]));
+    }
+
+    /**
+     * A wrong code and another customer's order answer character for
+     * character the same: neither tells whether the order exists.
+     */
+    public function testAWrongCodeAnswersLikeAnotherCustomersOrder(): void
+    {
+        $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote()), customerId: 'owner');
+        $wrongCode = $this->assertForbidden(fn () => $this->quote(['deepLinkCode' => 'another-code']));
+
+        $this->salesChannelContext = $this->salesChannelContext($this->customer('someone-else'));
+        $otherCustomer = $this->assertForbidden(fn () => $this->quote([]));
+
+        $this->assertSame($wrongCode->getErrorCode(), $otherCustomer->getErrorCode());
+        $this->assertSame($wrongCode->getMessage(), $otherCustomer->getMessage());
+        $this->assertSame($wrongCode->getStatusCode(), $otherCustomer->getStatusCode());
+    }
+
+    public function testAnExpiredQuoteIsNotHandedOutAgain(): void
+    {
+        $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote(expiry: time() - 1)));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+
+        $this->expectException(TransactionLifetimeException::class);
+
+        $this->quote(['deepLinkCode' => 'the-code']);
+    }
+
+    /**
+     * A short payment keeps the quote it was made for past the expiry — the
+     * status stays partial — and a front end has to be able to show the
+     * shortfall, so the quote is not refused on the raw timestamp.
+     */
+    public function testAPartiallyPaidQuoteIsHandedOutPastItsExpiry(): void
+    {
+        $partial = $this->xrpQuote(expiry: time() - 60)->withFulfillment('HASH', 30.0, 'CTID');
+        $this->givenAuthorisedOrder($this->transaction('paid_partially', $partial));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+
+        $payload = $this->quote(['deepLinkCode' => 'the-code']);
+
+        $this->assertSame('partial', $payload['page']['state']);
+        $this->assertSame('10', $payload['page']['amountDueDisplay']);
+    }
+
+    /**
+     * Closed by the merchant or paid: no payment instructions, whatever the
+     * intent says — nothing sent now would be applied. `check` carries the
+     * redirect for that case.
+     */
+    public function testAClosedTransactionGetsNoQuote(): void
+    {
+        $partial = $this->xrpQuote()->withFulfillment('HASH', 30.0, 'CTID');
+
+        foreach (['cancelled' => $partial, 'paid' => $this->xrpQuote()->withFulfillment('HASH', 40.0, 'CTID')] as $state => $intent) {
+            $this->setUp();
+            $this->givenAuthorisedOrder($this->transaction($state, $intent));
+
+            try {
+                $this->quote(['deepLinkCode' => 'the-code']);
+                $this->fail("expected a 410 for a {$state} transaction");
+            } catch (TransactionLifetimeException $exception) {
+                $this->assertSame(410, $exception->getStatusCode());
+            }
+        }
+    }
+
+    /**
+     * The quote syncs first, as the storefront page does on render: a
+     * payment that arrived since the last poll settles the order here, and
+     * the customer is not handed instructions to pay a second time.
+     */
+    public function testAPaymentFoundOnTheLedgerSettlesTheOrderInsteadOfQuotingIt(): void
+    {
+        $before = $this->transaction('open', $this->xrpQuote());
+        $settled = $this->xrpQuote()->withFulfillment('HASH', 40.0, 'CTID');
+        $after = $this->transaction('paid', $settled);
+
+        $this->givenAuthorisedOrder($before);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->with($before, $this->context, true)->andReturn($settled);
+        $this->stateHandler->shouldReceive('paid')->once()->with(self::TX_ID, $this->context);
+        $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->andReturn($after);
+
+        try {
+            $this->quote(['deepLinkCode' => 'the-code']);
+            $this->fail('expected a 410: the order is paid');
+        } catch (TransactionLifetimeException $exception) {
+            $this->assertSame(410, $exception->getStatusCode());
+        }
+    }
+
+    public function testQuoteOfAnOrderNeverQuotedIsNotFound(): void
+    {
+        $this->givenAuthorisedOrder($this->transaction('open', null));
+
+        $this->expectException(NoPaymentIntentException::class);
+
+        $this->quote(['deepLinkCode' => 'the-code']);
+    }
+
+    public function testThePriceRouteIsGone(): void
+    {
+        $this->assertFalse(method_exists(PaymentRoute::class, 'price'), 'price was a placeholder answering {todo: implement}; quote covers it');
+    }
+
+    private function assertForbidden(callable $call): CartException
+    {
+        try {
+            $call();
+        } catch (CartException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+
+            return $exception;
+        }
+
+        $this->fail('expected a 403');
+    }
+
+    /**
+     * @param array<string, string> $query
+     *
+     * @return array<string, mixed>
+     */
+    private function quote(array $query): array
+    {
+        return $this->route()->quote(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->all();
+    }
+
+    private function customer(string $id): CustomerEntity
+    {
+        $customer = new CustomerEntity();
+        $customer->setId($id);
+
+        return $customer;
+    }
+
+    private function paymentPageView(): PaymentPageView
+    {
+        return new PaymentPageView(new SettlementPolicy(), ConfigurationServiceMock::createInstance([]));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -241,20 +455,41 @@ class PaymentRouteTest extends TestCase
             new OrderAccessGuard($this->orderTransactionService),
             $settlementPolicy,
             new PaymentStateService($this->stateHandler, $this->orderTransactionService, $settlementPolicy, new NullLogger()),
-            new PaymentRedirect($this->router)
+            new PaymentRedirect($this->router),
+            $this->paymentPageView()
         );
     }
 
-    private function givenAuthorisedOrder(OrderTransactionEntity $orderTransaction, string $deepLinkCode = 'the-code'): void
+    private function givenAuthorisedOrder(OrderTransactionEntity $orderTransaction, string $deepLinkCode = 'the-code', ?string $customerId = null): void
     {
-        $order = new OrderEntity();
-        $order->setId(self::ORDER_ID);
-        $order->setDeepLinkCode($deepLinkCode);
+        $order = $this->order($deepLinkCode, $customerId);
         $order->setTransactions(new OrderTransactionCollection([$orderTransaction]));
 
         $this->orderTransactionService->shouldReceive('getOrderWithTransactions')
             ->with(self::ORDER_ID, $this->context)
             ->andReturn($order);
+    }
+
+    private function order(string $deepLinkCode = 'the-code', ?string $customerId = null): OrderEntity
+    {
+        $currency = new CurrencyEntity();
+        $currency->setId('currency-id');
+        $currency->setSymbol('€');
+
+        $order = new OrderEntity();
+        $order->setId(self::ORDER_ID);
+        $order->setOrderNumber('10010');
+        $order->setDeepLinkCode($deepLinkCode);
+        $order->setCurrency($currency);
+
+        if ($customerId !== null) {
+            $orderCustomer = new OrderCustomerEntity();
+            $orderCustomer->setId('order-customer-id');
+            $orderCustomer->setCustomerId($customerId);
+            $order->setOrderCustomer($orderCustomer);
+        }
+
+        return $order;
     }
 
     private function transaction(string $state, ?PaymentIntent $intent): OrderTransactionEntity
@@ -266,6 +501,7 @@ class PaymentRouteTest extends TestCase
         $orderTransaction->setId(self::TX_ID);
         $orderTransaction->setUniqueIdentifier(self::TX_ID);
         $orderTransaction->setStateMachineState($stateEntity);
+        $orderTransaction->setAmount(new CalculatedPrice(10.0, 10.0, new CalculatedTaxCollection(), new TaxRuleCollection()));
 
         $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($orderTransaction)->andReturn($intent);
 

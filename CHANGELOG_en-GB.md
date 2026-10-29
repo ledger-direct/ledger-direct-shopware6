@@ -1,3 +1,18 @@
+# 1.8.0
+- Store API for headless front ends, first part: `GET /store-api/ledger-direct/payment/quote/{orderId}`
+  answers a guest who sends the order's `deepLinkCode`, the way `check` always has, instead of
+  requiring a logged-in customer. A wrong code and another customer's order get the same 403, an
+  order never quoted with LedgerDirect 404, an expired quote or an order that no longer waits for a payment 410 (was 500)
+- The `quote` payload gains `page` (`schema_version` 1): every value the payment page is built from,
+  for XRP, RLUSD, USDC and the Stellar assets alike — state, seconds left, amounts as the page shows
+  them, account, tag or memo, issuer and currency code, the payment request for the QR code, explorer
+  base and the wallet-app identifiers. The storefront's own payment page renders from the same value
+  set (`PaymentPageView`), so the two cannot drift apart. The flat fields of `quote` stay as they were
+- The `price` route is removed; it was a placeholder answering `{"todo": "implement"}` since the first
+  release. What it was meant for, `quote` answers
+- README: a section "Headless / external front end" on the Store API and the payment page package's
+  `headers` option
+
 # 1.7.0
 - Stellar as the second chain, **as a preview** (core 0.10): XLM, USDC and EURC payment methods, paid
   by memo id, synced from Horizon, settled under the same rules as on the XRP Ledger. A card

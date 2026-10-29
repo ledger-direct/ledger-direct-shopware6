@@ -61,7 +61,7 @@ services:
             - '@Hardcastle\LedgerDirect\Service\OrderAccessGuard'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
             - '@Hardcastle\LedgerDirect\Service\PaymentRedirect'
-            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@Hardcastle\LedgerDirect\Presentation\PaymentPageView'
             - '@Hardcastle\LedgerDirect\Presentation\PageLogo'
         calls:
             - [setContainer, ['@service_container']]
@@ -228,6 +228,12 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
             - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
             - '@Hardcastle\LedgerDirect\Service\PaymentRedirect'
+            - '@Hardcastle\LedgerDirect\Presentation\PaymentPageView'
+
+    Hardcastle\LedgerDirect\Presentation\PaymentPageView:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
 
     Hardcastle\LedgerDirect\Presentation\PageLogo:
         arguments:
