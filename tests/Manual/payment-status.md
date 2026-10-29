@@ -18,7 +18,8 @@ a case get automated or become a merge gate one day, it keeps its ID.
   http://localhost **and** https://localhost (dockware's self-signed certificate, confirm it once):
   browsers upgrade `localhost` to https on their own, so the sales channel carries both domains
   (`dev-restore.sh` adds the https one). Administration: http://localhost/admin, `admin` / `shopware`.
-- Paying by hand from the harness's treasury, after `set -a; source ~/.config/ledger-direct/testnet.env; set +a`:
+- Paying by hand from the harness's treasury — on the host, not inside the container, after
+  `set -a; source ~/.config/ledger-direct/testnet.env; set +a` in that shell:
   `ld-e2e pay --to <account> --id <tag> --amount <amount as displayed>`.
 - **Own testnet wallet** for this shop (never the one another shop uses — shared tag space):
   `POST https://faucet.altnet.rippletest.net/accounts`, then trust lines to the testnet issuers
