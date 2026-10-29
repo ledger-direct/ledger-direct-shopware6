@@ -189,8 +189,9 @@ Without `sw-access-key` the Store API answers 401 — the payment page package p
 
 ## Automated with ld-e2e
 
-The `ledger-direct-e2e` harness runs the whole catalogue against this shop unattended — PS-01 to PS-09,
-PS-11 and PS-12 in the `automated` set, PS-10 (a 35-minute wait) on request or nightly. It pays real testnet
+The `ledger-direct-e2e` harness runs the whole catalogue against this shop unattended — PS-01 to PS-03,
+PS-05 to PS-09, PS-11 and PS-12 in the `automated` set; PS-04 (the public testnet's issuers) and PS-10
+(a 35-minute wait) only in the `nightly` set or on request. It pays real testnet
 transactions from its treasury to a receiving account it creates for the run, and writes the checklist lines
 into the pull request:
 

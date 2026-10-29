@@ -20,6 +20,7 @@
   einen Verkaufskanal ohne die Einstellungen ändert sich nichts
 - README: ein Abschnitt „Headless / externes Frontend“ zur Store-API, zu den Weiterleitungszielen und zur
   `headers`-Option des Zahlungsseiten-Pakets
+- Zahlungsseiten-Paket 0.3.0 (die `headers`-Option für den Poll); das Verhalten der Storefront ist unverändert
 
 # 1.7.0
 - Stellar als zweite Chain, **als Vorschau** (Core 0.10): Zahlarten XLM, USDC und EURC, bezahlt per

@@ -1,5 +1,9 @@
 # shopware-cli: how the store zip is built.
 #
+# compatibility_date pins shopware-cli's behaviour to the rules of this date, so a
+# newer shopware-cli does not change how the zip is built or validated unnoticed.
+compatibility_date: "2026-10-29"
+
 # The storefront bundle in src/Resources/app/storefront/dist is committed and
 # built with Shopware's own bin/build-storefront.sh (see the README); the zip
 # ships it as it is. Letting shopware-cli build the assets again produced a
