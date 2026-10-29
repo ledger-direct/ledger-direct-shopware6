@@ -18,6 +18,7 @@
   localhost) is refused on save. Nothing changes for a sales channel without the settings
 - README: a section "Headless / external front end" on the Store API, the redirect targets and the
   payment page package's `headers` option
+- Payment page package 0.3.0 (the `headers` option for the poll); the storefront's behaviour is unchanged
 
 # 1.7.0
 - Stellar as the second chain, **as a preview** (core 0.10): XLM, USDC and EURC payment methods, paid

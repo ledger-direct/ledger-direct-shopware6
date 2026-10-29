@@ -5,7 +5,7 @@
   "description": "LedgerDirect payment page for Shopware 6: the Shopware hull around @ledger-direct/payment-ui",
   "license": "MIT",
   "dependencies": {
-    "@ledger-direct/payment-ui": "github:ledger-direct/ledger-direct-payment-ui#0.2.0",
+    "@ledger-direct/payment-ui": "github:ledger-direct/ledger-direct-payment-ui#0.3.0",
     "qrcode-generator": "^2.0.4",
     "xrpl": "^4.6.0",
     "xrpl-connect": "1.0.0-rc.2"
