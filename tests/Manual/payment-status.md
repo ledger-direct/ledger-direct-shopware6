@@ -14,7 +14,12 @@ a case get automated or become a merge gate one day, it keeps its ID.
 ## Environment
 
 - The dockware container `shopware6_672-shopware-1`; commands below run inside it as `www-data`:
-  `docker exec -u www-data shopware6_672-shopware-1 bash -lc '…'`.
+  `docker exec -u www-data shopware6_672-shopware-1 bash -lc '…'`. The storefront answers on
+  http://localhost **and** https://localhost (dockware's self-signed certificate, confirm it once):
+  browsers upgrade `localhost` to https on their own, so the sales channel carries both domains
+  (`dev-restore.sh` adds the https one). Administration: http://localhost/admin, `admin` / `shopware`.
+- Paying by hand from the harness's treasury, after `set -a; source ~/.config/ledger-direct/testnet.env; set +a`:
+  `ld-e2e wallet pay --to <account> --id <tag> --amount <amount as displayed>`.
 - **Own testnet wallet** for this shop (never the one another shop uses — shared tag space):
   `POST https://faucet.altnet.rippletest.net/accounts`, then trust lines to the testnet issuers
   of RLUSD and USDC from the core's `StablecoinRegistry`. Seed outside the repo
