@@ -14,7 +14,13 @@ a case get automated or become a merge gate one day, it keeps its ID.
 ## Environment
 
 - The dockware container `shopware6_672-shopware-1`; commands below run inside it as `www-data`:
-  `docker exec -u www-data shopware6_672-shopware-1 bash -lc '…'`.
+  `docker exec -u www-data shopware6_672-shopware-1 bash -lc '…'`. The storefront answers on
+  http://localhost **and** https://localhost (dockware's self-signed certificate, confirm it once):
+  browsers upgrade `localhost` to https on their own, so the sales channel carries both domains
+  (`dev-restore.sh` adds the https one). Administration: http://localhost/admin, `admin` / `shopware`.
+- Paying by hand from the harness's treasury — on the host, not inside the container, after
+  `set -a; source ~/.config/ledger-direct/testnet.env; set +a` in that shell:
+  `ld-e2e pay --to <account> --id <tag> --amount <amount as displayed>`.
 - **Own testnet wallet** for this shop (never the one another shop uses — shared tag space):
   `POST https://faucet.altnet.rippletest.net/accounts`, then trust lines to the testnet issuers
   of RLUSD and USDC from the core's `StablecoinRegistry`. Seed outside the repo
@@ -181,9 +187,15 @@ curl -H 'sw-access-key: <key>' -H 'Accept: application/json' \
 Look for: `quote` answers 200 with `page.schema_version` 1 and the values the payment page of the
 same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `paymentUri`); `check`
 answers the contract. With a wrong code, and with a well-formed order id that does not exist, both
-routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled` with a
-`redirect` that is an absolute URL (Shopware's finalize route while the payment token lives, the
-external front end's order page afterwards where one is configured). Then `quote` answers 410.
+routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled`; its `redirect`
+is an absolute URL (Shopware's finalize route while the payment token lives, the external front end's
+order page afterwards where one is configured), and a separate `hash` field names the transaction.
+Then `quote` answers 410 — the order no longer waits for a payment.
+
+Expiry and refresh need a second, unpaid order: set *Quote validity* to 60 s, place an XRP order and send
+nothing. After a minute `quote` answers `page.state` `expired` with the stale amount, and
+`POST …/refresh/<orderId>?deepLinkCode=<code>` answers a fresh quote with the same account and tag and
+`page.state` `waiting`. Set the validity back to 300 s afterwards.
 Without `sw-access-key` the Store API answers 401 — the payment page package passes the key with
 `options.headers`.
 

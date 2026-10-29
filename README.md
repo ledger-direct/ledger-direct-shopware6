@@ -221,13 +221,16 @@ answer it, under the sales channel's `sw-access-key` like every Store API call:
 | Route | Answers |
 |---|---|
 | `GET /store-api/ledger-direct/payment/quote/{orderId}?deepLinkCode=…` | the values the payment page is built from: the flat fields from the first release and, under `page` (`schema_version` 1), the complete set — state, seconds left, the amounts as the page shows them, account, destination tag or memo id, issuer and currency code for a token, the payment request for the QR code, explorer base, accent colour, wallet-app identifiers. The same set the storefront's own page renders from |
-| `GET /store-api/ledger-direct/payment/check/{orderId}?deepLinkCode=…` | the payment status (`INVARIANTS.md` in the core, "Payment status") plus `redirect` once the order no longer waits; polls the ledger, throttled |
+| `POST /store-api/ledger-direct/payment/refresh/{orderId}?deepLinkCode=…` | a current quote, re-quoting an order whose quote has expired — the "quote expired" button; an order with a payment on record gets its current quote back unchanged; account and tag stay as they were unless the merchant changed the receiving account in between |
+| `GET /store-api/ledger-direct/payment/check/{orderId}?deepLinkCode=…` | the payment status (`INVARIANTS.md` in the core, "Payment status") plus `hash` once a payment is on record and `redirect` once the order no longer waits; polls the ledger, throttled |
 
 Access is the order's `deepLinkCode` — the code behind the guest order link in the confirmation mail —
 or the customer of the session, no login. A wrong code and another customer's order are answered
-alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` for an expired quote, or
-for an order that no longer waits for a payment, 410 (`check` reports the former as the state
-`expired` and carries a `redirect` for the latter). The Store API answers cross-origin requests with
+alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` or `refresh` for an order
+that no longer waits for a payment 410 (`check` carries the `redirect` for it). An expired quote is
+handed out as the page shows it, `page.state` `expired`, and `refresh` makes a current one. The three
+routes are described in the Store API's OpenAPI document, `/store-api/_info/openapi3.json`, under the
+tag LedgerDirect. The Store API answers cross-origin requests with
 Shopware's CORS headers, on these routes as on the core's.
 
 The payment page package renders from `page` and polls `check`; pass the access key with

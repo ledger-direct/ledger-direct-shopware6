@@ -15,7 +15,7 @@
         "blockchain",
         "stablecoin"
     ],
-    "version": "1.8.0",
+    "version": "1.9.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
