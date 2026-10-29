@@ -52,10 +52,13 @@ class PaymentRouteTest extends TestCase
 
     private const QUOTED_TOKEN = ['currency' => '5553444300000000000000000000000000000000', 'issuer' => 'rHuGNhqTG32mfmAvWA8hUyWRLV3tCSwKQt'];
 
+    /** @var OrderTransactionService&Mockery\MockInterface */
     private OrderTransactionService $orderTransactionService;
 
+    /** @var OrderTransactionStateHandler&Mockery\MockInterface */
     private OrderTransactionStateHandler $stateHandler;
 
+    /** @var RouterInterface&Mockery\MockInterface */
     private RouterInterface $router;
 
     private Context $context;
@@ -64,9 +67,15 @@ class PaymentRouteTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->orderTransactionService = Mockery::mock(OrderTransactionService::class);
-        $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
-        $this->router = Mockery::mock(RouterInterface::class);
+        /** @var OrderTransactionService&Mockery\MockInterface $orderTransactionService */
+        $orderTransactionService = Mockery::mock(OrderTransactionService::class);
+        $this->orderTransactionService = $orderTransactionService;
+        /** @var OrderTransactionStateHandler&Mockery\MockInterface $stateHandler */
+        $stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
+        $this->stateHandler = $stateHandler;
+        /** @var RouterInterface&Mockery\MockInterface $router */
+        $router = Mockery::mock(RouterInterface::class);
+        $this->router = $router;
         $this->context = new Context(new SystemSource());
 
         // No session: the deepLinkCode on the request is what opens the order.
@@ -508,7 +517,7 @@ class PaymentRouteTest extends TestCase
      */
     private function quote(array $query): array
     {
-        return $this->route()->quote(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->all();
+        return $this->route()->quote(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->getVars();
     }
 
     /**
@@ -518,7 +527,7 @@ class PaymentRouteTest extends TestCase
      */
     private function refresh(array $query): array
     {
-        return $this->route()->refresh(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->all();
+        return $this->route()->refresh(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->getVars();
     }
 
     private function customer(string $id): CustomerEntity
@@ -543,7 +552,7 @@ class PaymentRouteTest extends TestCase
 
         $response = $this->route()->check(self::ORDER_ID, $request, $this->salesChannelContext);
 
-        return $response->getObject()->all();
+        return $response->getObject()->getVars();
     }
 
     private function route(): PaymentRoute

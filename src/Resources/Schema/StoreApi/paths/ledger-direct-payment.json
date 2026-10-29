@@ -1,162 +1,534 @@
 {
-    "openapi": "3.1.0",
+    "openapi": "3.0.0",
     "info": [],
     "paths": {
         "/ledger-direct/payment/quote/{orderId}": {
             "get": {
-                "tags": ["LedgerDirect"],
+                "tags": [
+                    "LedgerDirect"
+                ],
                 "summary": "The quote of a LedgerDirect order: what its payment page shows",
                 "description": "Everything a payment page is built from: the flat fields of the first release and, under `page`, the complete value set the storefront's own page renders — state, seconds left, the amounts as displayed, receiving account, destination tag or memo id, issuer and currency code for a token, the payment request for the QR code, explorer base, accent colour and wallet-app identifiers. Access is the order's `deepLinkCode` or the customer of the session; no login. An expired quote is handed out with `page.state` `expired` — call `refresh` for a current one.",
                 "operationId": "readLedgerDirectQuote",
                 "parameters": [
-                    { "$ref": "#/components/parameters/ledgerDirectOrderId" },
-                    { "$ref": "#/components/parameters/ledgerDirectDeepLinkCode" },
-                    { "$ref": "#/components/parameters/swLanguageId" }
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectOrderId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
                 ],
                 "responses": {
-                    "200": { "description": "The quote", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LedgerDirectQuote" } } } },
-                    "403": { "description": "Wrong or missing code and no session customer of this order — the same answer whether or not the order exists" },
-                    "404": { "description": "The order was never quoted with LedgerDirect" },
-                    "410": { "description": "The order no longer waits for a payment (settled, cancelled or paid by hand); `check` carries the redirect" }
+                    "200": {
+                        "description": "The quote",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LedgerDirectQuote"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Wrong or missing code and no session customer of this order — the same answer whether or not the order exists"
+                    },
+                    "404": {
+                        "description": "The order was never quoted with LedgerDirect"
+                    },
+                    "410": {
+                        "description": "The order no longer waits for a payment (settled, cancelled or paid by hand); `check` carries the redirect"
+                    }
                 },
-                "security": [{ "ApiKey": [] }]
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
             }
         },
         "/ledger-direct/payment/refresh/{orderId}": {
             "post": {
-                "tags": ["LedgerDirect"],
+                "tags": [
+                    "LedgerDirect"
+                ],
                 "summary": "A current quote, re-quoting an expired one",
                 "description": "The same answer as `quote`, after a new quote has been made for an order whose quote had expired — the \"quote expired\" button of a payment page. Only while nothing has arrived: an order with a payment on record, short or in the wrong asset, gets its current quote back unchanged. Receiving account and destination tag or memo id stay the same, unless the merchant changed the receiving account in between — then the new quote is on the new account, with a new tag.",
                 "operationId": "refreshLedgerDirectQuote",
                 "parameters": [
-                    { "$ref": "#/components/parameters/ledgerDirectOrderId" },
-                    { "$ref": "#/components/parameters/ledgerDirectDeepLinkCode" },
-                    { "$ref": "#/components/parameters/swLanguageId" }
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectOrderId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
                 ],
                 "responses": {
-                    "200": { "description": "The current quote", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LedgerDirectQuote" } } } },
-                    "403": { "description": "Wrong or missing code and no session customer of this order" },
-                    "404": { "description": "The order was never quoted with LedgerDirect" },
-                    "410": { "description": "The order no longer waits for a payment" }
+                    "200": {
+                        "description": "The current quote",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LedgerDirectQuote"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Wrong or missing code and no session customer of this order"
+                    },
+                    "404": {
+                        "description": "The order was never quoted with LedgerDirect"
+                    },
+                    "410": {
+                        "description": "The order no longer waits for a payment"
+                    }
                 },
-                "security": [{ "ApiKey": [] }]
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
             }
         },
         "/ledger-direct/payment/check/{orderId}": {
             "get": {
-                "tags": ["LedgerDirect"],
+                "tags": [
+                    "LedgerDirect"
+                ],
                 "summary": "The payment status of a LedgerDirect order",
                 "description": "Is this order paid? The LedgerDirect payment-status contract (`schema_version` 1, the same seven fields every LedgerDirect plugin returns), plus `hash` once a payment is on record and `redirect` once the order no longer waits for a payment — Shopware's finalize route while the payment token lives, the order page afterwards (the external front end's where one is configured). While the order waits, the ledger is synced, throttled. Poll it every few seconds; only `settled` or a `redirect` ends the polling.",
                 "operationId": "readLedgerDirectPaymentStatus",
                 "parameters": [
-                    { "$ref": "#/components/parameters/ledgerDirectOrderId" },
-                    { "$ref": "#/components/parameters/ledgerDirectDeepLinkCode" },
-                    { "name": "returnUrl", "in": "query", "required": false, "description": "The returnUrl `handle-payment` handed out, so the `redirect` can be Shopware's finalize route while its payment token lives", "schema": { "type": "string" } },
-                    { "$ref": "#/components/parameters/swLanguageId" }
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectOrderId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
+                    },
+                    {
+                        "name": "returnUrl",
+                        "in": "query",
+                        "required": false,
+                        "description": "The returnUrl `handle-payment` handed out, so the `redirect` can be Shopware's finalize route while its payment token lives",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
                 ],
                 "responses": {
-                    "200": { "description": "The payment status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LedgerDirectPaymentStatus" } } } },
-                    "403": { "description": "Wrong or missing code and no session customer of this order" },
-                    "404": { "description": "The order was never quoted with LedgerDirect" }
+                    "200": {
+                        "description": "The payment status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LedgerDirectPaymentStatus"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Wrong or missing code and no session customer of this order"
+                    },
+                    "404": {
+                        "description": "The order was never quoted with LedgerDirect"
+                    }
                 },
-                "security": [{ "ApiKey": [] }]
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
             }
         }
     },
     "components": {
         "parameters": {
-            "ledgerDirectOrderId": { "name": "orderId", "in": "path", "required": true, "description": "The order's id", "schema": { "type": "string", "pattern": "^[0-9a-f]{32}$" } },
-            "ledgerDirectDeepLinkCode": { "name": "deepLinkCode", "in": "query", "required": false, "description": "The order's deepLinkCode, as `POST /checkout/order` returned it — the per-order secret that opens the order without a login. Optional for the customer of the session.", "schema": { "type": "string" } }
+            "ledgerDirectOrderId": {
+                "name": "orderId",
+                "in": "path",
+                "required": true,
+                "description": "The order's id",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                }
+            },
+            "ledgerDirectDeepLinkCode": {
+                "name": "deepLinkCode",
+                "in": "query",
+                "required": false,
+                "description": "The order's deepLinkCode, as `POST /checkout/order` returned it — the per-order secret that opens the order without a login. Optional for the customer of the session.",
+                "schema": {
+                    "type": "string"
+                }
+            }
         },
         "schemas": {
             "LedgerDirectPaymentStatus": {
                 "type": "object",
                 "description": "The LedgerDirect payment-status contract plus the platform's `hash` and `redirect`",
-                "required": ["schema_version", "state", "base_asset", "amount_requested", "amount_paid", "shortfall", "seconds_left"],
+                "required": [
+                    "schema_version",
+                    "state",
+                    "base_asset",
+                    "amount_requested",
+                    "amount_paid",
+                    "shortfall",
+                    "seconds_left"
+                ],
                 "properties": {
-                    "schema_version": { "type": "integer", "enum": [1] },
-                    "state": { "type": "string", "enum": ["waiting", "partial", "wrong_asset", "settled", "expired"] },
-                    "base_asset": { "type": "string", "description": "XRP, RLUSD, USDC, XLM, EURC" },
-                    "amount_requested": { "description": "A number for a native asset; for a token an object with currency, issuer and value", "oneOf": [{ "type": "number" }, { "$ref": "#/components/schemas/LedgerDirectTokenAmount" }] },
-                    "amount_paid": { "description": "What arrived, in the shape of the asset that arrived; null while nothing has", "oneOf": [{ "type": "number" }, { "$ref": "#/components/schemas/LedgerDirectTokenAmount" }, { "type": "null" }] },
-                    "shortfall": { "description": "What is still due in the quoted asset; null when nothing is", "oneOf": [{ "type": "number" }, { "$ref": "#/components/schemas/LedgerDirectTokenAmount" }, { "type": "null" }] },
-                    "seconds_left": { "type": ["integer", "null"], "description": "Seconds until the quote expires; null when the quote has no expiry or the order no longer waits" },
-                    "hash": { "type": "string", "description": "The transaction hash of the payment on record, once there is one; append it to `page.explorerBase` of the quote for the explorer link" },
-                    "redirect": { "type": "string", "description": "Where to send the customer once the order no longer waits for a payment; its presence ends the polling" }
+                    "schema_version": {
+                        "type": "integer",
+                        "enum": [
+                            1
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "waiting",
+                            "partial",
+                            "wrong_asset",
+                            "settled",
+                            "expired"
+                        ]
+                    },
+                    "base_asset": {
+                        "type": "string",
+                        "description": "XRP, RLUSD, USDC, XLM, EURC"
+                    },
+                    "amount_requested": {
+                        "description": "A number for a native asset; for a token an object with currency, issuer and value",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LedgerDirectTokenAmount"
+                            }
+                        ]
+                    },
+                    "amount_paid": {
+                        "description": "What arrived, in the shape of the asset that arrived; null while nothing has",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LedgerDirectTokenAmount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "shortfall": {
+                        "description": "What is still due in the quoted asset; null when nothing is",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LedgerDirectTokenAmount"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "seconds_left": {
+                        "type": "integer",
+                        "description": "Seconds until the quote expires; null when the quote has no expiry or the order no longer waits",
+                        "nullable": true
+                    },
+                    "hash": {
+                        "type": "string",
+                        "description": "The transaction hash of the payment on record, once there is one; append it to `page.explorerBase` of the quote for the explorer link"
+                    },
+                    "redirect": {
+                        "type": "string",
+                        "description": "Where to send the customer once the order no longer waits for a payment; its presence ends the polling"
+                    }
                 }
             },
             "LedgerDirectTokenAmount": {
                 "type": "object",
-                "required": ["currency", "issuer", "value"],
+                "required": [
+                    "currency",
+                    "issuer",
+                    "value"
+                ],
                 "properties": {
-                    "currency": { "type": "string", "description": "The token's currency code as the ledger names it (XRPL: hex)" },
-                    "issuer": { "type": "string" },
-                    "value": { "type": "string", "description": "A plain decimal, exactly as the ledger states it" }
+                    "currency": {
+                        "type": "string",
+                        "description": "The token's currency code as the ledger names it (XRPL: hex)"
+                    },
+                    "issuer": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "A plain decimal, exactly as the ledger states it"
+                    }
                 }
             },
             "LedgerDirectQuote": {
                 "type": "object",
                 "description": "The flat fields are the Store API contract of the first release; `page` is the complete value set of the payment page",
-                "required": ["orderId", "orderNumber", "currencyCode", "network", "destinationAccount", "destinationTag", "xrpAmount", "exchangeRate", "amountRequestedDisplay", "exchangeRateDisplay", "page"],
+                "required": [
+                    "orderId",
+                    "orderNumber",
+                    "currencyCode",
+                    "network",
+                    "destinationAccount",
+                    "destinationTag",
+                    "xrpAmount",
+                    "exchangeRate",
+                    "amountRequestedDisplay",
+                    "exchangeRateDisplay",
+                    "page"
+                ],
                 "properties": {
-                    "orderId": { "type": "string" },
-                    "orderNumber": { "type": "string" },
-                    "currencyCode": { "type": "string", "description": "The shop currency the order was quoted in" },
-                    "currencySymbol": { "type": ["string", "null"] },
-                    "price": { "type": "number", "description": "The order total in the shop currency" },
-                    "network": { "type": "string", "enum": ["mainnet", "testnet"] },
-                    "destinationAccount": { "type": "string", "description": "The receiving account; on Stellar the G… public key" },
-                    "destinationTag": { "type": "integer", "description": "The order identifier: the destination tag on the XRP Ledger, the memo id on Stellar" },
-                    "xrpAmount": { "description": "The requested amount — a number for a native asset, a token amount for a token; the name is historical", "oneOf": [{ "type": "number" }, { "$ref": "#/components/schemas/LedgerDirectTokenAmount" }] },
-                    "exchangeRate": { "type": "number" },
-                    "amountRequestedDisplay": { "type": "string", "description": "The requested amount as the payment page shows it, never rounded in a client" },
-                    "exchangeRateDisplay": { "type": "string" },
-                    "showNoTransactionFoundError": { "type": "boolean" },
-                    "page": { "$ref": "#/components/schemas/LedgerDirectPaymentPage" }
+                    "orderId": {
+                        "type": "string"
+                    },
+                    "orderNumber": {
+                        "type": "string"
+                    },
+                    "currencyCode": {
+                        "type": "string",
+                        "description": "The shop currency the order was quoted in"
+                    },
+                    "currencySymbol": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "The order total in the shop currency"
+                    },
+                    "network": {
+                        "type": "string",
+                        "enum": [
+                            "mainnet",
+                            "testnet"
+                        ]
+                    },
+                    "destinationAccount": {
+                        "type": "string",
+                        "description": "The receiving account; on Stellar the G… public key"
+                    },
+                    "destinationTag": {
+                        "type": "integer",
+                        "description": "The order identifier: the destination tag on the XRP Ledger, the memo id on Stellar"
+                    },
+                    "xrpAmount": {
+                        "description": "The requested amount — a number for a native asset, a token amount for a token; the name is historical",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LedgerDirectTokenAmount"
+                            }
+                        ]
+                    },
+                    "exchangeRate": {
+                        "type": "number"
+                    },
+                    "amountRequestedDisplay": {
+                        "type": "string",
+                        "description": "The requested amount as the payment page shows it, never rounded in a client"
+                    },
+                    "exchangeRateDisplay": {
+                        "type": "string"
+                    },
+                    "showNoTransactionFoundError": {
+                        "type": "boolean"
+                    },
+                    "page": {
+                        "$ref": "#/components/schemas/LedgerDirectPaymentPage"
+                    }
                 }
             },
             "LedgerDirectPaymentPage": {
                 "type": "object",
                 "description": "Every value the payment page is built from — the markup contract of @ledger-direct/payment-ui. Keys are added, never renamed, within a schema_version",
-                "required": ["schema_version", "chain", "mode", "assetLabel", "state", "amountDueDisplay", "destinationAccount", "destinationTag", "paymentUri", "network", "explorerBase"],
+                "required": [
+                    "schema_version",
+                    "chain",
+                    "mode",
+                    "assetLabel",
+                    "state",
+                    "amountDueDisplay",
+                    "destinationAccount",
+                    "destinationTag",
+                    "paymentUri",
+                    "network",
+                    "explorerBase"
+                ],
                 "properties": {
-                    "schema_version": { "type": "integer", "enum": [1] },
-                    "chain": { "type": "string", "enum": ["XRPL", "STELLAR"] },
-                    "mode": { "type": "string", "description": "The asset code in lower case (xrp, rlusd, usdc, xlm, eurc)" },
-                    "assetLabel": { "type": "string", "description": "The asset code as shown next to amounts" },
-                    "accentColor": { "type": "string", "description": "The merchant's accent colour, as a CSS colour" },
-                    "shopName": { "type": "string" },
-                    "xamanApiKey": { "type": "string", "description": "Public browser identifier for the Xaman wallet app; empty when not configured" },
-                    "walletConnectProjectId": { "type": "string", "description": "Public WalletConnect project id; empty when not configured" },
-                    "state": { "type": "string", "enum": ["waiting", "partial", "wrong_asset", "expired"] },
-                    "secondsLeft": { "type": ["integer", "null"] },
-                    "hasExpiry": { "type": "boolean" },
-                    "quoteSeconds": { "type": "integer", "description": "The quote's full validity, for a countdown bar" },
-                    "amountRequestedDisplay": { "type": "string" },
-                    "amountPaidDisplay": { "type": ["string", "null"] },
-                    "shortfallDisplay": { "type": ["string", "null"] },
-                    "amountDueDisplay": { "type": "string", "description": "The amount to send now: the shortfall while a partial payment is in, the request otherwise" },
-                    "paidShare": { "type": "integer", "description": "Share of the request that arrived, whole percent, for a progress bar only" },
-                    "wrongToken": { "type": "boolean" },
-                    "exchangeRateDisplay": { "type": "string" },
-                    "orderId": { "type": "string" },
-                    "orderNumber": { "type": "string" },
-                    "total": { "type": "number" },
-                    "currencyCode": { "type": "string" },
-                    "currencySymbol": { "type": ["string", "null"] },
-                    "network": { "type": "string", "enum": ["mainnet", "testnet"] },
-                    "explorerBase": { "type": "string", "description": "URL prefix a transaction hash is appended to" },
-                    "destinationAccount": { "type": "string" },
-                    "destinationTag": { "type": "integer", "description": "Destination tag (XRPL) or memo id (Stellar)" },
-                    "issuer": { "type": ["string", "null"], "description": "Tokens only: the quoted issuer" },
-                    "currencyHex": { "type": ["string", "null"], "description": "XRPL tokens only: the currency's hex code, for browser wallets" },
-                    "amountDrops": { "type": ["string", "null"], "description": "XRP only: the amount due in drops, for browser wallets" },
-                    "paymentUri": { "type": "string", "description": "The payment request the QR code encodes: an XRPL request or a SEP-0007 web+stellar:pay request" },
-                    "amountRequested": { "description": "The raw requested amount of the intent", "oneOf": [{ "type": "number" }, { "$ref": "#/components/schemas/LedgerDirectTokenAmount" }] },
-                    "exchangeRate": { "type": "number" }
+                    "schema_version": {
+                        "type": "integer",
+                        "enum": [
+                            1
+                        ]
+                    },
+                    "chain": {
+                        "type": "string",
+                        "enum": [
+                            "XRPL",
+                            "STELLAR"
+                        ]
+                    },
+                    "mode": {
+                        "type": "string",
+                        "description": "The asset code in lower case (xrp, rlusd, usdc, xlm, eurc)"
+                    },
+                    "assetLabel": {
+                        "type": "string",
+                        "description": "The asset code as shown next to amounts"
+                    },
+                    "accentColor": {
+                        "type": "string",
+                        "description": "The merchant's accent colour, as a CSS colour"
+                    },
+                    "shopName": {
+                        "type": "string"
+                    },
+                    "xamanApiKey": {
+                        "type": "string",
+                        "description": "Public browser identifier for the Xaman wallet app; empty when not configured"
+                    },
+                    "walletConnectProjectId": {
+                        "type": "string",
+                        "description": "Public WalletConnect project id; empty when not configured"
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "waiting",
+                            "partial",
+                            "wrong_asset",
+                            "expired"
+                        ]
+                    },
+                    "secondsLeft": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "hasExpiry": {
+                        "type": "boolean"
+                    },
+                    "quoteSeconds": {
+                        "type": "integer",
+                        "description": "The quote's full validity, for a countdown bar"
+                    },
+                    "amountRequestedDisplay": {
+                        "type": "string"
+                    },
+                    "amountPaidDisplay": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "shortfallDisplay": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "amountDueDisplay": {
+                        "type": "string",
+                        "description": "The amount to send now: the shortfall while a partial payment is in, the request otherwise"
+                    },
+                    "paidShare": {
+                        "type": "integer",
+                        "description": "Share of the request that arrived, whole percent, for a progress bar only"
+                    },
+                    "wrongToken": {
+                        "type": "boolean"
+                    },
+                    "exchangeRateDisplay": {
+                        "type": "string"
+                    },
+                    "orderId": {
+                        "type": "string"
+                    },
+                    "orderNumber": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "number"
+                    },
+                    "currencyCode": {
+                        "type": "string"
+                    },
+                    "currencySymbol": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "network": {
+                        "type": "string",
+                        "enum": [
+                            "mainnet",
+                            "testnet"
+                        ]
+                    },
+                    "explorerBase": {
+                        "type": "string",
+                        "description": "URL prefix a transaction hash is appended to"
+                    },
+                    "destinationAccount": {
+                        "type": "string"
+                    },
+                    "destinationTag": {
+                        "type": "integer",
+                        "description": "Destination tag (XRPL) or memo id (Stellar)"
+                    },
+                    "issuer": {
+                        "type": "string",
+                        "description": "Tokens only: the quoted issuer",
+                        "nullable": true
+                    },
+                    "currencyHex": {
+                        "type": "string",
+                        "description": "XRPL tokens only: the currency's hex code, for browser wallets",
+                        "nullable": true
+                    },
+                    "amountDrops": {
+                        "type": "string",
+                        "description": "XRP only: the amount due in drops, for browser wallets",
+                        "nullable": true
+                    },
+                    "paymentUri": {
+                        "type": "string",
+                        "description": "The payment request the QR code encodes: an XRPL request or a SEP-0007 web+stellar:pay request"
+                    },
+                    "amountRequested": {
+                        "description": "The raw requested amount of the intent",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LedgerDirectTokenAmount"
+                            }
+                        ]
+                    },
+                    "exchangeRate": {
+                        "type": "number"
+                    }
                 }
             }
         },
-        "tags": [{ "name": "LedgerDirect", "description": "Paying an order on the XRP Ledger or Stellar with LedgerDirect: the quote, a refresh, the payment status" }]
+        "tags": [
+            {
+                "name": "LedgerDirect",
+                "description": "Paying an order on the XRP Ledger or Stellar with LedgerDirect: the quote, a refresh, the payment status"
+            }
+        ]
     }
 }

@@ -184,9 +184,12 @@ answers the contract. With a wrong code, and with a well-formed order id that do
 routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled` with a
 `redirect` that is an absolute URL (Shopware's finalize route while the payment token lives, the
 external front end's order page afterwards where one is configured) and carries the transaction `hash`.
-Then `quote` answers 410. With *Quote validity* at 60 s: after a minute `quote` answers `page.state`
-`expired` with the stale amount, and `POST …/refresh/<orderId>?deepLinkCode=<code>` answers a fresh quote
-with the same account and tag and `page.state` `waiting`.
+Then `quote` answers 410 — the order no longer waits for a payment.
+
+Expiry and refresh need a second, unpaid order: set *Quote validity* to 60 s, place an XRP order and send
+nothing. After a minute `quote` answers `page.state` `expired` with the stale amount, and
+`POST …/refresh/<orderId>?deepLinkCode=<code>` answers a fresh quote with the same account and tag and
+`page.state` `waiting`. Set the validity back to 300 s afterwards.
 Without `sw-access-key` the Store API answers 401 — the payment page package passes the key with
 `options.headers`.
 
