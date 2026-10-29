@@ -187,9 +187,9 @@ curl -H 'sw-access-key: <key>' -H 'Accept: application/json' \
 Look for: `quote` answers 200 with `page.schema_version` 1 and the values the payment page of the
 same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `paymentUri`); `check`
 answers the contract. With a wrong code, and with a well-formed order id that does not exist, both
-routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled` with a
-`redirect` that is an absolute URL (Shopware's finalize route while the payment token lives, the
-external front end's order page afterwards where one is configured) and carries the transaction `hash`.
+routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled`; its `redirect`
+is an absolute URL (Shopware's finalize route while the payment token lives, the external front end's
+order page afterwards where one is configured), and a separate `hash` field names the transaction.
 Then `quote` answers 410 — the order no longer waits for a payment.
 
 Expiry and refresh need a second, unpaid order: set *Quote validity* to 60 s, place an XRP order and send
