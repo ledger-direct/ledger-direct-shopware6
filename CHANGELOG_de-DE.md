@@ -1,3 +1,17 @@
+# 1.9.0
+- Store-API für Headless-Frontends, zweiter Teil. `check` liefert `hash`, sobald eine Zahlung verbucht ist:
+  Die Erfolgsansicht der Zahlungsseite zeigt die Transaktion mit Explorer-Link — dafür gab es seit 1.4.0 eine
+  Zeile, die keine Plattform je gefüllt hat — und auch die Bestellseite eines Frontends kann sie zeigen
+- `POST /store-api/ledger-direct/payment/refresh/{orderId}`: ein aktuelles Angebot, mit neuer Quotierung für
+  eine Bestellung, deren Angebot abgelaufen ist — der Knopf „Angebot abgelaufen“ einer Frontend-Zahlungsseite.
+  Eine Bestellung mit verbuchter Zahlung, zu wenig oder im falschen Asset, bekommt ihr aktuelles Angebot
+  unverändert zurück; Konto und Tag bleiben gleich, sofern das Empfangskonto nicht zwischenzeitlich geändert wurde
+- `quote` gibt ein abgelaufenes Angebot so heraus, wie die Seite es zeigt, mit `page.state` `expired`, statt
+  mit 410 zu antworten (1.8.0); 410 bleibt für eine Bestellung, die nicht mehr auf eine Zahlung wartet. Ein
+  Frontend baut dieselbe abgelaufene Seite wie die Storefront und erneuert von dort
+- Die drei Routen stehen im OpenAPI-Dokument der Store-API (`/store-api/_info/openapi3.json`), mit den Schemata
+  von Angebot, Zahlungsseiten-Werten und Zahlungsstatus, sodass sich API-Clients daraus erzeugen lassen
+
 # 1.8.0
 - Store-API für Headless-Frontends, erster Teil: `GET /store-api/ledger-direct/payment/quote/{orderId}`
   antwortet einem Gast mit dem `deepLinkCode` der Bestellung, wie `check` es immer getan hat, statt einen

@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\SalesChannel;
 
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
@@ -14,6 +15,8 @@ use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Cart\CartException;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -98,6 +101,13 @@ class PaymentRoute
 
         $payload = PaymentStatus::fromIntent($intent, $this->settlementPolicy)->toArray();
 
+        // The platform's additions to the contract. The hash of the payment on
+        // record, once there is one: the success view shows it with the
+        // explorer link, and a front end's order page can, too.
+        if ($intent->hash !== null) {
+            $payload['hash'] = $intent->hash;
+        }
+
         if (!$this->paymentState->isOpen($orderTransaction)) {
             $payload['redirect'] = $this->paymentRedirect->target($order, $request->get('returnUrl'));
         }
@@ -114,9 +124,11 @@ class PaymentRoute
      * has the code; so has anyone opening the confirmation mail hours later.
      * Nothing becomes visible that the storefront's payment page does not
      * show for the same code. 403 for anything else, without telling whether
-     * the order exists; 404 for an order never quoted with LedgerDirect;
-     * 410 for a quote that has expired or an order that no longer waits for
-     * a payment — in both cases `check` is the route to poll.
+     * the order exists; 404 for an order never quoted with LedgerDirect; 410
+     * for an order that no longer waits for a payment — `check` carries the
+     * redirect for it. An expired quote is handed out as the page shows it,
+     * with `page.state` `expired`: the amount is stale and the page says so;
+     * `refresh` is the way to a current one.
      *
      * The payload has two layers. The flat fields are the Store API contract
      * from the first release and stay as they are. `page` is the complete
@@ -130,6 +142,51 @@ class PaymentRoute
     )]
     public function quote(string $orderId, Request $request, SalesChannelContext $context): PaymentRouteResponse
     {
+        [$order, $orderTransaction, $intent] = $this->openOrder($orderId, $request, $context);
+
+        return new PaymentRouteResponse(new ArrayStruct($this->quotePayload($order, $orderTransaction, $intent, $context)));
+    }
+
+    /**
+     * A current quote: the same answer as `quote`, after re-quoting an order
+     * whose quote has expired — the button under the "quote expired" notice,
+     * for a front end. Only while nothing has arrived: a payment on the tag,
+     * short or in the wrong asset, is matched against the quote it was made
+     * for, and a refresh would re-quote an order that is already partly
+     * paid; such an order gets its current quote back unchanged. The
+     * destination account and tag stay the same, unless the merchant changed
+     * the receiving account in between (OrderTransactionService::prepareOrderTransaction()).
+     */
+    #[Route(
+        path: '/store-api/ledger-direct/payment/refresh/{orderId}',
+        name: 'store-api.ledger-direct.payment.refresh',
+        methods: ['POST']
+    )]
+    public function refresh(string $orderId, Request $request, SalesChannelContext $context): PaymentRouteResponse
+    {
+        [$order, $orderTransaction, $intent] = $this->openOrder($orderId, $request, $context);
+
+        if (PaymentStatus::fromIntent($intent, $this->settlementPolicy)->state() === PaymentStatus::EXPIRED) {
+            $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
+
+            $orderTransaction = $this->orderTransactionService->getOrderTransactionById($orderTransaction->getId(), $context->getContext()) ?? $orderTransaction;
+            $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction) ?? $intent;
+        }
+
+        return new PaymentRouteResponse(new ArrayStruct($this->quotePayload($order, $orderTransaction, $intent, $context)));
+    }
+
+    /**
+     * The order behind `quote` and `refresh`, synced and still waiting for a
+     * payment. Synced before answering, throttled, as the storefront page is
+     * on render: a payment that reached the ledger since the last poll
+     * settles the order right here, and a customer coming back to the page
+     * is not handed instructions to pay a second time.
+     *
+     * @return array{0: OrderEntity, 1: OrderTransactionEntity, 2: PaymentIntent}
+     */
+    private function openOrder(string $orderId, Request $request, SalesChannelContext $context): array
+    {
         $order = $this->orderAccessGuard->authorisedOrder($orderId, $request, $context);
 
         if ($order === null) {
@@ -142,15 +199,9 @@ class PaymentRoute
             throw new NoPaymentIntentException($orderId);
         }
 
-        /*
-         * Synced before answering, throttled, as the storefront page is on
-         * render: a payment that reached the ledger since the last poll
-         * settles the order right here, and a customer coming back to the
-         * page is not handed instructions to pay a second time.
-         */
         $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
 
-        /** @var \Hardcastle\LedgerDirect\Core\Payment\PaymentIntent $intent the record as the sync left it */
+        /** @var PaymentIntent $intent the record as the sync left it */
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
         if (ChainCatalog::forType($intent->type) === null) {
@@ -168,22 +219,16 @@ class PaymentRoute
             throw new TransactionLifetimeException('This order no longer waits for a payment');
         }
 
-        /*
-         * Past the expiry the quoted exchange rate is stale and the amount
-         * must not be handed out again as if it were current. The storefront
-         * page shows the expired state instead; a front end that wants that
-         * state polls `check`. Decided on the computed status, not the raw
-         * timestamp: a short or wrong-asset payment on the tag keeps the
-         * quote it was made for (the status stays `partial` or `wrong_asset`
-         * past the expiry, a late top-up is matched against it), and the
-         * page for that has to be buildable.
-         */
-        if (PaymentStatus::fromIntent($intent, $this->settlementPolicy)->state() === PaymentStatus::EXPIRED) {
-            throw new TransactionLifetimeException('This transaction is not valid anymore');
-        }
+        return [$order, $orderTransaction, $intent];
+    }
 
-        return new PaymentRouteResponse(new ArrayStruct([
-            'orderId' => $orderId,
+    /**
+     * @return array<string, mixed>
+     */
+    private function quotePayload(OrderEntity $order, OrderTransactionEntity $orderTransaction, PaymentIntent $intent, SalesChannelContext $context): array
+    {
+        return [
+            'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
             'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()?->getSymbol(),
@@ -204,6 +249,6 @@ class PaymentRoute
             'showNoTransactionFoundError' => true,
             'page' => ['schema_version' => PaymentPageView::SCHEMA_VERSION]
                 + $this->paymentPageView->values($order, $orderTransaction, $intent, $context),
-        ]));
+        ];
     }
 }

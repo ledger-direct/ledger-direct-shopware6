@@ -185,7 +185,9 @@ class PaymentRouteTest extends TestCase
         $this->assertSame('settled', $payload['state']);
         $this->assertSame(40.0, $payload['amount_paid']);
         $this->assertNull($payload['shortfall']);
+        $this->assertSame('HASH', $payload['hash'], 'the payment on record, for the success view and a front end\'s order page');
         $this->assertSame('https://shop.example/account/order/the-code', $payload['redirect']);
+        $this->assertSame(['schema_version', 'state', 'base_asset', 'amount_requested', 'amount_paid', 'shortfall', 'seconds_left', 'hash', 'redirect'], array_keys($payload), 'the contract, then the platform\'s additions');
     }
 
     /**
@@ -312,14 +314,101 @@ class PaymentRouteTest extends TestCase
         $this->assertSame($wrongCode->getStatusCode(), $otherCustomer->getStatusCode());
     }
 
-    public function testAnExpiredQuoteIsNotHandedOutAgain(): void
+    /**
+     * An expired quote is handed out as the page shows it: state expired, the
+     * stale amount still there for the "quote expired" block. A front end
+     * builds the same page as the storefront, and refreshes from there.
+     */
+    public function testAnExpiredQuoteAnswersWithTheExpiredPage(): void
     {
         $this->givenAuthorisedOrder($this->transaction('open', $this->xrpQuote(expiry: time() - 1)));
         $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('prepareOrderTransaction')->never();
 
-        $this->expectException(TransactionLifetimeException::class);
+        $payload = $this->quote(['deepLinkCode' => 'the-code']);
 
-        $this->quote(['deepLinkCode' => 'the-code']);
+        $this->assertSame('expired', $payload['page']['state']);
+        $this->assertNull($payload['page']['secondsLeft']);
+        $this->assertSame('40', $payload['page']['amountDueDisplay']);
+    }
+
+    /*
+     * refresh: a current quote, re-quoting an expired one.
+     */
+
+    public function testRefreshReQuotesAnExpiredOrderAndAnswersTheFreshQuote(): void
+    {
+        $expired = $this->transaction('open', $this->xrpQuote(expiry: time() - 1));
+        $this->givenAuthorisedOrder($expired);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('prepareOrderTransaction')->once()->with(Mockery::type(OrderEntity::class), $expired, $this->context);
+        $fresh = $this->transaction('open', $this->xrpQuote(expiry: time() + 300));
+        $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->with(self::TX_ID, $this->context)->andReturn($fresh);
+
+        $payload = $this->refresh(['deepLinkCode' => 'the-code']);
+
+        $this->assertSame('waiting', $payload['page']['state']);
+        $this->assertGreaterThan(200, $payload['page']['secondsLeft']);
+        $this->assertSame(114729, $payload['destinationTag'], 'the tag stays');
+    }
+
+    /**
+     * Not expired — waiting, or partly paid — nothing is re-quoted: a payment
+     * on the tag is matched against the quote it was made for.
+     */
+    public function testRefreshLeavesAQuoteThatHasNotExpiredAlone(): void
+    {
+        $partial = $this->xrpQuote(expiry: time() - 60)->withFulfillment('HASH', 30.0, 'CTID');
+        $this->givenAuthorisedOrder($this->transaction('paid_partially', $partial));
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('prepareOrderTransaction')->never();
+
+        $payload = $this->refresh(['deepLinkCode' => 'the-code']);
+
+        $this->assertSame('partial', $payload['page']['state']);
+        $this->assertSame('10', $payload['page']['amountDueDisplay']);
+    }
+
+    public function testRefreshIsGuardedLikeQuote(): void
+    {
+        $this->givenAuthorisedOrder($this->transaction('cancelled', $this->xrpQuote(expiry: time() - 1)));
+        $this->assertForbidden(fn () => $this->refresh([]));
+
+        try {
+            $this->refresh(['deepLinkCode' => 'the-code']);
+            $this->fail('expected a 410 for a cancelled transaction');
+        } catch (TransactionLifetimeException $exception) {
+            $this->assertSame(410, $exception->getStatusCode());
+        }
+    }
+
+    /**
+     * The Store API document (src/Resources/Schema/StoreApi) describes every
+     * route of this class and none that does not exist — a headless
+     * developer reads that document first.
+     */
+    public function testTheOpenApiDocumentDescribesExactlyTheRoutesOfThisClass(): void
+    {
+        $schema = json_decode((string) file_get_contents(__DIR__ . '/../../../src/Resources/Schema/StoreApi/paths/ledger-direct-payment.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $documented = [];
+        foreach ($schema['paths'] as $path => $methods) {
+            foreach (array_keys($methods) as $method) {
+                $documented[] = strtoupper($method) . ' /store-api' . $path;
+            }
+        }
+
+        $declared = [];
+        foreach ((new \ReflectionClass(PaymentRoute::class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+            foreach ($method->getAttributes(\Symfony\Component\Routing\Attribute\Route::class) as $attribute) {
+                $route = $attribute->newInstance();
+                // GET is what a front end calls; the POST twin of quote and check is Shopware's convention, not a second route.
+                $declared[] = (in_array('GET', $route->getMethods(), true) ? 'GET' : 'POST') . ' ' . $route->getPath();
+            }
+        }
+
+        sort($documented);
+        sort($declared);
+        $this->assertSame($declared, $documented);
     }
 
     /**
@@ -420,6 +509,16 @@ class PaymentRouteTest extends TestCase
     private function quote(array $query): array
     {
         return $this->route()->quote(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->all();
+    }
+
+    /**
+     * @param array<string, string> $query
+     *
+     * @return array<string, mixed>
+     */
+    private function refresh(array $query): array
+    {
+        return $this->route()->refresh(self::ORDER_ID, new Request($query), $this->salesChannelContext)->getObject()->all();
     }
 
     private function customer(string $id): CustomerEntity

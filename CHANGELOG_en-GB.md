@@ -1,3 +1,18 @@
+# 1.9.0
+- Store API for headless front ends, second part. `check` carries `hash` once a payment is on record:
+  the payment page's success view shows the transaction with its explorer link — it had a row for that
+  since 1.4.0, which no platform ever filled — and a front end's order page can show it too
+- `POST /store-api/ledger-direct/payment/refresh/{orderId}`: a current quote, re-quoting an order whose
+  quote has expired — the "quote expired" button of a front end's payment page. An order with a payment on
+  record, short or in the wrong asset, gets its current quote back unchanged; account and tag stay the same
+  unless the receiving account was changed in between
+- `quote` hands an expired quote out as the page shows it, with `page.state` `expired`, instead of
+  answering 410 (1.8.0); 410 stays for an order that no longer waits for a payment. A front end builds the
+  same expired page as the storefront and refreshes from there
+- The three routes are in the Store API's OpenAPI document (`/store-api/_info/openapi3.json`), with the
+  schemas of the quote, the payment page values and the payment status, so API clients can be generated
+  from it
+
 # 1.8.0
 - Store API for headless front ends, first part: `GET /store-api/ledger-direct/payment/quote/{orderId}`
   answers a guest who sends the order's `deepLinkCode`, the way `check` always has, instead of

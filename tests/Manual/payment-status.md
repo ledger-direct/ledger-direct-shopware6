@@ -183,7 +183,10 @@ same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `p
 answers the contract. With a wrong code, and with a well-formed order id that does not exist, both
 routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled` with a
 `redirect` that is an absolute URL (Shopware's finalize route while the payment token lives, the
-external front end's order page afterwards where one is configured). Then `quote` answers 410.
+external front end's order page afterwards where one is configured) and carries the transaction `hash`.
+Then `quote` answers 410. With *Quote validity* at 60 s: after a minute `quote` answers `page.state`
+`expired` with the stale amount, and `POST …/refresh/<orderId>?deepLinkCode=<code>` answers a fresh quote
+with the same account and tag and `page.state` `waiting`.
 Without `sw-access-key` the Store API answers 401 — the payment page package passes the key with
 `options.headers`.
 
