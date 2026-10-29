@@ -69,6 +69,10 @@ class HeadlessTargetsTest extends TestCase
         $this->assertSame('must contain {deepLinkCode}', HeadlessTargets::problem('https://f.example/pay/{orderId}', $allowed, $required));
         $this->assertStringStartsWith('must be an absolute URL', (string) HeadlessTargets::problem('/pay/{orderId}?c={deepLinkCode}', $allowed, $required));
         $this->assertStringStartsWith('must be an absolute URL', (string) HeadlessTargets::problem('javascript:alert({orderId}{deepLinkCode})', $allowed, $required));
+        // parse_url() would read these as localhost; a browser would go to frontend.example over http.
+        $this->assertStringStartsWith('must not contain backslashes', (string) HeadlessTargets::problem('http://frontend.example\\@localhost/{orderId}/{deepLinkCode}', $allowed, $required));
+        $this->assertStringStartsWith('must not carry credentials', (string) HeadlessTargets::problem('http://frontend.example@localhost/{orderId}/{deepLinkCode}', $allowed, $required));
+        $this->assertStringStartsWith('must not contain backslashes', (string) HeadlessTargets::problem("https://f.example/{orderId}/{deepLinkCode}\t", $allowed, $required), 'a control character');
         $this->assertStringStartsWith('names an unknown placeholder {secret}', (string) HeadlessTargets::problem('https://f.example/{orderId}/{deepLinkCode}/{secret}', $allowed, $required));
     }
 

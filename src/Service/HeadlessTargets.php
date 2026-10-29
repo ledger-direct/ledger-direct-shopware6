@@ -108,6 +108,17 @@ final class HeadlessTargets
      */
     public static function problem(string $template, array $allowed, array $required): ?string
     {
+        // parse_url() reads `http://evil.example\@localhost/` as host localhost; a browser does not.
+        // Nothing a URL template legitimately needs is a backslash, a space, a control character
+        // or credentials in the authority, so all of them are refused before the host is looked at.
+        if (preg_match('/[\\\\\s\x00-\x1f\x7f]/', $template) === 1) {
+            return 'must not contain backslashes, spaces or control characters';
+        }
+
+        if (parse_url($template, PHP_URL_USER) !== null || parse_url($template, PHP_URL_PASS) !== null) {
+            return 'must not carry credentials in front of the host';
+        }
+
         $scheme = strtolower((string) parse_url($template, PHP_URL_SCHEME));
         $host = parse_url($template, PHP_URL_HOST);
 
