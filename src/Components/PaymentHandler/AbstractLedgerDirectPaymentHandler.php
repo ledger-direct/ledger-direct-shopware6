@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Components\PaymentHandler;
 
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
@@ -36,14 +37,18 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
 
     private PaymentStateService $paymentState;
 
+    private HeadlessTargets $headlessTargets;
+
     public function __construct(
         RouterInterface $router,
         OrderTransactionService $transactionService,
-        PaymentStateService $paymentState
+        PaymentStateService $paymentState,
+        HeadlessTargets $headlessTargets
     ) {
         $this->router = $router;
         $this->transactionService = $transactionService;
         $this->paymentState = $paymentState;
+        $this->headlessTargets = $headlessTargets;
     }
 
     public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
@@ -65,6 +70,15 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
         }
 
         $this->transactionService->prepareOrderTransaction($order, $orderTransaction, $context);
+
+        // A sales channel with an external front end: its payment page, from
+        // the merchant's template, with the same three values the storefront
+        // page gets. Nothing else changes for it; the storefront never sees this.
+        $headlessPage = $this->headlessTargets->paymentPageUrl($order, (string) $transaction->getReturnUrl());
+
+        if ($headlessPage !== null) {
+            return new RedirectResponse($headlessPage);
+        }
 
         // The deepLinkCode is the order secret the payment page and the status
         // endpoint accept instead of a login — a guest has no other way in.

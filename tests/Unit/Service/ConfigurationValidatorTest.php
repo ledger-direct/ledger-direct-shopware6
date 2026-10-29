@@ -66,6 +66,56 @@ class ConfigurationValidatorTest extends TestCase
         $this->assertSame('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', $foreign->getValue());
     }
 
+    /*
+     * The external front end's URL templates: checked on save like an
+     * account — a template a guest could not open is refused.
+     */
+
+    public function testATemplateWithoutTheCodeIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/must contain \{deepLinkCode\}/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessPaymentPageUrl', 'https://frontend.example/pay/{orderId}', null));
+    }
+
+    public function testARelativeTemplateIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/absolute URL/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessOrderPageUrl', '/orders/{orderId}?code={deepLinkCode}', null));
+    }
+
+    public function testAPlainHttpTemplateToARealHostIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/must use https/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessPaymentPageUrl', 'http://frontend.example/pay/{orderId}?code={deepLinkCode}', null));
+    }
+
+    public function testAnUnknownPlaceholderIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/unknown placeholder \{token\}/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessOrderPageUrl', 'https://frontend.example/orders/{deepLinkCode}?t={token}', null));
+    }
+
+    public function testAValidTemplateIsTrimmedAndKeptAndAnEmptyOneClears(): void
+    {
+        $validator = $this->validator();
+
+        $event = new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessPaymentPageUrl', " https://frontend.example/pay/{orderId}?code={deepLinkCode}&return={returnUrl}\n", null);
+        $validator->onBeforeChange($event);
+        $this->assertSame('https://frontend.example/pay/{orderId}?code={deepLinkCode}&return={returnUrl}', $event->getValue());
+
+        $empty = new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessOrderPageUrl', '  ', null);
+        $validator->onBeforeChange($empty);
+        $this->assertSame('', $empty->getValue(), 'cleared, not refused');
+    }
+
     /**
      * Impossible between the XRPL and Stellar by format; the rule is there
      * for a chain that shares the XRPL's address format. A warning, not a

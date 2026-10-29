@@ -164,10 +164,33 @@ Look for: the next poll carries a `redirect` while `state` is still `waiting`; t
 Then send the amount anyway: the transaction stays `cancelled` (neither the scheduled task nor a
 return over the `returnUrl` reopens it).
 
+## PS-12 — Headless: quote and status over the Store API
+
+Shopware's own case, not in the core catalogue: a front end that is not the storefront builds the
+payment page from the Store API. Place an XRP order (the harness does it through the Store API; by
+hand, any order of the storefront will do), note `orderId` and `deepLinkCode`. Then, without a
+session, with the sales channel's access key:
+
+```
+curl -H 'sw-access-key: <key>' -H 'Accept: application/json' \
+  'http://localhost/store-api/ledger-direct/payment/quote/<orderId>?deepLinkCode=<code>'
+curl -H 'sw-access-key: <key>' -H 'Accept: application/json' \
+  'http://localhost/store-api/ledger-direct/payment/check/<orderId>?deepLinkCode=<code>'
+```
+
+Look for: `quote` answers 200 with `page.schema_version` 1 and the values the payment page of the
+same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `paymentUri`); `check`
+answers the contract. With a wrong code, and with a well-formed order id that does not exist, both
+routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled` with a
+`redirect` that is an absolute URL (Shopware's finalize route while the payment token lives, the
+external front end's order page afterwards where one is configured). Then `quote` answers 410.
+Without `sw-access-key` the Store API answers 401 — the payment page package passes the key with
+`options.headers`.
+
 ## Automated with ld-e2e
 
-The `ledger-direct-e2e` harness runs the whole catalogue against this shop unattended — PS-01 to PS-09 and
-PS-11 in the `automated` set, PS-10 (a 35-minute wait) on request or nightly. It pays real testnet
+The `ledger-direct-e2e` harness runs the whole catalogue against this shop unattended — PS-01 to PS-09,
+PS-11 and PS-12 in the `automated` set, PS-10 (a 35-minute wait) on request or nightly. It pays real testnet
 transactions from its treasury to a receiving account it creates for the run, and writes the checklist lines
 into the pull request:
 

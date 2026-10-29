@@ -15,7 +15,8 @@ use Symfony\Component\Routing\RouterInterface;
  * finalize() and lands on the finish page. Its payment token lives 30
  * minutes, though, and a customer who pays after 40 would run into
  * "token expired". Then the order page, which the deepLinkCode opens for
- * a guest too.
+ * a guest too — the storefront's, or the external front end's where a
+ * sales channel has one configured (HeadlessTargets).
  *
  * The returnUrl is never passed through as given. Only its token is
  * taken and the URL rebuilt from the router — the customer's own request
@@ -25,8 +26,10 @@ final class PaymentRedirect
 {
     private const TOKEN_PARAMETER = '_sw_payment_token';
 
-    public function __construct(private readonly RouterInterface $router)
-    {
+    public function __construct(
+        private readonly RouterInterface $router,
+        private readonly HeadlessTargets $headlessTargets,
+    ) {
     }
 
     /**
@@ -46,7 +49,11 @@ final class PaymentRedirect
             );
         }
 
-        return $this->router->generate(
+        // A sales channel with an external front end has its own order page;
+        // the storefront's would be a page that front end does not serve.
+        // From the configuration, never from the token: its finishUrl is set
+        // by whoever made the request.
+        return $this->headlessTargets->orderPageUrl($order) ?? $this->router->generate(
             'frontend.account.order.single.page',
             ['deepLinkCode' => (string) $order->getDeepLinkCode()],
             UrlGeneratorInterface::ABSOLUTE_URL

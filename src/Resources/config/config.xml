@@ -177,4 +177,27 @@
         </input-field>
     </card>
 
+    <card>
+        <title>LedgerDirect - External front end</title>
+        <title lang="de-DE">LedgerDirect - Externes Frontend</title>
+
+        <input-field type="text">
+            <name>headlessPaymentPageUrl</name>
+            <label>Payment page of the external front end</label>
+            <label lang="de-DE">Zahlungsseite des externen Frontends</label>
+            <placeholder>https://shop.example/pay/{orderId}?code={deepLinkCode}&amp;return={returnUrl}</placeholder>
+            <helpText>Only for a sales channel whose front end is not this storefront (Shopware Frontends, an app). After the order the customer is sent here instead of to the storefront's payment page. An absolute https:// URL with {orderId} and {deepLinkCode}, optionally {returnUrl}; the values are inserted URL-encoded. Set it per sales channel. Leave empty for the storefront.</helpText>
+            <helpText lang="de-DE">Nur für einen Verkaufskanal, dessen Frontend nicht diese Storefront ist (Shopware Frontends, eine App). Nach der Bestellung wird der Kunde hierher geschickt statt auf die Zahlungsseite der Storefront. Eine absolute https://-URL mit {orderId} und {deepLinkCode}, optional {returnUrl}; die Werte werden URL-kodiert eingesetzt. Je Verkaufskanal setzen. Für die Storefront leer lassen.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>headlessOrderPageUrl</name>
+            <label>Order page of the external front end</label>
+            <label lang="de-DE">Bestellseite des externen Frontends</label>
+            <placeholder>https://shop.example/orders/{orderId}?code={deepLinkCode}</placeholder>
+            <helpText>Where a customer lands whose payment arrives after Shopware's payment token has expired (about 30 minutes after checkout, or from the confirmation mail). An absolute https:// URL with {deepLinkCode}, optionally {orderId}. Leave empty for the storefront's order page.</helpText>
+            <helpText lang="de-DE">Wohin ein Kunde kommt, dessen Zahlung nach Ablauf von Shopwares Zahlungs-Token eintrifft (etwa 30 Minuten nach dem Checkout, oder aus der Bestätigungsmail). Eine absolute https://-URL mit {deepLinkCode}, optional {orderId}. Für die Bestellseite der Storefront leer lassen.</helpText>
+        </input-field>
+    </card>
+
 </config>

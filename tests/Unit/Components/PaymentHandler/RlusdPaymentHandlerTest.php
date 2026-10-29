@@ -5,8 +5,10 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Components\PaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
@@ -44,7 +46,7 @@ class RlusdPaymentHandlerTest extends TestCase
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
         $this->transactionService = Mockery::mock(OrderTransactionService::class);
 
-        $this->handler = new RlusdPaymentHandler($router, $this->transactionService, $this->paymentStateService());
+        $this->handler = new RlusdPaymentHandler($router, $this->transactionService, $this->paymentStateService(), new HeadlessTargets(ConfigurationServiceMock::createInstance([])));
         $this->context = new Context(new SystemSource());
     }
 
