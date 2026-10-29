@@ -15,7 +15,8 @@
   die URL der Zahlungsseite des Frontends (`{orderId}`, `{deepLinkCode}`, `{returnUrl}`), die
   `handle-payment` statt der Storefront-Seite liefert, und die URL seiner Bestellseite (`{orderId}`,
   `{deepLinkCode}`), auf der eine Zahlung nach Ablauf des Zahlungs-Tokens landet. Werte werden URL-kodiert
-  eingesetzt; eine Vorlage ohne `{deepLinkCode}` oder ohne absolute URL wird beim Speichern abgelehnt. Für
+  eingesetzt; eine Vorlage ohne `{deepLinkCode}` oder ohne absolute `https://`-URL (`http://` nur für localhost) wird beim
+  Speichern abgelehnt. Für
   einen Verkaufskanal ohne die Einstellungen ändert sich nichts
 - README: ein Abschnitt „Headless / externes Frontend“ zur Store-API, zu den Weiterleitungszielen und zur
   `headers`-Option des Zahlungsseiten-Pakets

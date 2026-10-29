@@ -14,8 +14,8 @@
   the URL of the front end's payment page (`{orderId}`, `{deepLinkCode}`, `{returnUrl}`), which
   `handle-payment` answers instead of the storefront's page, and the URL of its order page
   (`{orderId}`, `{deepLinkCode}`), where a payment arriving after the payment token has expired lands.
-  Values are inserted URL-encoded; a template without `{deepLinkCode}` or not an absolute URL is refused
-  on save. Nothing changes for a sales channel without the settings
+  Values are inserted URL-encoded; a template without `{deepLinkCode}` or not an absolute `https://` URL (plain `http://` only for
+  localhost) is refused on save. Nothing changes for a sales channel without the settings
 - README: a section "Headless / external front end" on the Store API, the redirect targets and the
   payment page package's `headers` option
 

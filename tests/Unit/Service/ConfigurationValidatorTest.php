@@ -87,6 +87,14 @@ class ConfigurationValidatorTest extends TestCase
         $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessOrderPageUrl', '/orders/{orderId}?code={deepLinkCode}', null));
     }
 
+    public function testAPlainHttpTemplateToARealHostIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/must use https/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.headlessPaymentPageUrl', 'http://frontend.example/pay/{orderId}?code={deepLinkCode}', null));
+    }
+
     public function testAnUnknownPlaceholderIsRefused(): void
     {
         $this->expectException(InvalidConfigurationException::class);

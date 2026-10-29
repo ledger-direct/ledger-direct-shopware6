@@ -94,8 +94,14 @@ final class HeadlessTargets
     }
 
     /**
-     * Why a template cannot be used, or null when it can: an absolute
-     * http(s) URL, every required placeholder present, no unknown one.
+     * Why a template cannot be used, or null when it can: an absolute https
+     * URL (http only for a local development host), every required
+     * placeholder present, no unknown one.
+     *
+     * The redirect carries the order's deepLinkCode and, in {returnUrl},
+     * Shopware's payment token: over plain http both would cross the wire in
+     * the clear for anyone on the path to read. A front end on localhost is
+     * the one place that is not a wire.
      *
      * @param list<string> $allowed
      * @param list<string> $required
@@ -103,9 +109,14 @@ final class HeadlessTargets
     public static function problem(string $template, array $allowed, array $required): ?string
     {
         $scheme = strtolower((string) parse_url($template, PHP_URL_SCHEME));
+        $host = parse_url($template, PHP_URL_HOST);
 
-        if (!in_array($scheme, ['http', 'https'], true) || parse_url($template, PHP_URL_HOST) === null) {
-            return 'must be an absolute URL starting with https:// or http://';
+        if (!in_array($scheme, ['http', 'https'], true) || !is_string($host) || $host === '') {
+            return 'must be an absolute URL starting with https://';
+        }
+
+        if ($scheme === 'http' && !self::isLocalHost($host)) {
+            return 'must use https:// — the code and the payment token it carries must not cross the wire in the clear (http:// is allowed for localhost only)';
         }
 
         preg_match_all('/\{([^{}]*)\}/', $template, $matches);
@@ -124,5 +135,14 @@ final class HeadlessTargets
         }
 
         return null;
+    }
+
+    /** localhost, 127.0.0.1, ::1, and the .localhost and .test names a developer's machine answers for. */
+    private static function isLocalHost(string $host): bool
+    {
+        $host = strtolower(trim($host, '[]'));
+
+        return $host === 'localhost' || $host === '127.0.0.1' || $host === '::1'
+            || str_ends_with($host, '.localhost') || str_ends_with($host, '.test');
     }
 }

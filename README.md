@@ -245,8 +245,10 @@ channel**: two URL templates, filled in URL-encoded, empty by default.
 | Payment page of the external front end | `{orderId}`, `{deepLinkCode}` required, `{returnUrl}` optional | the redirect `handle-payment` answers after the order |
 | Order page of the external front end | `{deepLinkCode}` required, `{orderId}` optional | the `redirect` of `check` once the order no longer waits and the payment token has expired; while the token lives, `redirect` is Shopware's finalize route, which lands on the `finishUrl` you gave `handle-payment`, whatever its origin |
 
-A template that is not an absolute URL or lacks a required placeholder is refused when saved: without
-the code a guest could never open the page. Both targets come from the configuration alone, never from
+A template that is not an absolute `https://` URL or lacks a required placeholder is refused when saved:
+without the code a guest could never open the page, and over plain `http://` the code and the payment
+token in `{returnUrl}` would cross the wire in the clear (`http://` is accepted for `localhost`, `127.0.0.1`
+and `.localhost`/`.test` names, a front end on the developer's own machine). Both targets come from the configuration alone, never from
 the request or the payment token, so the payment page cannot become an open redirect. Set the templates
 on the headless sales channel only; the storefront's channels keep their own pages.
 

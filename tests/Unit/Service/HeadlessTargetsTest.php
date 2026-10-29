@@ -61,7 +61,10 @@ class HeadlessTargetsTest extends TestCase
         $required = HeadlessTargets::PAYMENT_PAGE_REQUIRED;
 
         $this->assertNull(HeadlessTargets::problem('https://f.example/pay/{orderId}?c={deepLinkCode}', $allowed, $required));
-        $this->assertNull(HeadlessTargets::problem('http://localhost:3000/pay/{orderId}/{deepLinkCode}/{returnUrl}', $allowed, $required), 'http for a development front end');
+        $this->assertNull(HeadlessTargets::problem('http://localhost:3000/pay/{orderId}/{deepLinkCode}/{returnUrl}', $allowed, $required), 'http for a front end on this machine');
+        $this->assertNull(HeadlessTargets::problem('http://shop.test/pay/{orderId}/{deepLinkCode}', $allowed, $required), 'a .test name is this machine too');
+        $this->assertStringStartsWith('must use https://', (string) HeadlessTargets::problem('http://frontend.example/pay/{orderId}/{deepLinkCode}', $allowed, $required), 'plain http to a real host would carry the code in the clear');
+        $this->assertStringStartsWith('must use https://', (string) HeadlessTargets::problem('http://192.168.1.20/pay/{orderId}/{deepLinkCode}', $allowed, $required));
         $this->assertSame('must contain {orderId}', HeadlessTargets::problem('https://f.example/pay?c={deepLinkCode}', $allowed, $required));
         $this->assertSame('must contain {deepLinkCode}', HeadlessTargets::problem('https://f.example/pay/{orderId}', $allowed, $required));
         $this->assertStringStartsWith('must be an absolute URL', (string) HeadlessTargets::problem('/pay/{orderId}?c={deepLinkCode}', $allowed, $required));
