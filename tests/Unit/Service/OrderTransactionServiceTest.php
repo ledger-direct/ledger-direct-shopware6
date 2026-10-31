@@ -4,6 +4,8 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Service;
 
 use Exception;
 use GuzzleHttp\Psr7\HttpFactory;
+use Doctrine\DBAL\Connection;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -23,6 +25,7 @@ use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Interledger\Testing\FakeOpenPayments;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
@@ -69,6 +72,9 @@ class OrderTransactionServiceTest extends TestCase
 
     private InMemoryCache $throttleStore;
 
+    /** The Interledger wallet a test wants the gateway to use, if any. */
+    private ?FakeOpenPayments $wallet = null;
+
     protected function setUp(): void
     {
         $this->context = new Context(new SystemSource());
@@ -76,6 +82,7 @@ class OrderTransactionServiceTest extends TestCase
         $this->transactionRepository = Mockery::mock(XrplTransactionRepositoryInterface::class);
         $this->httpClient = new StubHttpClient(2.5);
         $this->throttleStore = new InMemoryCache();
+        $this->wallet = null;
     }
 
     protected function tearDown(): void
@@ -576,15 +583,77 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertSame(2, $this->httpClient->ledgerRequests, 'each chain is throttled on its own mark');
     }
 
+    /**
+     * Interledger: the order is quoted 1:1 against the wallet's own currency
+     * (no oracle), an incoming payment is created for it, and the record is
+     * Lesart A — the incoming payment's URL as the destination account, the
+     * reference as the identifier, the amount as an issued currency whose
+     * issuer is the merchant's wallet address.
+     */
+    public function testPrepareQuotesAnInterledgerOrderAgainstAnIncomingPayment(): void
+    {
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2);
+        $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'));
+        $this->expectUpsertCapturing($customFields);
+
+        $this->createService(Fixtures::getStaticInterledgerConfiguration())->prepareOrderTransaction(
+            $this->givenOrder(),
+            $orderTransaction,
+            $this->context
+        );
+
+        $intent = $customFields[0]['customFields'][OrderTransactionService::CUSTOM_FIELDS_KEY];
+        $incomingPayment = $this->wallet->onlyPayment();
+
+        $this->assertSame('interledger-eur-payment', $intent['type']);
+        $this->assertSame('INTERLEDGER', $intent['chain']);
+        $this->assertSame('testnet', $intent['network']);
+        $this->assertSame('EUR', $intent['base_asset']);
+        $this->assertSame('EUR/EUR', $intent['pairing']);
+        $this->assertSame(1.0, $intent['exchange_rate'], 'a EUR wallet takes a EUR order at par');
+        $this->assertSame(
+            ['currency' => 'EUR', 'value' => '100.00', 'issuer' => Fixtures::INTERLEDGER_WALLET],
+            $intent['amount_requested']
+        );
+        $this->assertSame($incomingPayment->url, $intent['destination_account'], 'the payment link, per order');
+        $this->assertGreaterThan(0, $intent['destination_tag'], 'a reference from the counter');
+        $this->assertSame(
+            'LD-' . $intent['destination_tag'],
+            $incomingPayment->metadata['externalRef'],
+            'the reference travels in the incoming payment'
+        );
+        $this->assertSame('10000', $this->wallet->created[0]['amount']->value, 'unscaled, at the asset scale');
+        $this->assertNull($intent['hash']);
+    }
+
     private function createService(?array $configuration = null): OrderTransactionService
     {
         $httpClient = $this->httpClient;
         $httpFactory = new HttpFactory();
         $logger = new NullLogger();
 
-        $configProvider = new ShopwareConfigProvider(
-            ConfigurationServiceMock::createInstance($configuration ?? Fixtures::getStaticConfiguration())
+        $configurationService = ConfigurationServiceMock::createInstance($configuration ?? Fixtures::getStaticConfiguration());
+        $configProvider = new ShopwareConfigProvider($configurationService);
+
+        // The reference counter is one atomic statement read back through LAST_INSERT_ID();
+        // see Port\DbalInterledgerRepository. Its own contract test covers the semantics.
+        $connection = Mockery::mock(Connection::class);
+        $connection->shouldReceive('executeStatement')->andReturn(1);
+        $connection->shouldReceive('fetchOne')->with('SELECT LAST_INSERT_ID()')->andReturn('1001');
+
+        $interledger = new InterledgerGateway(
+            $configurationService,
+            $configProvider,
+            $httpClient,
+            $httpFactory,
+            $connection,
+            new InMemoryCache(),
+            $logger,
         );
+
+        if ($this->wallet !== null) {
+            $interledger->useWallet($this->wallet);
+        }
 
         $stellarRepository = new InMemoryStellarPaymentRepository();
         $stellarIntents = new StellarPaymentIntentService(
@@ -617,6 +686,7 @@ class OrderTransactionServiceTest extends TestCase
             $syncService,
             $stellarIntents,
             $stellarSync,
+            $interledger,
             new SyncThrottle($this->throttleStore, $logger),
             $logger,
             new PaymentIntentService(

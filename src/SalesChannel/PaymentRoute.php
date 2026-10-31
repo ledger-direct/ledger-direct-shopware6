@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\SalesChannel;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -215,7 +215,7 @@ class PaymentRoute
         /** @var PaymentIntent $intent the record as the sync left it */
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
-        if (ChainCatalog::forType($intent->type) === null) {
+        if (ChainRegistry::forType($intent->type) === null) {
             throw new NoPaymentIntentException($orderId);
         }
 

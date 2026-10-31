@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
@@ -61,7 +61,7 @@ class PreviewChainActivator implements EventSubscriberInterface
         }
 
         $short = substr($key, strlen(self::DOMAIN));
-        foreach (ChainCatalog::chains() as $chain) {
+        foreach (ChainRegistry::chains() as $chain) {
             if ($short === strtolower($chain->chain) . 'Enabled' && PaymentMethodInstaller::isPreviewChain($chain->chain)) {
                 return $chain->chain;
             }

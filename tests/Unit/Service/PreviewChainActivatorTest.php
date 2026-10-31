@@ -43,11 +43,22 @@ class PreviewChainActivatorTest extends TestCase
         $activator->onChanged(new SystemConfigChangedEvent('core.basicInformation.shopName', 'Stellar Shop', null));
     }
 
+    public function testSwitchingInterledgerOnInstallsItsMethodsToo(): void
+    {
+        /** @var PaymentMethodInstaller&Mockery\MockInterface $installer */
+        $installer = Mockery::mock(PaymentMethodInstaller::class);
+        $installer->shouldReceive('installChain')->once()->with('INTERLEDGER', Mockery::type(Context::class));
+
+        (new PreviewChainActivator($installer, new NullLogger()))
+            ->onChanged(new SystemConfigChangedEvent('LedgerDirect.config.interledgerEnabled', true, null));
+    }
+
     public function testTheKeyRuleIsNamedAfterTheCatalogue(): void
     {
         $this->assertSame('STELLAR', PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', '1'));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', 0));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xrplEnabled', true), 'XRPL is released, not a preview');
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xahauEnabled', true), 'Xahau is released, its method comes with the plugin');
+        $this->assertSame('INTERLEDGER', PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.interledgerEnabled', '1'));
     }
 }

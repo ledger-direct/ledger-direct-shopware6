@@ -127,9 +127,15 @@
                                 </div>
                             {% endif %}
 
+                            {#
+                                The steps are numbered as they are rendered: a chain whose
+                                customer never types an identifier (Interledger) has no step 2,
+                                and the issuer step must not then be called "3".
+                            #}
+                            {% set stepNo = 1 %}
                             <ol class="ld-steps">
                                 <li>
-                                    <div class="ld-field-label"><span class="ld-step-no">1</span> {{ "LedgerDirect.paymentPage.stepAccount"|trans }}</div>
+                                    <div class="ld-field-label"><span class="ld-step-no">{{ stepNo }}</span> {{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".account")|trans }}</div>
                                     <div class="ld-field">
                                         <span class="ld-field-value" data-ld-account data-value="{{ destinationAccount }}">{{ destinationAccount }}</span>
                                         <button type="button" class="ld-copy" data-copy="account" aria-label="{{ "LedgerDirect.paymentPage.copyAccount"|trans|striptags }}">
@@ -137,8 +143,10 @@
                                         </button>
                                     </div>
                                 </li>
+                                {% if identifierRequired %}
+                                {% set stepNo = stepNo + 1 %}
                                 <li>
-                                    <div class="ld-field-label"><span class="ld-step-no">2</span> {{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".step")|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
+                                    <div class="ld-field-label"><span class="ld-step-no">{{ stepNo }}</span> {{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".step")|trans }} <span class="ld-badge ld-badge--required">{{ "LedgerDirect.paymentPage.requiredBadge"|trans }}</span></div>
                                     <div class="ld-field ld-field--key">
                                         <span class="ld-field-value" data-ld-tag data-value="{{ destinationTag }}">{{ destinationTag }}</span>
                                         <button type="button" class="ld-copy" data-copy="tag" aria-label="{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".copy")|trans|striptags }}">
@@ -147,9 +155,11 @@
                                     </div>
                                     <p class="ld-hint">{{ ("LedgerDirect.paymentPage.identifier." ~ chain ~ ".hint")|trans }}</p>
                                 </li>
+                                {% endif %}
                                 {% if issuer %}
+                                    {% set stepNo = stepNo + 1 %}
                                     <li>
-                                        <div class="ld-field-label"><span class="ld-step-no">3</span> {{ "LedgerDirect.paymentPage.stepIssuer"|trans }}</div>
+                                        <div class="ld-field-label"><span class="ld-step-no">{{ stepNo }}</span> {{ "LedgerDirect.paymentPage.stepIssuer"|trans }}</div>
                                         <div class="ld-field">
                                             <span class="ld-field-value">{{ assetLabel }} · <span data-ld-issuer data-value="{{ issuer }}">{{ issuer }}</span></span>
                                             <button type="button" class="ld-copy" data-copy="issuer" aria-label="{{ "LedgerDirect.paymentPage.copyIssuer"|trans|striptags }}">
