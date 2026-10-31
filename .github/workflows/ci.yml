@@ -88,14 +88,16 @@ jobs:
       # at all, so its tests need it installed in the shop. The plugin declares it as a dev
       # dependency, but a shop installs a plugin without dev dependencies, hence this step.
       # It comes from its repository until it is on Packagist, and `minimum-stability dev`
-      # is what lets `dev-main` resolve before it has its first tag.
+      # is what lets a branch resolve before it has its first tag. The package's own review
+      # branch is in the constraint while its pull request is open; `dev-main` takes over on
+      # the merge, `^0.1` on the tag, and the whole constraint shrinks to `^0.1` then.
       - name: Install the Interledger preview package
         run: |
           docker exec shopware bash -lc 'cd /var/www/html \
             && composer config repositories.ledger-direct-interledger vcs https://github.com/ledger-direct/ledger-direct-interledger \
             && composer config minimum-stability dev \
             && composer config prefer-stable true \
-            && COMPOSER_ALLOW_SUPERUSER=1 composer require --dev --no-interaction "hardcastle/ledger-direct-interledger:^0.1 || dev-main"'
+            && COMPOSER_ALLOW_SUPERUSER=1 composer require --dev --no-interaction "hardcastle/ledger-direct-interledger:^0.1 || dev-main || dev-feat/open-payments-chain"'
           docker exec shopware bash -lc 'cd /var/www/html && php -v | head -1 && composer show hardcastle/ledger-direct-interledger | grep -m1 versions'
 
       - name: PHPUnit — Unit
