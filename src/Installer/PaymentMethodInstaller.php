@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Installer;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\InterledgerPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
@@ -22,10 +24,13 @@ use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 
 /**
- * One payment method per (chain, asset) the core's ChainCatalog lists for a
- * chain this plugin has a handler for. The catalogue is the only list of
+ * One payment method per (chain, asset) the plugin's ChainRegistry lists for
+ * a chain this plugin has a handler for. The registry is the only list of
  * assets; what the plugin holds is the mapping onto Shopware's objects: the
  * payment method id, the technical name, the handler per chain.
+ *
+ * A chain whose package is not installed is not in the registry, so it has
+ * no methods — HANDLER_BY_CHAIN naming it changes nothing on its own.
  *
  * The three XRPL methods keep the ids they have had since the first release
  * — orders reference them. Every later method derives its id from the
@@ -47,6 +52,7 @@ class PaymentMethodInstaller
     public const HANDLER_BY_CHAIN = [
         ChainCatalog::XRPL => XrplPaymentHandler::class,
         ChainCatalog::STELLAR => StellarPaymentHandler::class,
+        ChainRegistry::INTERLEDGER => InterledgerPaymentHandler::class,
     ];
 
     /**
@@ -57,7 +63,7 @@ class PaymentMethodInstaller
      * (PreviewChainActivator), and their card says "Preview". Removing a
      * chain from this list is what releases it.
      */
-    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR];
+    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR, ChainRegistry::INTERLEDGER];
 
     /** Ids from before the catalogue, kept for the orders that carry them. */
     private const LEGACY_ID_BY_TYPE = [
@@ -115,7 +121,7 @@ class PaymentMethodInstaller
     public static function supportedChains(): array
     {
         return array_values(array_filter(
-            ChainCatalog::chains(),
+            ChainRegistry::chains(),
             static fn (ChainDescriptor $chain): bool => isset(self::HANDLER_BY_CHAIN[$chain->chain]),
         ));
     }

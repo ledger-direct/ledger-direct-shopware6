@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Presentation;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentUri;
@@ -57,7 +57,7 @@ final class PaymentPageView
         PaymentIntent $intent,
         SalesChannelContext $context,
     ): array {
-        $chainAndAsset = ChainCatalog::forType($intent->type);
+        $chainAndAsset = ChainRegistry::forType($intent->type);
 
         if ($chainAndAsset === null) {
             throw new InvalidArgumentException('LedgerDirect: no asset in the catalogue for intent type ' . $intent->type);
@@ -71,7 +71,7 @@ final class PaymentPageView
         $amountPaid = AmountFormatter::amountPaid($intent);
         $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
         $isToken = !$asset->native;
-        $isXrpl = $intent->chain === ChainCatalog::XRPL;
+        $isXrpl = $intent->chain === ChainRegistry::XRPL;
         $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
 
         return [
@@ -115,13 +115,42 @@ final class PaymentPageView
             'destinationAccount' => $intent->destinationAccount,
             // The order identifier as shown: the destination tag on the XRPL, the memo id on Stellar.
             'destinationTag' => $intent->destinationTag,
-            // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
-            'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
+            /*
+             * Whether the customer has to put that identifier on their payment. On a
+             * ledger they do, and forgetting it loses the money. Over Interledger they
+             * never see it: the reference travels inside the incoming payment the shop
+             * created, and the destination account is a link that already carries it.
+             */
+            'identifierRequired' => $intent->chain !== ChainRegistry::INTERLEDGER,
+            /*
+             * Tokens: the quoted issuer and currency, from the intent (source: the core's
+             * registry), never typed in. Empty over Interledger: the issuer there is the
+             * merchant's own wallet address, and the page's issuer step means "a token
+             * issuer you need a trust line to", which is not a thing a customer paying a
+             * wallet address has to know. It stays in the record's amount either way.
+             */
+            'issuer' => $isToken && $intent->chain !== ChainRegistry::INTERLEDGER
+                ? (string) $intent->amountRequested['issuer']
+                : null,
             // XRPL only, read by the browser-wallet module alone: the token's hex code and, for XRP, the amount in drops.
             'currencyHex' => $isXrpl && $isToken ? (string) $intent->amountRequested['currency'] : null,
             'amountDrops' => $isXrpl && !$isToken ? XrplAmount::xrpToDrops($amountDue) : null,
-            // The payment request behind the QR code: the XRPL one or the SEP-0007 one, built by the core.
-            'paymentUri' => $isXrpl ? PaymentUri::forIntent($intent, $amountDue) : StellarPaymentUri::forIntent($intent, $amountDue),
+            /*
+             * The payment request behind the QR code. The ledger chains need one built
+             * around account, amount and identifier; Interledger does not — the incoming
+             * payment's URL *is* the request every Open Payments wallet understands, with
+             * the amount and the expiry already in it. It therefore also does not follow
+             * a partial payment down to the shortfall: the resource asks for what it was
+             * created for, and the page says the rest in words.
+             */
+            'paymentUri' => match ($intent->chain) {
+                ChainRegistry::XRPL => PaymentUri::forIntent($intent, $amountDue),
+                ChainRegistry::STELLAR => StellarPaymentUri::forIntent($intent, $amountDue),
+                ChainRegistry::INTERLEDGER => $intent->destinationAccount,
+                default => throw new InvalidArgumentException(
+                    'LedgerDirect: no payment request for chain ' . $intent->chain
+                ),
+            },
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
         ];

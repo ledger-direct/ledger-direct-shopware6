@@ -31,6 +31,8 @@ class PaymentPageViewTest extends TestCase
 
     private const USDC = ['currency' => '5553444300000000000000000000000000000000', 'issuer' => 'rHuGNhqTG32mfmAvWA8hUyWRLV3tCSwKQt'];
 
+    private const INCOMING_PAYMENT = 'https://ilp.example.test/0102/incoming-payments/cc294351-d4e2-411e-ae25-14b5118c8776';
+
     /**
      * What the contract's attributes and blocks are rendered from. A key
      * removed here is a key the Twig page and every headless page lose.
@@ -40,7 +42,7 @@ class PaymentPageViewTest extends TestCase
         'state', 'secondsLeft', 'hasExpiry', 'quoteSeconds',
         'amountRequestedDisplay', 'amountPaidDisplay', 'shortfallDisplay', 'amountDueDisplay', 'paidShare', 'wrongToken', 'exchangeRateDisplay',
         'orderId', 'orderNumber', 'total', 'currencyCode', 'currencySymbol', 'network', 'explorerBase',
-        'destinationAccount', 'destinationTag', 'issuer', 'currencyHex', 'amountDrops', 'paymentUri',
+        'destinationAccount', 'destinationTag', 'identifierRequired', 'issuer', 'currencyHex', 'amountDrops', 'paymentUri',
         'amountRequested', 'exchangeRate',
     ];
 
@@ -102,6 +104,28 @@ class PaymentPageViewTest extends TestCase
         $this->assertSame('10000000', $values['amountDrops']);
         $this->assertStringContainsString('amount=10', $values['paymentUri']);
         $this->assertSame(75, $values['paidShare']);
+    }
+
+    /**
+     * Interledger: the incoming payment's URL is both the receiving account
+     * and the payment request, there is no identifier for the customer to
+     * copy, and nothing on the page is XRPL-specific.
+     */
+    public function testAnInterledgerPageIsAPaymentLinkAndNoIdentifierStep(): void
+    {
+        $values = $this->view()->values($this->order(), $this->transaction(), $this->interledger(), $this->salesChannel('Beispielshop'));
+
+        $this->assertSame(self::CONTRACT_KEYS, array_keys($values), 'the value set, in its order');
+        $this->assertSame('INTERLEDGER', $values['chain']);
+        $this->assertSame('eur', $values['mode']);
+        $this->assertSame(self::INCOMING_PAYMENT, $values['destinationAccount']);
+        $this->assertSame(self::INCOMING_PAYMENT, $values['paymentUri'], 'the link is the request, no builder');
+        $this->assertFalse($values['identifierRequired'], 'the reference is in the request, not in the customer\'s hands');
+        $this->assertNull($values['issuer'], 'the payee is the wallet address, not a token issuer');
+        $this->assertNull($values['currencyHex']);
+        $this->assertNull($values['amountDrops']);
+        $this->assertSame('', $values['explorerBase'], 'no per-payment ledger entry to link to');
+        $this->assertSame('40.00', $values['amountRequestedDisplay']);
     }
 
     public function testAnIntentOfAnUnknownTypeIsRefused(): void
@@ -168,6 +192,23 @@ class PaymentPageViewTest extends TestCase
             exchangeRate: 2.5,
             amountRequested: 40.0,
             destinationAccount: 'rMerchant',
+            destinationTag: 114729,
+            expiry: time() + 300,
+        );
+    }
+
+    private function interledger(): PaymentIntent
+    {
+        return PaymentIntent::quote(
+            type: 'interledger-eur-payment',
+            chain: 'INTERLEDGER',
+            network: 'testnet',
+            baseAsset: 'EUR',
+            quoteCurrency: 'EUR',
+            pairing: 'EUR/EUR',
+            exchangeRate: 1.0,
+            amountRequested: ['currency' => 'EUR', 'value' => '40.00', 'issuer' => 'https://ilp.example.test/merchant'],
+            destinationAccount: self::INCOMING_PAYMENT,
             destinationTag: 114729,
             expiry: time() + 300,
         );

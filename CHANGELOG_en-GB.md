@@ -1,3 +1,26 @@
+# 1.10.0
+- Interledger as a third chain, as a **preview and a prototype**: the shop takes an
+  [Open Payments](https://openpayments.dev) payment into the merchant's own wallet — a Dassie node, the
+  Interledger test wallet, or any Rafiki-based wallet. Test money only, and off until the new card's
+  switch is on. The chain's services come from `hardcastle/ledger-direct-interledger`, an optional
+  package the shop installs with `composer require`; without it nothing of the card, the payment
+  methods or the chain exists
+- A card "LedgerDirect - Interledger (Preview)": the wallet address (a payment pointer is accepted and
+  stored as its URL), the key id the wallet registered and the private key as base64 of its PEM. Only the
+  payment method in the currency the wallet address actually holds is offered at checkout, and a wallet
+  that cannot be reached offers none — the same fail-closed rule as a Stellar trust line that cannot be
+  checked
+- The payment page over Interledger is one step: the incoming payment's URL is the payment link and the
+  QR code, with amount, payee and expiry inside it. The customer copies no identifier — the order's
+  reference travels in the payment request the shop created. The record is the same schema v1 every
+  LedgerDirect plugin reads, with the incoming payment as the destination account and the received
+  amount as an issued currency of the merchant's wallet
+- The plugin's chain list is its own (`Chain\ChainRegistry`) instead of the core's `ChainCatalog`: a chain
+  can now come from a package next to the core. Nothing changes for the XRPL and Stellar
+- Known gaps of the prototype: no top-up after a quote expires (an expired incoming payment accepts
+  nothing), no fiat conversion (a EUR wallet takes EUR orders), no settlement proof per payment, no
+  browser wallet on the payment page
+
 # 1.9.0
 - Store API for headless front ends, second part. `check` carries `hash` once a payment is on record:
   the payment page's success view shows the transaction with its explorer link — it had a row for that

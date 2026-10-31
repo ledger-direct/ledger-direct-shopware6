@@ -171,4 +171,33 @@ class ConfigurationValidatorTest extends TestCase
     {
         return new ConfigurationValidator(ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration()), new NullLogger());
     }
+
+    /**
+     * An Interledger wallet address is an https URL. A payment pointer is a
+     * way of writing one, so it is stored as the URL it means; anything else
+     * is refused like a malformed ledger account.
+     */
+    public function testAnInterledgerWalletAddressIsCheckedAndNormalised(): void
+    {
+        $event = new BeforeSystemConfigChangedEvent(
+            'LedgerDirect.config.interledgerTestnetDestinationAccount',
+            '  $ilp.interledger-test.dev/acme/  ',
+            null
+        );
+
+        $this->validator()->onBeforeChange($event);
+
+        $this->assertSame('https://ilp.interledger-test.dev/acme', $event->getValue());
+    }
+
+    public function testSomethingThatIsNoWalletAddressIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent(
+            'LedgerDirect.config.interledgerTestnetDestinationAccount',
+            'http://ilp.interledger-test.dev/acme',
+            null
+        ));
+    }
 }

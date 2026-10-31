@@ -114,6 +114,7 @@ services:
             - '@.inner'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
             - '@Hardcastle\LedgerDirect\Core\Stellar\AccountInspector'
+            - '@Hardcastle\LedgerDirect\Chain\InterledgerGateway'
             - '@logger'
 
     # Refuses a receiving account that is not one, the moment it is saved.
@@ -172,6 +173,29 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Stellar\HorizonClient'
             - '@logger'
             - '@ledger_direct.rate_cache'
+
+    # Interledger: the preview chain whose services come from the optional package
+    # hardcastle/ledger-direct-interledger. Only this gateway is a service — it names
+    # none of the package's classes in its constructor, so it is safe to build in an
+    # installation that does not have the package. See Chain\InterledgerGateway.
+    Hardcastle\LedgerDirect\Chain\InterledgerGateway:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - '@shopware.app_system.guzzle'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+            - '@Doctrine\DBAL\Connection'
+            - '@ledger_direct.rate_cache'
+            - '@logger'
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\InterledgerPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
+        tags:
+            - shopware.payment.method
 
     Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler:
         arguments:
@@ -279,5 +303,6 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncService'
             - '@Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService'
             - '@Hardcastle\LedgerDirect\Core\Stellar\SyncService'
+            - '@Hardcastle\LedgerDirect\Chain\InterledgerGateway'
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle'
             - '@logger'

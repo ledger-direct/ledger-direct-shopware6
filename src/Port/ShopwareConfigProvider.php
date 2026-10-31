@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Port;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Port\ConfigProviderInterface;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
 
@@ -12,8 +12,9 @@ use Hardcastle\LedgerDirect\Service\ConfigurationService;
  * configuration actually lives.
  *
  * Chain-generic since 1.6.0. The port has taken `$chain` since core 0.1; the
- * plugin used to refuse everything but XRPL. Now every chain the core's
- * ChainCatalog lists is answered from its own configuration card, and
+ * plugin used to refuse everything but XRPL. Now every chain the plugin's
+ * ChainRegistry lists — the core's catalogue plus Interledger when its
+ * package is installed — is answered from its own configuration card, and
  * "chain switched off" is expressed through the port as it always could
  * be: no receiving account, no asset enabled. The core needs no notion of
  * an enabled chain for that.
@@ -21,7 +22,7 @@ use Hardcastle\LedgerDirect\Service\ConfigurationService;
 class ShopwareConfigProvider implements ConfigProviderInterface
 {
     /** The chain the plugin's XRPL-only entry points (console commands) still speak. */
-    public const CHAIN = ChainCatalog::XRPL;
+    public const CHAIN = ChainRegistry::XRPL;
 
     private ConfigurationService $configurationService;
 
@@ -36,7 +37,7 @@ class ShopwareConfigProvider implements ConfigProviderInterface
      */
     public function getNetwork(string $chain): string
     {
-        if (!ChainCatalog::has($chain)) {
+        if (!ChainRegistry::has($chain)) {
             return 'testnet';
         }
 
@@ -49,7 +50,7 @@ class ShopwareConfigProvider implements ConfigProviderInterface
      */
     public function getDestinationAccount(string $chain): string
     {
-        if (!ChainCatalog::has($chain) || !$this->configurationService->isChainEnabled($chain)) {
+        if (!ChainRegistry::has($chain) || !$this->configurationService->isChainEnabled($chain)) {
             return '';
         }
 
@@ -69,7 +70,7 @@ class ShopwareConfigProvider implements ConfigProviderInterface
             return false;
         }
 
-        $descriptor = ChainCatalog::chain($chain);
+        $descriptor = ChainRegistry::chain($chain);
         $code = strtoupper($baseAsset);
 
         if (!$descriptor->hasAsset($code)) {

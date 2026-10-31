@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Presentation;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -40,7 +40,7 @@ final class PaymentInfoPresenter
             // with its issuer, or the native asset when a token order was paid with XRP.
             $paidAsset = is_array($intent->amountPaid)
                 ? ['currency' => self::currencyName((string) ($intent->amountPaid['currency'] ?? '')), 'issuer' => (string) ($intent->amountPaid['issuer'] ?? '')]
-                : ['currency' => ChainCatalog::has($intent->chain) ? ChainCatalog::chain($intent->chain)->nativeAsset : $intent->chain, 'issuer' => null];
+                : ['currency' => ChainRegistry::has($intent->chain) ? ChainRegistry::chain($intent->chain)->nativeAsset : $intent->chain, 'issuer' => null];
         }
 
         return [

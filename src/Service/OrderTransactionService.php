@@ -3,13 +3,16 @@
 namespace Hardcastle\LedgerDirect\Service;
 
 use Exception;
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
+use Hardcastle\LedgerDirect\Interledger\IncomingPaymentService as InterledgerIncomingPaymentService;
+use Hardcastle\LedgerDirect\Interledger\ReceiptSyncService as InterledgerReceiptSyncService;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -54,6 +57,8 @@ class OrderTransactionService
 
     private StellarSyncService $stellarSync;
 
+    private InterledgerGateway $interledger;
+
     private SyncThrottle $syncThrottle;
 
     private LoggerInterface $logger;
@@ -61,8 +66,13 @@ class OrderTransactionService
     /**
      * One intent service and one sync per chain; which pair serves an order
      * is decided by its payment method (a fresh quote) or by the chain the
-     * stored intent names (everything after). One throttle for both: its
-     * keys are (network, account), and an `r…` and a `G…` never collide.
+     * stored intent names (everything after). One throttle for all of them:
+     * its keys are (network, account), and an `r…`, a `G…` and a wallet
+     * address never collide.
+     *
+     * Interledger comes in as a gateway rather than as two services,
+     * because its package is optional: nothing of it is constructed until
+     * an order on that chain asks for it (see Chain\InterledgerGateway).
      */
     public function __construct(
         EntityRepository $orderRepository,
@@ -72,6 +82,7 @@ class OrderTransactionService
         SyncService $xrplSync,
         StellarPaymentIntentService $stellarIntents,
         StellarSyncService $stellarSync,
+        InterledgerGateway $interledger,
         SyncThrottle $syncThrottle,
         LoggerInterface $logger
     ) {
@@ -82,6 +93,7 @@ class OrderTransactionService
         $this->xrplSync = $xrplSync;
         $this->stellarIntents = $stellarIntents;
         $this->stellarSync = $stellarSync;
+        $this->interledger = $interledger;
         $this->syncThrottle = $syncThrottle;
         $this->logger = $logger;
     }
@@ -268,22 +280,25 @@ class OrderTransactionService
         }
     }
 
-    private function intentServiceFor(string $chain): PaymentIntentService|StellarPaymentIntentService
-    {
+    private function intentServiceFor(
+        string $chain
+    ): PaymentIntentService|StellarPaymentIntentService|InterledgerIncomingPaymentService {
         return match ($chain) {
-            ChainCatalog::XRPL => $this->xrplIntents,
-            ChainCatalog::STELLAR => $this->stellarIntents,
+            ChainRegistry::XRPL => $this->xrplIntents,
+            ChainRegistry::STELLAR => $this->stellarIntents,
+            ChainRegistry::INTERLEDGER => $this->interledger->incomingPaymentService(),
             // The installer only creates methods for chains in HANDLER_BY_CHAIN,
             // so this is a wiring mistake, not a merchant's configuration.
             default => throw new Exception('No payment services for chain ' . $chain),
         };
     }
 
-    private function syncFor(string $chain): SyncService|StellarSyncService
+    private function syncFor(string $chain): SyncService|StellarSyncService|InterledgerReceiptSyncService
     {
         return match ($chain) {
-            ChainCatalog::XRPL => $this->xrplSync,
-            ChainCatalog::STELLAR => $this->stellarSync,
+            ChainRegistry::XRPL => $this->xrplSync,
+            ChainRegistry::STELLAR => $this->stellarSync,
+            ChainRegistry::INTERLEDGER => $this->interledger->receiptSync(),
             default => throw new Exception('No payment services for chain ' . $chain),
         };
     }

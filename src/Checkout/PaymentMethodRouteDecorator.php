@@ -2,7 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Checkout;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Stellar\AccountInspector;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
@@ -23,6 +24,12 @@ use Throwable;
  * Asked here, at the list of payment methods, it keeps a method the merchant
  * turned off out of the checkout instead of failing when the customer has
  * already chosen it. Methods that are not ours pass through untouched.
+ *
+ * Interledger has a pre-flight question of its own: a wallet address holds
+ * exactly one asset, so only the method in that asset can be paid at all.
+ * The wallet is asked (and cached for minutes), and a wallet that cannot be
+ * reached offers nothing — the same fail-closed rule as a trust line that
+ * cannot be checked.
  */
 class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 {
@@ -30,6 +37,7 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         private readonly AbstractPaymentMethodRoute $decorated,
         private readonly ShopwareConfigProvider $configProvider,
         private readonly AccountInspector $accountInspector,
+        private readonly InterledgerGateway $interledger,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -71,7 +79,11 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
             return false;
         }
 
-        if ($chain->chain !== ChainCatalog::STELLAR || $asset->native) {
+        if ($chain->chain === ChainRegistry::INTERLEDGER) {
+            return $asset->code === $this->interledger->walletAssetCode();
+        }
+
+        if ($chain->chain !== ChainRegistry::STELLAR || $asset->native) {
             return true;
         }
 
