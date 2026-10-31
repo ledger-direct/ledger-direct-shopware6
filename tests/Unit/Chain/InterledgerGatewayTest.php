@@ -93,6 +93,27 @@ class InterledgerGatewayTest extends TestCase
         $this->assertSame('warning', $this->logger->records()[0]['level']);
     }
 
+    /**
+     * The checkout's payment-method list asks for every Interledger method, so
+     * a wallet that is down must be asked once and not once per method.
+     */
+    public function testAnUnreachableWalletIsRememberedForAMoment(): void
+    {
+        $wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2);
+        $wallet->failWith = new OpenPaymentsException('503 Service Unavailable');
+
+        self::assertNull($this->gateway(Fixtures::getStaticInterledgerConfiguration(), $wallet)->walletAssetCode());
+        self::assertNull($this->gateway(Fixtures::getStaticInterledgerConfiguration(), $wallet)->walletAssetCode());
+
+        // Two gateways stand for two requests; they share the cache, and only a call that
+        // actually asked the wallet logs. (The fake's own counter sees successful reads only.)
+        $attempts = array_filter(
+            $this->logger->records(),
+            static fn (array $record): bool => str_contains($record['message'], 'could not read the Interledger wallet'),
+        );
+        self::assertCount(1, $attempts, 'the second call reads the cache, not the wallet');
+    }
+
     public function testTheServicesComeOutOfThePackageWhenItIsConfigured(): void
     {
         $gateway = $this->gateway(Fixtures::getStaticInterledgerConfiguration(), new FakeOpenPayments());

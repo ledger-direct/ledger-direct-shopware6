@@ -41,6 +41,16 @@ final class InterledgerGateway
 
     private const ASSET_CACHE_TTL = 300;
 
+    /**
+     * What is remembered when the wallet could not be read, and for how long.
+     * Without it, every payment-method list of every checkout retries a wallet
+     * that is down and waits for it to fail, while the answer is already known:
+     * offer nothing. Short, so a wallet that comes back is offered again soon.
+     */
+    private const UNREACHABLE = 'unreachable';
+
+    private const UNREACHABLE_CACHE_TTL = 30;
+
     public const KEY_ID_CONFIG = 'interledgerKeyId';
 
     public const PRIVATE_KEY_CONFIG = 'interledgerPrivateKey';
@@ -127,6 +137,10 @@ final class InterledgerGateway
         try {
             $cached = $this->cache->get($key);
 
+            if ($cached === self::UNREACHABLE) {
+                return null;
+            }
+
             if (is_string($cached) && $cached !== '') {
                 return $cached;
             }
@@ -143,6 +157,14 @@ final class InterledgerGateway
                 'wallet_address' => $this->walletAddress(),
                 'exception' => $exception->getMessage(),
             ]);
+
+            try {
+                $this->cache->set($key, self::UNREACHABLE, self::UNREACHABLE_CACHE_TTL);
+            } catch (Throwable $cacheFailure) {
+                $this->logger->warning('LedgerDirect: Interledger asset cache write failed', [
+                    'exception' => $cacheFailure->getMessage(),
+                ]);
+            }
 
             return null;
         }

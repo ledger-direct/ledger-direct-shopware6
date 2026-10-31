@@ -16,6 +16,7 @@ use Hardcastle\LedgerDirect\Interledger\ReceiptSyncService as InterledgerReceipt
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -243,7 +244,27 @@ class OrderTransactionService
             return null;
         }
 
-        $fulfilledIntent = $this->syncFor($intent->chain)->findFulfillmentFor($intent)?->applyTo($intent);
+        /*
+         * Building the chain's receiving service can fail where a ledger's cannot:
+         * Interledger's lives in an optional package and needs configuration, and
+         * asks for both the moment it is used. A shop that lost its wallet address
+         * after an order was placed must not answer the payment page or the status
+         * endpoint with an error — the order stays open, the customer keeps waiting,
+         * and the reason is in the log.
+         */
+        try {
+            $receiving = $this->syncFor($intent->chain);
+        } catch (RuntimeException $exception) {
+            $this->logger->warning('LedgerDirect: no receiving service for this order, leaving it open', [
+                'chain' => $intent->chain,
+                'order_transaction' => $orderTransaction->getId(),
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $fulfilledIntent = $receiving->findFulfillmentFor($intent)?->applyTo($intent);
 
         if ($fulfilledIntent === null) {
             return null;
