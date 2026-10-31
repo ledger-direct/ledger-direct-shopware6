@@ -26,7 +26,8 @@
             "identifier": {
                 "XRPL": "Destination Tag",
                 "STELLAR": "Memo-ID",
-                "XAHAU": "Destination Tag"
+                "XAHAU": "Destination Tag",
+                "INTERLEDGER": "Referenz"
             }
         }
     }

@@ -225,9 +225,41 @@ the preview without a change for anyone who never switched it on.
 
 A payment method is offered at checkout only while its chain is on, has a receiving address and the
 asset is enabled — and, for a Stellar issued asset, while the receiving account has its trust line.
-The assets, the payment methods and the address format come from the core's `ChainCatalog`. On
+The assets, the payment methods and the address format come from the plugin's chain list
+(`Chain\ChainRegistry`): the core's `ChainCatalog` plus Interledger when its package is installed. On
 Stellar the customer puts the order's **memo id** (memo type ID) on the payment where the XRPL uses a
 destination tag; the QR code carries a SEP-7 payment request.
+
+**LedgerDirect – Interledger (Preview)**
+
+A prototype, with test money only, and the one card that needs something installed first:
+
+```bash
+composer require hardcastle/ledger-direct-interledger
+```
+
+The package brings [Open Payments](https://openpayments.dev) and needs PHP 8.3. Without it the card
+does nothing and the chain does not exist. The payment goes into the merchant's own wallet — a
+[Dassie](https://dassie.land) node, the [Interledger test wallet](https://wallet.interledger-test.dev),
+or any Rafiki-based wallet, because Open Payments and not Dassie is the interface.
+
+| Setting | |
+|---|---|
+| Accept payments over Interledger (preview) | Off by default. On, with a wallet address and a key, the payment method in the wallet's own currency is offered. |
+| Use test network | On by default. The test wallet and a Dassie node both move test money only. |
+| Wallet address, live and test | The wallet address as an `https://` URL (`https://ilp.example.com/acme`). A payment pointer (`$ilp.example.com/acme`) is accepted and stored as its URL. Checked when saved. |
+| Key ID | The id the wallet registered for this client — it shows it as "Key ID", and it is a UUID, not the wallet's name. A wrong id is refused by the authorization server with `invalid_client`. |
+| Private key | The Ed25519 key belonging to that id, as base64 of its PEM on one line (`base64 -w0 private.key`). The PEM itself is refused. It signs every request to the wallet and never leaves the shop. |
+
+A wallet address holds exactly one asset, and it says which: only the payment method in that
+currency is offered at checkout, and a wallet that cannot be reached offers none. The customer gets
+one step instead of three — the incoming payment's URL is the payment link and the QR code, with
+amount, payee and expiry inside it, and the order's reference travels in the payment request rather
+than in the customer's hands.
+
+Known gaps of the prototype: a quote cannot be topped up after it expires (an expired incoming
+payment accepts nothing), the wallet's currency has to be the shop's currency (no fiat conversion),
+there is no per-payment settlement proof to link to, and the payment page has no browser wallet.
 
 **LedgerDirect – Payment page**
 

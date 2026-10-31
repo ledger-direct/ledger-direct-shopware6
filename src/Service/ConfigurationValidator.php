@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Exception\InvalidConfigurationException;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Psr\Log\LoggerInterface;
@@ -13,10 +13,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 /**
  * Checks a receiving account the moment it is saved, before it is stored.
  *
- * The format check is the core's (ChainDescriptor::isValidAccount(), an
- * `r…` address on the XRPL, a `G…` key on Stellar); it proves the string
- * has the shape of an account on that chain, not that the account exists or
- * belongs to the merchant. An invalid one is refused — a typo here sends
+ * The format check is the chain descriptor's (ChainDescriptor::isValidAccount(),
+ * an `r…` address on the XRPL, a `G…` key on Stellar, an `https://` wallet
+ * address over Interledger); it proves the string has the shape of an account
+ * on that chain, not that the account exists or belongs to the merchant. An invalid one is refused — a typo here sends
  * every customer's money nowhere. The value is trimmed first: an account is
  * copied from a wallet, and a stray space or line break is not part of it.
  *
@@ -96,7 +96,7 @@ class ConfigurationValidator implements EventSubscriberInterface
         if ($previewChain !== null && PaymentMethodInstaller::isPreviewChain($previewChain) && self::isOff($value)) {
             throw new InvalidConfigurationException(
                 '{{ chain }} is a preview and runs on the testnet only. The mainnet comes with its release.',
-                ['chain' => ChainCatalog::chain($previewChain)->label]
+                ['chain' => ChainRegistry::chain($previewChain)->label]
             );
         }
 
@@ -107,13 +107,15 @@ class ConfigurationValidator implements EventSubscriberInterface
         }
 
         [$chain, $network] = $chainAndNetwork;
-        $account = trim($value);
+        // Normalised first, then checked: an Interledger wallet address written as a
+        // payment pointer is a valid way to write it, and what gets stored is its URL.
+        $account = ChainRegistry::normalizeAccount($chain, trim($value));
 
         if ($account === '') {
             return $account;
         }
 
-        $descriptor = ChainCatalog::chain($chain);
+        $descriptor = ChainRegistry::chain($chain);
 
         if (!$descriptor->isValidAccount($account)) {
             throw new InvalidConfigurationException(
@@ -122,7 +124,7 @@ class ConfigurationValidator implements EventSubscriberInterface
             );
         }
 
-        foreach (ChainCatalog::chains() as $other) {
+        foreach (ChainRegistry::chains() as $other) {
             if ($other->chain === $chain) {
                 continue;
             }
@@ -185,7 +187,7 @@ class ConfigurationValidator implements EventSubscriberInterface
 
         $short = substr($key, strlen(self::DOMAIN));
 
-        foreach (ChainCatalog::chains() as $chain) {
+        foreach (ChainRegistry::chains() as $chain) {
             if ($short === 'use' . ucfirst(strtolower($chain->chain)) . 'Testnet') {
                 return $chain->chain;
             }
@@ -218,7 +220,7 @@ class ConfigurationValidator implements EventSubscriberInterface
 
         $short = substr($key, strlen(self::DOMAIN));
 
-        foreach (ChainCatalog::chains() as $chain) {
+        foreach (ChainRegistry::chains() as $chain) {
             foreach ($chain->networks as $network) {
                 if ($short === strtolower($chain->chain) . ucfirst($network) . 'DestinationAccount') {
                     return [$chain->chain, $network];
