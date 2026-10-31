@@ -531,6 +531,44 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertNull($intent['hash']);
     }
 
+    /**
+     * The Interledger services come from an optional package and need
+     * configuration, and the gateway says so by throwing. On the storefront's
+     * path that must not become an error page: the order stays open, the
+     * customer keeps waiting, and the reason is in the log.
+     */
+    public function testAnInterledgerOrderWithoutAConfiguredWalletLeavesTheOrderOpen(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'),
+            $this->interledgerIntent(),
+        );
+
+        // The Interledger card is empty in this configuration, so the gateway cannot build anything.
+        $matched = $this->createService(Fixtures::getStaticConfiguration())
+            ->matchOrderTransaction($orderTransaction, $this->context);
+
+        $this->assertNull($matched);
+    }
+
+    /** @return array<string, mixed> */
+    private function interledgerIntent(): array
+    {
+        return PaymentIntent::quote(
+            type: 'interledger-eur-payment',
+            chain: 'INTERLEDGER',
+            network: 'testnet',
+            baseAsset: 'EUR',
+            quoteCurrency: 'EUR',
+            pairing: 'EUR/EUR',
+            exchangeRate: 1.0,
+            amountRequested: ['currency' => 'EUR', 'value' => '19.99', 'issuer' => Fixtures::INTERLEDGER_WALLET],
+            destinationAccount: Fixtures::INTERLEDGER_WALLET . '/incoming-payments/cc294351',
+            destinationTag: 494349,
+            expiry: time() + 300,
+        )->toArray();
+    }
+
     private function createService(?array $configuration = null): OrderTransactionService
     {
         $httpClient = $this->httpClient;

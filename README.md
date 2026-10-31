@@ -157,11 +157,14 @@ A prototype, with test money only, and the one card that needs something install
 
 ```bash
 composer config repositories.ledger-direct-interledger vcs https://github.com/ledger-direct/ledger-direct-interledger
-composer require hardcastle/ledger-direct-interledger
+composer require hardcastle/ledger-direct-interledger:dev-main
 ```
 
-The first line goes away once the package is on Packagist. It brings
-[Open Payments](https://openpayments.dev) and needs PHP 8.3. Without it the card
+The first line goes away once the package is on Packagist, and `:dev-main` once it has its first
+release: before that, Composer's default stability refuses it. It brings
+[Open Payments](https://openpayments.dev) and needs PHP 8.3 — the plugin itself still runs on 8.2, and a
+shop without the package is unaffected. Working on the plugin needs 8.3 too while the package is a
+development dependency of its test suite. Without it the card
 does nothing and the chain does not exist. The payment goes into the merchant's own wallet — a
 [Dassie](https://dassie.land) node, the [Interledger test wallet](https://wallet.interledger-test.dev),
 or any Rafiki-based wallet, because Open Payments and not Dassie is the interface.
