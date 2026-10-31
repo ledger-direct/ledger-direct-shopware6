@@ -81,6 +81,8 @@
             "Hardcastle\\LedgerDirect\\Tests\\": "tests/"
         }
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "config": {
         "allow-plugins": {
             "symfony/runtime": true,
