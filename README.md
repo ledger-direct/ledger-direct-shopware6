@@ -156,10 +156,12 @@ destination tag; the QR code carries a SEP-7 payment request.
 A prototype, with test money only, and the one card that needs something installed first:
 
 ```bash
+composer config repositories.ledger-direct-interledger vcs https://github.com/ledger-direct/ledger-direct-interledger
 composer require hardcastle/ledger-direct-interledger
 ```
 
-The package brings [Open Payments](https://openpayments.dev) and needs PHP 8.3. Without it the card
+The first line goes away once the package is on Packagist. It brings
+[Open Payments](https://openpayments.dev) and needs PHP 8.3. Without it the card
 does nothing and the chain does not exist. The payment goes into the merchant's own wallet — a
 [Dassie](https://dassie.land) node, the [Interledger test wallet](https://wallet.interledger-test.dev),
 or any Rafiki-based wallet, because Open Payments and not Dassie is the interface.
