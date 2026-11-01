@@ -3,6 +3,8 @@
 namespace Hardcastle\LedgerDirect;
 
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
@@ -10,6 +12,7 @@ use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class LedgerDirect extends Plugin
 {
@@ -41,8 +44,13 @@ class LedgerDirect extends Plugin
 
     /**
      * Writes the payment methods again on every update: a new chain or asset
-     * in the core's catalogue gets its method, an existing one its current
-     * handler identifier. Active flags stay as the merchant set them.
+     * in the chain list gets its method, an existing one its current handler
+     * identifier. Active flags stay as the merchant set them.
+     *
+     * Then the repair for a preview chain that is switched on but has no
+     * methods: a merchant who switched Interledger on before installing its
+     * package got none, because the activator had no chain to create, and the
+     * pass above writes preview methods only where they already exist.
      */
     public function update(UpdateContext $updateContext): void
     {
@@ -52,7 +60,19 @@ class LedgerDirect extends Plugin
         /** @var PluginIdProvider $pluginIdProvider */
         $pluginIdProvider = $this->container->get(PluginIdProvider::class);
 
-        (new PaymentMethodInstaller($paymentMethodRepository, $pluginIdProvider))->update($updateContext);
+        $installer = new PaymentMethodInstaller($paymentMethodRepository, $pluginIdProvider);
+        $installer->update($updateContext);
+
+        /** @var SystemConfigService $systemConfigService */
+        $systemConfigService = $this->container->get(SystemConfigService::class);
+
+        /** @var LoggerInterface $logger */
+        $logger = $this->container->get('logger');
+
+        $installer->installEnabledPreviewChains(
+            new ConfigurationService($systemConfigService, $logger),
+            $updateContext->getContext(),
+        );
     }
 
     public function deactivate(DeactivateContext $deactivateContext): void

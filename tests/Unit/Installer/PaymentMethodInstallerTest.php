@@ -10,6 +10,7 @@ use Hardcastle\LedgerDirect\Components\PaymentHandler\XahauPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\LedgerDirect;
 use Mockery;
@@ -172,6 +173,44 @@ class PaymentMethodInstallerTest extends TestCase
         $this->installer($repository)->install(new InstallContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class)));
 
         $this->assertSame(['ledgerdirect_xahau_xah', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+    }
+
+    /**
+     * The repair the update lifecycle owes a preview chain whose package
+     * arrived after the switch: switched on, no methods, because the activator
+     * had no chain to create at the time.
+     */
+    public function testUpdateCreatesTheMethodsOfAPreviewChainThatIsAlreadySwitchedOn(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
+
+        $this->installer($repository)->installEnabledPreviewChains(
+            ConfigurationServiceMock::createInstance(['LedgerDirect.config.interledgerEnabled' => true]),
+            Context::createDefaultContext(),
+        );
+
+        $this->assertSame(
+            ['ledgerdirect_interledger_dsusd', 'ledgerdirect_interledger_eur', 'ledgerdirect_interledger_usd', 'ledgerdirect_interledger_xrp'],
+            $this->sorted(array_column($written, 'technicalName')),
+        );
+        $this->assertSame([true, true, true, true], array_column($written, 'active'));
+    }
+
+    public function testAPreviewChainThatIsOffGetsNoMethods(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
+
+        $this->installer($repository)->installEnabledPreviewChains(
+            ConfigurationServiceMock::createInstance([
+                'LedgerDirect.config.interledgerEnabled' => false,
+                'LedgerDirect.config.stellarEnabled' => false,
+            ]),
+            Context::createDefaultContext(),
+        );
+
+        $this->assertSame([], $written);
     }
 
     /**
