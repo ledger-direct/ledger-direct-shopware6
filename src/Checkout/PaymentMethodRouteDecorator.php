@@ -33,6 +33,9 @@ use Throwable;
  */
 class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 {
+    /** Our handlers, as the database holds them; it survives the loss of a chain's package. */
+    private const HANDLER_NAMESPACE = 'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\';
+
     public function __construct(
         private readonly AbstractPaymentMethodRoute $decorated,
         private readonly ShopwareConfigProvider $configProvider,
@@ -70,7 +73,20 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         $chainAndAsset = PaymentMethodInstaller::chainAndAssetFor($method->getId());
 
         if ($chainAndAsset === null) {
-            return true;
+            /*
+             * Either not ours, or ours from a chain this installation no longer
+             * knows: a merchant who removes the Interledger package keeps its
+             * stored, active payment methods, and the chain list no longer maps
+             * their ids. Offering one would let a customer choose a method that
+             * cannot be quoted, so a method with one of our handlers stays out.
+             * Everything else is another plugin's and passes untouched.
+             */
+            // Read through getVars(): the entity's handler identifier is a typed property,
+            // and a route that loaded the collection with `includes` leaves it uninitialized,
+            // which the getter answers with an Error.
+            $handler = $method->getVars()['handlerIdentifier'] ?? null;
+
+            return !is_string($handler) || !str_starts_with($handler, self::HANDLER_NAMESPACE);
         }
 
         [$chain, $asset] = $chainAndAsset;

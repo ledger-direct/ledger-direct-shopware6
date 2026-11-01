@@ -5,6 +5,7 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Checkout;
 use Doctrine\DBAL\Connection;
 use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Checkout\PaymentMethodRouteDecorator;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Interledger\Client\OpenPaymentsException;
@@ -151,6 +152,28 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $this->assertNotContains(PaymentMethodInstaller::paymentMethodIdFor('interledger-usd-payment'), $ids);
     }
 
+    /**
+     * A merchant who removes the Interledger package keeps its stored, active
+     * payment methods, and the chain list no longer maps their ids. Such a
+     * method must not be offered: quoting it would fail after the customer has
+     * chosen it. Another plugin's method still passes.
+     */
+    public function testAStoredMethodOfAChainThisInstallationNoLongerKnowsIsNotOffered(): void
+    {
+        $gone = md5('xahau-xah-payment');
+        $collection = new PaymentMethodCollection([
+            $this->method(PaymentMethodInstaller::XRP_PAYMENT_ID, XrplPaymentHandler::class),
+            $this->method($gone, XrplPaymentHandler::class),
+            $this->method(self::OTHER_METHOD, 'Another\\Plugin\\Handler'),
+        ]);
+
+        $ids = $this->loadCollection($collection, Fixtures::getStaticConfiguration())->getIds();
+
+        $this->assertNotContains($gone, $ids, 'its chain is not in the chain list any more');
+        $this->assertContains(PaymentMethodInstaller::XRP_PAYMENT_ID, $ids);
+        $this->assertContains(self::OTHER_METHOD, $ids, "another plugin's method is untouched");
+    }
+
     /** @param list<array<string, mixed>> $balances */
     private static function account(array $balances): Response
     {
@@ -159,7 +182,7 @@ class PaymentMethodRouteDecoratorTest extends TestCase
 
     private function load(array $configuration): PaymentMethodCollection
     {
-        $collection = new PaymentMethodCollection([
+        return $this->loadCollection(new PaymentMethodCollection([
             $this->method(PaymentMethodInstaller::XRP_PAYMENT_ID),
             $this->method(PaymentMethodInstaller::RLUSD_PAYMENT_ID),
             $this->method(PaymentMethodInstaller::USDC_PAYMENT_ID),
@@ -168,7 +191,11 @@ class PaymentMethodRouteDecoratorTest extends TestCase
             $this->method(PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment')),
             $this->method(PaymentMethodInstaller::paymentMethodIdFor('interledger-usd-payment')),
             $this->method(self::OTHER_METHOD),
-        ]);
+        ]), $configuration);
+    }
+
+    private function loadCollection(PaymentMethodCollection $collection, array $configuration): PaymentMethodCollection
+    {
         $response = new PaymentMethodRouteResponse(new EntitySearchResult('payment_method', $collection->count(), $collection, null, new Criteria(), Context::createDefaultContext()));
 
         /** @var AbstractPaymentMethodRoute&MockInterface $inner */
@@ -207,11 +234,15 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         return $filtered->getPaymentMethods();
     }
 
-    private function method(string $id): PaymentMethodEntity
+    private function method(string $id, ?string $handlerIdentifier = null): PaymentMethodEntity
     {
         $method = new PaymentMethodEntity();
         $method->setId($id);
         $method->setUniqueIdentifier($id);
+
+        if ($handlerIdentifier !== null) {
+            $method->setHandlerIdentifier($handlerIdentifier);
+        }
 
         return $method;
     }
