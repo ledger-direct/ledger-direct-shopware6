@@ -13,6 +13,7 @@ use Hardcastle\LedgerDirect\Core\AssetDescriptor;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\ChainDescriptor;
 use Hardcastle\LedgerDirect\LedgerDirect;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -251,6 +252,28 @@ class PaymentMethodInstaller
      * flag stays as the merchant set it, so switching the chain off and on
      * again does not undo a deactivation made in between.
      */
+    /**
+     * Creates the payment methods of every preview chain the merchant has
+     * switched on but that has none yet — the repair the update lifecycle owes
+     * a chain whose package arrived after the switch.
+     *
+     * PreviewChainActivator creates them when the switch is saved, but it can
+     * only create what the registry knows: a merchant who switches Interledger
+     * on before installing its package gets nothing, and `update()` would not
+     * help either, since it writes preview methods only where they already
+     * exist. So the methods stay missing while the card says the chain is on.
+     * Called on update, not on install: a fresh installation has every preview
+     * chain off, and that is the point of a preview.
+     */
+    public function installEnabledPreviewChains(ConfigurationService $configuration, Context $context): void
+    {
+        foreach (self::PREVIEW_CHAINS as $chain) {
+            if (ChainRegistry::has($chain) && $configuration->isChainEnabled($chain)) {
+                $this->installChain($chain, $context);
+            }
+        }
+    }
+
     public function installChain(string $chain, Context $context): void
     {
         foreach (self::paymentMethodsFor($chain) as $paymentMethod) {
