@@ -31,6 +31,11 @@ class Fixtures
     }
 
     /** The static configuration plus a switched-on Stellar card on the testnet. */
+    public const INTERLEDGER_WALLET = 'https://ilp.example.test/merchant';
+
+    /** base64 of a PEM that is not a key: enough for Credentials, useless for signing. */
+    public const INTERLEDGER_PRIVATE_KEY = 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tClRrOVVRVkpGUVV4TFJVWT0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=';
+
     public static function getStaticMultiChainConfiguration(): array
     {
         return self::getStaticConfiguration() + [
@@ -39,6 +44,23 @@ class Fixtures
             'LedgerDirect.config.stellarTestnetDestinationAccount' => self::STELLAR_ACCOUNT,
             'LedgerDirect.config.stellarIsUsdcEnabled' => true,
             'LedgerDirect.config.stellarIsEurcEnabled' => false,
+        ];
+    }
+
+    /**
+     * The Interledger card filled in: wallet address, key id and a key in
+     * the shape the SDK signs with. The key is a throwaway PEM — nothing is
+     * signed in a unit test, but Credentials refuses anything that is not
+     * base64 of a PEM, and that check is part of what is being tested.
+     */
+    public static function getStaticInterledgerConfiguration(): array
+    {
+        return self::getStaticConfiguration() + [
+            'LedgerDirect.config.interledgerEnabled' => true,
+            'LedgerDirect.config.useInterledgerTestnet' => true,
+            'LedgerDirect.config.interledgerTestnetDestinationAccount' => self::INTERLEDGER_WALLET,
+            'LedgerDirect.config.interledgerKeyId' => '4a1f0d6e-7c3b-4a52-9a2e-1b8c5d0f9e77',
+            'LedgerDirect.config.interledgerPrivateKey' => self::INTERLEDGER_PRIVATE_KEY,
         ];
     }
 

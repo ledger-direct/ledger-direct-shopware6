@@ -14,7 +14,6 @@
       "fiatEquivalent": "equals %fiat%",
       "fiatOfTotal": "of %total% %asset% in total (%fiat%)",
       "quoteValidFor": "Amount guaranteed for %countdown% minutes",
-      "stepAccount": "Receiving address",
       "requiredBadge": "Required",
       "stepIssuer": "Token and issuer",
       "issuerHint": "Only %asset% from exactly this issuer is credited. Your wallet needs a trust line for it.",
@@ -62,6 +61,7 @@
       "backToCart": "Back to cart",
       "identifier": {
         "XRPL": {
+          "account": "Receiving address",
           "step": "Destination tag",
           "copy": "Copy destination tag",
           "hint": "Without this tag we cannot match the payment to your order.",
@@ -71,6 +71,7 @@
           "partialSendRest": "Please send the rest to the same address with the same destination tag."
         },
         "STELLAR": {
+          "account": "Receiving account",
           "step": "Memo ID",
           "copy": "Copy memo ID",
           "hint": "Without this memo we cannot match the payment to your order. Memo type: ID.",
@@ -78,6 +79,16 @@
           "qrCaption": "Scan with a Stellar wallet that supports payment links (SEP-7). Account, memo and amount are filled in – please check them before sending.",
           "qrLabel": "QR code with account, memo ID and amount",
           "partialSendRest": "Please send the rest to the same account with the same memo ID."
+        },
+        "INTERLEDGER": {
+          "account": "Payment link",
+          "step": "Reference",
+          "copy": "Copy reference",
+          "hint": "Your shop put this reference on the payment request; you do not have to enter it anywhere.",
+          "exchangeHint": "This link is paid from an Open Payments wallet, not from an exchange: it carries the amount, the payee and an expiry.",
+          "qrCaption": "Scan the code or open the link with your Open Payments wallet. Payee, amount and expiry are part of the request – please check them before you approve it.",
+          "qrLabel": "QR code with the payment link",
+          "partialSendRest": "Please pay the rest from the same wallet before the request expires."
         }
       },
       "network": {
@@ -88,11 +99,16 @@
         "STELLAR": {
           "mainnet": "Stellar Mainnet",
           "testnet": "Stellar Testnet"
+        },
+        "INTERLEDGER": {
+          "mainnet": "Interledger",
+          "testnet": "Interledger (test money)"
         }
       },
       "poweredBy": {
         "XRPL": "Paid directly on the XRP Ledger, with no intermediary.",
-        "STELLAR": "Paid directly on the Stellar network, with no intermediary."
+        "STELLAR": "Paid directly on the Stellar network, with no intermediary.",
+        "INTERLEDGER": "Paid over Interledger with Open Payments, straight into the merchant’s own wallet."
       }
     }
   }

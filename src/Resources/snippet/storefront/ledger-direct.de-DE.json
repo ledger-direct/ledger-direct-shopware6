@@ -14,7 +14,6 @@
       "fiatEquivalent": "entspricht %fiat%",
       "fiatOfTotal": "von insgesamt %total% %asset% (%fiat%)",
       "quoteValidFor": "Betrag garantiert für %countdown% Minuten",
-      "stepAccount": "Empfängeradresse",
       "requiredBadge": "Pflicht",
       "stepIssuer": "Token und Herausgeber",
       "issuerHint": "Nur %asset% genau dieses Herausgebers wird angerechnet. Ihre Wallet braucht eine Trustline dafür.",
@@ -62,6 +61,7 @@
       "backToCart": "Zurück zum Warenkorb",
       "identifier": {
         "XRPL": {
+          "account": "Empfängeradresse",
           "step": "Destination Tag",
           "copy": "Destination Tag kopieren",
           "hint": "Ohne dieses Tag können wir die Zahlung nicht Ihrer Bestellung zuordnen.",
@@ -71,6 +71,7 @@
           "partialSendRest": "Bitte senden Sie den Rest an dieselbe Adresse mit demselben Destination Tag."
         },
         "STELLAR": {
+          "account": "Empfängerkonto",
           "step": "Memo-ID",
           "copy": "Memo-ID kopieren",
           "hint": "Ohne dieses Memo können wir die Zahlung nicht Ihrer Bestellung zuordnen. Memo-Typ: ID.",
@@ -78,6 +79,16 @@
           "qrCaption": "Mit einer Stellar-Wallet scannen, die Zahlungslinks (SEP-7) unterstützt. Konto, Memo und Betrag sind vorausgefüllt – bitte vor dem Senden prüfen.",
           "qrLabel": "QR-Code mit Konto, Memo-ID und Betrag",
           "partialSendRest": "Bitte senden Sie den Rest an dasselbe Konto mit derselben Memo-ID."
+        },
+        "INTERLEDGER": {
+          "account": "Zahlungslink",
+          "step": "Referenz",
+          "copy": "Referenz kopieren",
+          "hint": "Ihr Shop hat diese Referenz an die Zahlungsanfrage gehängt; Sie müssen nichts eintragen.",
+          "exchangeHint": "Dieser Link wird aus einer Open-Payments-Wallet bezahlt, nicht von einer Börse: Betrag, Empfänger und Ablauf stecken darin.",
+          "qrCaption": "Code scannen oder den Link in Ihrer Open-Payments-Wallet öffnen. Empfänger, Betrag und Ablauf gehören zur Anfrage – bitte vor dem Freigeben prüfen.",
+          "qrLabel": "QR-Code mit dem Zahlungslink",
+          "partialSendRest": "Bitte zahlen Sie den Rest aus derselben Wallet, bevor die Anfrage abläuft."
         }
       },
       "network": {
@@ -88,11 +99,16 @@
         "STELLAR": {
           "mainnet": "Stellar Mainnet",
           "testnet": "Stellar Testnet"
+        },
+        "INTERLEDGER": {
+          "mainnet": "Interledger",
+          "testnet": "Interledger (Spielgeld)"
         }
       },
       "poweredBy": {
         "XRPL": "Zahlung direkt auf dem XRP Ledger, ohne Zwischenhändler.",
-        "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler."
+        "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler.",
+        "INTERLEDGER": "Per Interledger über Open Payments bezahlt, direkt in die Wallet des Händlers."
       }
     }
   }

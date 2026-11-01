@@ -37,6 +37,9 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
 
     private string $configuredStellarAccount = '';
 
+    /** Interledger is in the registry too, and the task asks every chain for its account. */
+    private string $configuredInterledgerWallet = '';
+
     protected function setUp(): void
     {
         $this->orderTransactionService = Mockery::mock(OrderTransactionService::class);
@@ -184,6 +187,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $configuration->shouldReceive('getNetwork')->with('XRPL')->andReturn('testnet');
         $configuration->shouldReceive('getDestinationAccount')->with('STELLAR')->andReturn($this->configuredStellarAccount);
         $configuration->shouldReceive('getNetwork')->with('STELLAR')->andReturn('testnet');
+        $configuration->shouldReceive('getDestinationAccount')->with('INTERLEDGER')->andReturn($this->configuredInterledgerWallet);
+        $configuration->shouldReceive('getNetwork')->with('INTERLEDGER')->andReturn('testnet');
 
         return $configuration;
     }

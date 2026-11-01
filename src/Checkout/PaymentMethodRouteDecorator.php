@@ -2,7 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Checkout;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Stellar\AccountInspector;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
@@ -23,13 +24,23 @@ use Throwable;
  * Asked here, at the list of payment methods, it keeps a method the merchant
  * turned off out of the checkout instead of failing when the customer has
  * already chosen it. Methods that are not ours pass through untouched.
+ *
+ * Interledger has a pre-flight question of its own: a wallet address holds
+ * exactly one asset, so only the method in that asset can be paid at all.
+ * The wallet is asked (and cached for minutes), and a wallet that cannot be
+ * reached offers nothing — the same fail-closed rule as a trust line that
+ * cannot be checked.
  */
 class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 {
+    /** Our handlers, as the database holds them; it survives the loss of a chain's package. */
+    private const HANDLER_NAMESPACE = 'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\';
+
     public function __construct(
         private readonly AbstractPaymentMethodRoute $decorated,
         private readonly ShopwareConfigProvider $configProvider,
         private readonly AccountInspector $accountInspector,
+        private readonly InterledgerGateway $interledger,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -62,7 +73,20 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         $chainAndAsset = PaymentMethodInstaller::chainAndAssetFor($method->getId());
 
         if ($chainAndAsset === null) {
-            return true;
+            /*
+             * Either not ours, or ours from a chain this installation no longer
+             * knows: a merchant who removes the Interledger package keeps its
+             * stored, active payment methods, and the chain list no longer maps
+             * their ids. Offering one would let a customer choose a method that
+             * cannot be quoted, so a method with one of our handlers stays out.
+             * Everything else is another plugin's and passes untouched.
+             */
+            // Read through getVars(): the entity's handler identifier is a typed property,
+            // and a route that loaded the collection with `includes` leaves it uninitialized,
+            // which the getter answers with an Error.
+            $handler = $method->getVars()['handlerIdentifier'] ?? null;
+
+            return !is_string($handler) || !str_starts_with($handler, self::HANDLER_NAMESPACE);
         }
 
         [$chain, $asset] = $chainAndAsset;
@@ -71,7 +95,11 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
             return false;
         }
 
-        if ($chain->chain !== ChainCatalog::STELLAR || $asset->native) {
+        if ($chain->chain === ChainRegistry::INTERLEDGER) {
+            return $asset->code === $this->interledger->walletAssetCode();
+        }
+
+        if ($chain->chain !== ChainRegistry::STELLAR || $asset->native) {
             return true;
         }
 
