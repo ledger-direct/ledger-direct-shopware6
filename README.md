@@ -19,6 +19,50 @@ Project website: https://www.ledger-direct.com
 
 ![Payment Page](payment_page.png)
 
+## Try it in five minutes
+
+A complete Shopware 6.7 shop with the plugin, on the XRP Ledger **testnet** — no Shopware account, no
+real money. You need Docker and about 4 GB of disk.
+
+```
+git clone https://github.com/ledger-direct/ledger-direct-shopware6.git
+cd ledger-direct-shopware6/dev/try
+docker compose up -d --wait        # first start sets up the shop: about two minutes
+```
+
+1. Open http://localhost:8091/ (German: http://localhost:8091/de/): the home page explains the demo
+   and offers three hand-painted **miniatures** (2–4 EUR). They are demo articles, nothing is sold or
+   shipped; their pictures and texts are not under the MIT licence, see
+   [`dev/try/catalog/NOTICE.md`](dev/try/catalog/NOTICE.md). Put one in the cart and check out as a
+   guest with *XRP on XRPL*, *RLUSD* or *USDC*.
+2. The payment page shows the amount, the receiving account and the destination tag. Pay it from a
+   testnet wallet — [Xaman](https://xaman.app/) in testnet mode or [Crossmark](https://crossmark.io/)
+   — funded from the [XRP Testnet faucet](https://xrpl.org/xrp-testnet-faucet.html); RLUSD and USDC
+   come from the [RLUSD faucet](https://tryrlusd.com/) and the [Circle faucet](https://faucet.circle.com/).
+   Send the amount exactly as shown, **with the destination tag**, or connect the wallet with the
+   buttons on the page.
+3. The page notices the payment within seconds and moves on to the order; the order's payment is
+   *Paid* in the administration at http://localhost:8091/admin (demo login `demo` /
+   `demo-ledgerdirect-1` — a local demo login, never reuse it).
+
+On its first start the shop creates its own testnet wallet from the faucet and sets the trust lines
+to the RLUSD and USDC issuers on it, so all three assets can be paid right away (`docker compose logs
+shopware` names the address). The wallet's seed stays in the stack's volume, testnet only. When the
+testnet has been reset, the next start notices and creates a new wallet. To receive into an address
+of your own instead — it then needs the trust lines itself:
+
+```
+LD_TESTNET_ACCOUNT=r... docker compose up -d --wait
+```
+
+Setting `LD_TESTNET_ACCOUNT` later works too: the next `up` applies it to the existing shop.
+`LD_TRY_PORT` moves the shop off port 8091 (`LD_TRY_TLS_PORT` its https port, 8491, with a
+self-signed certificate). `docker compose down` stops the stack and keeps the shop and its orders;
+`docker compose down -v` resets everything, and the next `up` starts from a fresh shop.
+`docker compose up --build` builds the image from your checkout instead of pulling the published one.
+The shop is [dockware](https://dockware.io/)'s Shopware image, as in this plugin's CI; it is not an
+official Shopware or dockware image, and it is for trying the plugin, not for production.
+
 ## How it works
 
 A customer picks XRP, RLUSD or USDC at checkout; each is a payment method of its own. The order is
@@ -311,7 +355,12 @@ is how you see whether the throttle holds.
 Every push and pull request runs `.github/workflows/ci.yml`: `shopware-cli extension validate`
 (basic and store-compliance checks as a gate, the full validation non-blocking) and both PHPUnit
 suites in a dockware container with Shopware 6.7. `e2e.yml` runs the end-to-end harness against a
-fresh dockware shop and the XRPL testnet every night; it is not a merge gate, it detects drift.
+fresh dockware shop and the XRPL testnet every night; it is not a merge gate, it detects drift. `try.yml`
+builds the try stack in `dev/try` from the checkout on every pull request, smoke-tests it
+(`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks the storefront
+in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it publishes the image to
+GHCR only for a tag when the repository variable `LD_PUBLISH_TRY_IMAGE` is `true`. The stack also
+serves the end-to-end harness as its `shopware` target (see the comment in `dev/try/compose.yaml`).
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field
 for a plugin under `custom/plugins`; Packagist reads the tag). Pushing the tag runs `release.yml`:

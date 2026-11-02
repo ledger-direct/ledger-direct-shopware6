@@ -1,3 +1,13 @@
+# Unreleased
+- In fünf Minuten ausprobieren: `dev/try` startet einen vollständigen Shopware-6.7-Shop mit dem Plugin im
+  XRP-Ledger-Testnet (`docker compose up -d --wait`): eine Startseite auf Englisch und Deutsch, die die Demo
+  erklärt und drei handbemalte Miniaturen anbietet, ein Demo-Artikel für 1 EUR in einer eigenen Kategorie,
+  eine eigene Testnet-Wallet des Shops mit Trustlines für RLUSD und USDC und ein Demo-Admin-Zugang. Ein
+  CI-Job baut ihn bei jedem Pull Request, installiert das Plugin wie ein Händler in ein frisches Shopware,
+  prüft Zahlungsseite und Status-Endpunkt und geht die Storefront in einem echten Browser durch, von der
+  Startseite bis zur Zahlungsseite, mit XRP, RLUSD und USDC. Bilder und Texte der Miniaturen stehen nicht
+  unter der MIT-Lizenz (`dev/try/catalog/NOTICE.md`); Store-Zip und Composer-Paket lassen `dev` weg
+
 # 1.9.0
 - Store-API für Headless-Frontends, zweiter Teil. `check` liefert `hash`, sobald eine Zahlung verbucht ist:
   Die Erfolgsansicht der Zahlungsseite zeigt die Transaktion mit Explorer-Link — dafür gab es seit 1.4.0 eine
