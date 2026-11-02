@@ -27,7 +27,7 @@ real money. You need Docker and about 4 GB of disk.
 ```
 git clone https://github.com/ledger-direct/ledger-direct-shopware6.git
 cd ledger-direct-shopware6/dev/try
-docker compose up -d --wait        # first start sets up the shop: about two minutes
+docker compose up -d --wait        # first start sets up the shop: about a minute
 ```
 
 1. Open http://localhost:8091/ (German: http://localhost:8091/de/): the home page explains the demo

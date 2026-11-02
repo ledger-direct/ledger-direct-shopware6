@@ -1,6 +1,6 @@
 # LedgerDirect for Shopware 6 — try it in five minutes, on the XRP Ledger testnet.
 #
-#   docker compose up -d --wait          # first start sets up the shop, about two minutes
+#   docker compose up -d --wait          # first start sets up the shop, about a minute
 #   open http://localhost:8091/
 #   docker compose down                  # stop; the shop and its orders stay in the volumes
 #   docker compose down -v               # reset: the next `up` starts from a fresh shop
