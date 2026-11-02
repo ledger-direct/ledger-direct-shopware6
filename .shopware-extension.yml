@@ -21,6 +21,7 @@ build:
           - makefile
           - payment_page.png
           - tests
+          - dev
           - .github
           - .shopware-extension.yml
           - src/Resources/app/storefront/src/node_modules
