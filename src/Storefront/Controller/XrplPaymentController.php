@@ -6,6 +6,7 @@ use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\PageLogo;
 use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
@@ -14,10 +15,12 @@ use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
+use Shopware\Core\Checkout\Cart\CartException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -114,10 +117,27 @@ class XrplPaymentController extends StorefrontController
         return $this->renderPaymentPage($order, $orderTransaction, $returnUrl, $context);
     }
 
+    /**
+     * The payment page's poll. Refusals answer as JSON, the same bodies as
+     * Magento's and PrestaShop's status endpoints: thrown through the
+     * storefront, Shopware's error handling would render its HTML error page
+     * in prod, whatever the request accepts. The Store API route itself keeps
+     * Shopware's own error format.
+     */
     #[Route(path: '/ledger-direct/payment/check/{orderId}', name: 'frontend.checkout.ledger-direct.check-payment', methods: ['GET', 'POST'], defaults: ['XmlHttpRequest' => true])]
     public function checkPayment(SalesChannelContext $context, string $orderId, Request $request): Response
     {
-        return $this->paymentRoute->check($orderId, $request, $context);
+        try {
+            return $this->paymentRoute->check($orderId, $request, $context);
+        } catch (NoPaymentIntentException) {
+            return new JsonResponse(['error' => 'no_payment_intent'], Response::HTTP_NOT_FOUND);
+        } catch (CartException $exception) {
+            if ($exception->getStatusCode() !== Response::HTTP_FORBIDDEN) {
+                throw $exception;
+            }
+
+            return new JsonResponse(['error' => 'forbidden'], Response::HTTP_FORBIDDEN);
+        }
     }
 
     /**

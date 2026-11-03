@@ -7,6 +7,13 @@
   prüft Zahlungsseite und Status-Endpunkt und geht die Storefront in einem echten Browser durch, von der
   Startseite bis zur Zahlungsseite, mit XRP, RLUSD und USDC. Bilder und Texte der Miniaturen stehen nicht
   unter der MIT-Lizenz (`dev/try/catalog/NOTICE.md`); Store-Zip und Composer-Paket lassen `dev` weg
+- Die Statusabfrage der Zahlungsseite (`/ledger-direct/payment/check/{orderId}`) lehnt in jeder Umgebung
+  mit JSON ab: `403 {"error":"forbidden"}`, wenn weder der Schlüssel noch die Sitzung des Kunden die Bestellung
+  freigibt, `404
+  {"error":"no_payment_intent"}` für eine Bestellung ohne XRPL-Angebot — dieselben Antworten wie in den
+  Plugins für Magento und PrestaShop. In `prod` antwortete Shopware in beiden Fällen mit seiner
+  HTML-Fehlerseite. Die Zahlungsseite hat diese Antwort nie gelesen, für Kunden ändert sich also nichts; ein
+  Client, der die Ablehnung auswertet, bekommt jetzt JSON. Die Store-API-Route bleibt unverändert
 
 # 1.9.0
 - Store-API für Headless-Frontends, zweiter Teil. `check` liefert `hash`, sobald eine Zahlung verbucht ist:
