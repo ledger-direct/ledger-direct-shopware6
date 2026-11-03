@@ -77,7 +77,7 @@ knowledge_base:
     enabled: true
     filePatterns:
     - files: ledger-direct/ledger-direct-core-php:INVARIANTS.md
-      applyTo: src/**,tests/**
+      applyTo: src/*.php,src/Api/**,src/Checkout/**,src/Command/**,src/Components/**,src/Exception/**,src/Installer/**,src/Migration/**,src/Port/**,src/Presentation/**,src/SalesChannel/**,src/ScheduledTask/**,src/Service/**,src/Storefront/**,src/Resources/app/administration/src/**,src/Resources/app/storefront/src/**,src/Resources/config/**,src/Resources/Schema/**,src/Resources/snippet/**,src/Resources/views/**,tests/**
   learnings:
     scope: global
   linked_repositories:
