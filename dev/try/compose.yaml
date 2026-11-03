@@ -1,0 +1,57 @@
+# LedgerDirect for Shopware 6 — try it in five minutes, on the XRP Ledger testnet.
+#
+#   docker compose up -d --wait          # first start sets up the shop, about a minute
+#   open http://localhost:8091/
+#   docker compose down                  # stop; the shop and its orders stay in the volumes
+#   docker compose down -v               # reset: the next `up` starts from a fresh shop
+#
+# Settings (environment or a .env file next to this one):
+#   LD_TRY_PORT          host port of the shop (default 8091, bound to 127.0.0.1 only)
+#   LD_TRY_TLS_PORT      host port of the same shop over https, dockware's self-signed certificate
+#                        (default 8491, bound to 127.0.0.1 only)
+#   LD_TESTNET_ACCOUNT   your testnet receiving address (it needs the RLUSD and USDC trust lines).
+#                        Without it the shop creates its own testnet wallet with those trust lines.
+#   LD_TRY_APP_ENV      Shopware's environment (default prod, as a real shop runs; the end-to-end harness
+#                        wants dev: its throttle case reads var/log/dev.log)
+#   LD_TRY_IMAGE         the tag the shop image is built under (default ledger-direct/try-shopware:local)
+#
+# One container: dockware runs Shopware, MySQL and Apache together, as in the plugin's CI. Its
+# database and its developer tools are not published; the database stays inside the container. The
+# shop's state lives in named volumes, so recreating the container (a new image, a changed
+# LD_TESTNET_ACCOUNT or port) keeps the shop and its orders.
+#
+# For the end-to-end harness (ledger-direct-e2e, target shopware): base URL http://localhost:8091,
+# container ledger-direct-try-shopware-shopware-1, Store API access key SWSCLEDGERDIRECTTRYSHOP000,
+# admin login demo / demo-ledgerdirect-1 (LD_E2E_SHOPWARE_ADMIN_USER / _ADMIN_PASSWORD), test article
+# ledger-direct-demo (LD_E2E_SHOPWARE_TEST_PRODUCT), LD_TRY_APP_ENV=dev.
+name: ledger-direct-try-shopware
+
+services:
+  shopware:
+    image: ${LD_TRY_IMAGE:-ledger-direct/try-shopware:local}
+    # Built from this checkout, never pulled: no image is published (dockware's base layers carry
+    # Tideways and Filebeat, which a public image would redistribute).
+    pull_policy: build
+    build:
+      context: ../..
+      dockerfile: dev/try/Dockerfile
+    environment:
+      LD_BASE_URL: http://localhost:${LD_TRY_PORT:-8091}
+      LD_TLS_URL: https://localhost:${LD_TRY_TLS_PORT:-8491}
+      LD_TESTNET_ACCOUNT: ${LD_TESTNET_ACCOUNT:-}
+      LD_STABLECOINS: ${LD_STABLECOINS:-1}
+      LD_APP_ENV: ${LD_TRY_APP_ENV:-prod}
+    ports:
+      - "127.0.0.1:${LD_TRY_PORT:-8091}:80"
+      - "127.0.0.1:${LD_TRY_TLS_PORT:-8491}:443"
+    volumes:
+      - db-data:/var/lib/mysql
+      - shop-media:/var/www/html/public/media
+      - shop-thumbnails:/var/www/html/public/thumbnail
+      - shop-wallet:/var/www/ledger-direct-try
+
+volumes:
+  db-data:
+  shop-media:
+  shop-thumbnails:
+  shop-wallet:

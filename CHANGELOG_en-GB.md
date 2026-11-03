@@ -1,4 +1,12 @@
 # Unreleased
+- Try it in five minutes: `dev/try` starts a complete Shopware 6.7 shop with the plugin on the XRP Ledger
+  testnet (`docker compose up -d --wait`): a home page in English and German that explains the demo and
+  offers three hand-painted miniatures, a demo article for 1 EUR in a category of its own, the shop's own
+  testnet wallet with trust lines for RLUSD and USDC, and a demo admin login. A CI job builds it on every
+  pull request, installs the plugin into a fresh Shopware the way a merchant does, smoke-tests the payment
+  page and the status endpoint and walks the storefront in a real browser, from the home page to the
+  payment page, with XRP, RLUSD and USDC. The miniatures' pictures and texts are not under the MIT
+  licence (`dev/try/catalog/NOTICE.md`); the store zip and the Composer package leave `dev` out
 - The payment page's poll (`/ledger-direct/payment/check/{orderId}`) refuses with JSON in every
   environment: `403 {"error":"forbidden"}` when neither the key nor the customer's session authorises the order,
   `404 {"error":"no_payment_intent"}`

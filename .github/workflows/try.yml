@@ -1,0 +1,106 @@
+name: Try stack
+
+# The try-it stack in dev/try: every pull request and every push to master builds the image from the
+# checkout, starts the stack the way a visitor does and runs dev/try/smoke.sh against it (storefront,
+# catalogue, guest order, payment page markup contract, status endpoint PS-01 and PS-07), then walks
+# the storefront in a real browser with XRP, RLUSD and USDC. It installs the plugin into a fresh
+# Shopware the way a merchant does from the store zip.
+#
+# No image is published: dockware's base layers carry the Tideways daemon (proprietary) and Filebeat
+# (Elastic License Agreement), which a derived public image would redistribute. Visitors build the
+# shop from the checkout on its first `docker compose up`.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ledger-direct/try-shopware
+
+jobs:
+  smoke:
+    name: Build, start and smoke-test the try stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Docker Hub counts anonymous pulls per IP and GitHub's runners share theirs; logged in, the
+      # dockware pull counts against the organisation. Pull requests from forks have no secrets and
+      # pull anonymously.
+      - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the shop image from this checkout
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dev/try/Dockerfile
+          tags: ${{ env.IMAGE }}:ci
+          load: true
+          cache-from: type=gha,scope=try-shopware
+          cache-to: type=gha,mode=max,scope=try-shopware
+
+      - name: Start the stack
+        working-directory: dev/try
+        env:
+          LD_TRY_IMAGE: ${{ env.IMAGE }}:ci
+          # Empty unless set: the shop then takes a fresh account from the testnet faucet.
+          LD_TESTNET_ACCOUNT: ${{ vars.LD_TRY_TESTNET_ACCOUNT }}
+        run: |
+          started=$(date +%s)
+          docker compose up -d --wait --no-build
+          echo "Stack up, shop set up: $(( $(date +%s) - started )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test
+        # smoke.sh's own exit status decides the step, not tee's; the summary fence is closed either way.
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          set +e
+          dev/try/smoke.sh 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          status=${PIPESTATUS[0]}
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      # The storefront the way a prospect sees it, in a real browser: home page, cart, guest
+      # checkout with each LedgerDirect method, payment page. GitHub's runners ship Chrome.
+      - name: Browser walk (XRP, RLUSD, USDC)
+        working-directory: dev/try/browser
+        env:
+          CHROME: /usr/bin/google-chrome
+        run: |
+          npm install --no-audit --no-fund
+          mkdir -p screenshots
+          for asset in xrp rlusd usdc; do
+            echo "== $asset"
+            node visitor.mjs http://localhost:8091 screenshots "$asset"
+          done
+
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: try-stack-screenshots
+          path: dev/try/browser/screenshots
+          if-no-files-found: ignore
+
+      - name: Shop log
+        if: always()
+        working-directory: dev/try
+        run: |
+          docker compose logs --no-color --tail 200 shopware
+          docker compose exec -T shopware bash -c 'tail -n 50 /var/www/html/var/log/prod-*.log 2>/dev/null' || true

@@ -3,6 +3,7 @@
 # committed storefront and administration bundles stay in, so an install
 # needs no build.
 /tests            export-ignore
+/dev              export-ignore
 /.github          export-ignore
 /.gitattributes   export-ignore
 /.gitignore       export-ignore
