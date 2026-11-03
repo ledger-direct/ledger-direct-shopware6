@@ -11,3 +11,4 @@
 /phpstan.neon     export-ignore
 /makefile         export-ignore
 /payment_page.png export-ignore
+/.coderabbit.yaml export-ignore
