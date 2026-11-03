@@ -13,7 +13,7 @@
 #                        Without it the shop creates its own testnet wallet with those trust lines.
 #   LD_TRY_APP_ENV      Shopware's environment (default prod, as a real shop runs; the end-to-end harness
 #                        wants dev: its throttle case reads var/log/dev.log)
-#   LD_TRY_IMAGE         the shop image (default: the published one; `--build` builds this checkout)
+#   LD_TRY_IMAGE         the tag the shop image is built under (default ledger-direct/try-shopware:local)
 #
 # One container: dockware runs Shopware, MySQL and Apache together, as in the plugin's CI. Its
 # database and its developer tools are not published; the database stays inside the container. The
@@ -28,7 +28,10 @@ name: ledger-direct-try-shopware
 
 services:
   shopware:
-    image: ${LD_TRY_IMAGE:-ghcr.io/ledger-direct/try-shopware:latest}
+    image: ${LD_TRY_IMAGE:-ledger-direct/try-shopware:local}
+    # Built from this checkout, never pulled: no image is published (dockware's base layers carry
+    # Tideways and Filebeat, which a public image would redistribute).
+    pull_policy: build
     build:
       context: ../..
       dockerfile: dev/try/Dockerfile

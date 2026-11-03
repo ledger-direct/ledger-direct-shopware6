@@ -27,7 +27,7 @@ real money. You need Docker and about 4 GB of disk.
 ```
 git clone https://github.com/ledger-direct/ledger-direct-shopware6.git
 cd ledger-direct-shopware6/dev/try
-docker compose up -d --wait        # first start sets up the shop: about a minute
+docker compose up -d --wait        # first start builds and sets up the shop: about three minutes
 ```
 
 1. Open http://localhost:8091/ (German: http://localhost:8091/de/): the home page explains the demo
@@ -59,9 +59,11 @@ Setting `LD_TESTNET_ACCOUNT` later works too: the next `up` applies it to the ex
 `LD_TRY_PORT` moves the shop off port 8091 (`LD_TRY_TLS_PORT` its https port, 8491, with a
 self-signed certificate). `docker compose down` stops the stack and keeps the shop and its orders;
 `docker compose down -v` resets everything, and the next `up` starts from a fresh shop.
-`docker compose up --build` builds the image from your checkout instead of pulling the published one.
-The shop is [dockware](https://dockware.io/)'s Shopware image, as in this plugin's CI; it is not an
-official Shopware or dockware image, and it is for trying the plugin, not for production.
+The shop image is always built from your checkout; none is published, because dockware's base image
+carries third-party tools under licences of their own. After a `git pull`, `docker compose up -d --wait`
+builds the new state and updates the existing shop. The shop is [dockware](https://dockware.io/)'s
+Shopware image, as in this plugin's CI; it is not an official Shopware or dockware image, and it is
+for trying the plugin, not for production.
 
 ## How it works
 
@@ -358,8 +360,8 @@ suites in a dockware container with Shopware 6.7. `e2e.yml` runs the end-to-end 
 fresh dockware shop and the XRPL testnet every night; it is not a merge gate, it detects drift. `try.yml`
 builds the try stack in `dev/try` from the checkout on every pull request, smoke-tests it
 (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks the storefront
-in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it publishes the image to
-GHCR only for a tag when the repository variable `LD_PUBLISH_TRY_IMAGE` is `true`. The stack also
+in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it publishes no image. The
+stack also
 serves the end-to-end harness as its `shopware` target (see the comment in `dev/try/compose.yaml`).
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field

@@ -6,9 +6,9 @@ name: Try stack
 # the storefront in a real browser with XRP, RLUSD and USDC. It installs the plugin into a fresh
 # Shopware the way a merchant does from the store zip.
 #
-# Publishing the image to GHCR (ghcr.io/ledger-direct/try-shopware) happens on a version tag only when
-# the repository variable LD_PUBLISH_TRY_IMAGE is "true", or by hand (workflow_dispatch, "publish").
-# A first publish creates the package private; switch it to public once in the package settings.
+# No image is published: dockware's base layers carry the Tideways daemon (proprietary) and Filebeat
+# (Elastic License Agreement), which a derived public image would redistribute. Visitors build the
+# shop from the checkout on its first `docker compose up`.
 
 on:
   pull_request:
@@ -16,17 +16,12 @@ on:
     branches: [master]
     tags: ['[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
-    inputs:
-      publish:
-        description: Publish the image to GHCR as ":edge"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 env:
-  IMAGE: ghcr.io/ledger-direct/try-shopware
+  IMAGE: ledger-direct/try-shopware
 
 jobs:
   smoke:
@@ -105,55 +100,3 @@ jobs:
         run: |
           docker compose logs --no-color --tail 200 shopware
           docker compose exec -T shopware bash -c 'tail -n 50 /var/www/html/var/log/prod-*.log 2>/dev/null' || true
-
-  publish:
-    name: Publish the try image
-    needs: smoke
-    if: >-
-      (startsWith(github.ref, 'refs/tags/') && vars.LD_PUBLISH_TRY_IMAGE == 'true')
-      || (github.event_name == 'workflow_dispatch' && inputs.publish)
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - uses: docker/setup-qemu-action@v3
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=ref,event=tag
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
-            type=raw,value=edge,enable=${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Build and push (amd64 and arm64)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: dev/try/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            LD_VERSION=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('dev-{0}', github.sha) }}
-          cache-from: type=gha,scope=try-shopware
