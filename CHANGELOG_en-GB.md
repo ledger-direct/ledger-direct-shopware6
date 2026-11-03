@@ -1,3 +1,11 @@
+# Unreleased
+- The payment page's poll (`/ledger-direct/payment/check/{orderId}`) refuses with JSON in every
+  environment: `403 {"error":"forbidden"}` when neither the key nor the customer's session authorises the order,
+  `404 {"error":"no_payment_intent"}`
+  for an order never quoted for XRPL — the same bodies as the Magento and PrestaShop plugins. In `prod`
+  Shopware answered both with its HTML error page. The payment page never read that body, so nothing
+  changes for customers; a client that parses the refusal now gets JSON. The Store API route is unchanged
+
 # 1.9.0
 - Store API for headless front ends, second part. `check` carries `hash` once a payment is on record:
   the payment page's success view shows the transaction with its explorer link — it had a row for that

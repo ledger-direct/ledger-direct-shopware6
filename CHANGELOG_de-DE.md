@@ -1,3 +1,12 @@
+# Unreleased
+- Die Statusabfrage der Zahlungsseite (`/ledger-direct/payment/check/{orderId}`) lehnt in jeder Umgebung
+  mit JSON ab: `403 {"error":"forbidden"}`, wenn weder der Schlüssel noch die Sitzung des Kunden die Bestellung
+  freigibt, `404
+  {"error":"no_payment_intent"}` für eine Bestellung ohne XRPL-Angebot — dieselben Antworten wie in den
+  Plugins für Magento und PrestaShop. In `prod` antwortete Shopware in beiden Fällen mit seiner
+  HTML-Fehlerseite. Die Zahlungsseite hat diese Antwort nie gelesen, für Kunden ändert sich also nichts; ein
+  Client, der die Ablehnung auswertet, bekommt jetzt JSON. Die Store-API-Route bleibt unverändert
+
 # 1.9.0
 - Store-API für Headless-Frontends, zweiter Teil. `check` liefert `hash`, sobald eine Zahlung verbucht ist:
   Die Erfolgsansicht der Zahlungsseite zeigt die Transaktion mit Explorer-Link — dafür gab es seit 1.4.0 eine
