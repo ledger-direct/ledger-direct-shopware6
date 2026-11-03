@@ -56,6 +56,9 @@ class XrplPaymentControllerTest extends TestCase
         $controller = (new \ReflectionClass(XrplPaymentController::class))->newInstanceWithoutConstructor();
         (new \ReflectionProperty(XrplPaymentController::class, 'paymentRoute'))->setValue($controller, $route);
 
-        return $controller->checkPayment(Mockery::mock(SalesChannelContext::class), 'order-id', new Request());
+        /** @var SalesChannelContext&\Mockery\MockInterface $context */
+        $context = Mockery::mock(SalesChannelContext::class);
+
+        return $controller->checkPayment($context, 'order-id', new Request());
     }
 }
