@@ -8,6 +8,10 @@ on:
   push:
   pull_request:
 
+# Every job only reads the repository; nothing here writes to GitHub.
+permissions:
+  contents: read
+
 # A newer push to the same pull request cancels its run in progress. Every other run (push to master,
 # tag, manual) gets a group of its own: GitHub keeps only one pending run per group, so a shared
 # group would cancel a pending master run whose changes the next run never classifies again.

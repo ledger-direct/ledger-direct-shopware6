@@ -5,9 +5,10 @@
 set -euo pipefail
 
 docs='^([^/]+/)*[^/]+\.md$|^docs/|^readme\.txt$|^CHANGELOG|^LICENSE|^\.coderabbit\.yaml$|^\.github/(ISSUE_TEMPLATE/|PULL_REQUEST_TEMPLATE|CODEOWNERS|dependabot\.yml)'
-# Changes that never reach the shop: tests and the configs of the test tools, CI workflows other than
-# the try stack's, editor and git housekeeping.
-not_runtime='^tests?/|^phpunit(\.xml)?(\.dist)?$|^phpstan[^/]*$|^\.phpcs[^/]*$|^phpcs\.xml(\.dist)?$|^\.php-cs-fixer[^/]*$|^\.editorconfig$|^\.gitattributes$|^\.gitignore$'
+# Changes that never reach the shop: tests and the configs of the test tools (at the root or under
+# dev/), the CodeRabbit config, editor and git housekeeping. CI workflows other than the try stack's
+# are handled in reaches_shop().
+not_runtime='^tests?/|^(dev/)?phpunit(\.xml)?(\.dist)?$|^(dev/)?phpstan[^/]*$|^(dev/)?\.phpcs[^/]*$|^(dev/)?phpcs\.xml(\.dist)?$|^(dev/)?\.php-cs-fixer[^/]*$|^\.coderabbit\.yaml$|^\.editorconfig$|^\.gitattributes$|^\.gitignore$'
 
 # The commits to diff: "<base> <head>", or empty when there is no base (then everything counts).
 diff_range() {
@@ -48,6 +49,16 @@ fi
 files="$(printf '%s\n' "$files" | grep -v '^$' || true)"
 deleted="$(printf '%s\n' "$deleted" | grep -v '^$' || true)"
 
+# Can a change to this file reach the shop? Tests, the test tools' configs and GitHub's own files
+# cannot; the try workflow and this action can, because they decide when the stack is built.
+reaches_shop() {
+  case "$1" in
+    .github/workflows/try.yml|.github/actions/changes/*) return 0 ;;
+    .github/*) return 1 ;;
+  esac
+  ! printf '%s' "$1" | grep -Eq "$not_runtime"
+}
+
 docs_only=true; runtime=false
 if [ -z "$files" ]; then docs_only=false; fi
 while IFS= read -r f; do
@@ -55,25 +66,15 @@ while IFS= read -r f; do
   if [ "$f" = '*' ]; then docs_only=false; runtime=true; continue; fi
   if printf '%s' "$f" | grep -Eq "$docs"; then continue; fi
   docs_only=false
-  case "$f" in
-    .github/workflows/try.yml) ;;      # the try workflow itself is part of the try stack
-    .github/*) continue ;;             # every other workflow or GitHub config never reaches the shop
-  esac
-  if printf '%s' "$f" | grep -Eq "$not_runtime"; then continue; fi
-  runtime=true
+  if reaches_shop "$f"; then runtime=true; fi
 done <<< "$files"
-# A deleted file is never documentation-only, and it counts as a runtime change unless it is a test,
-# a test-tool config or another workflow: a build may copy it (the try image copies LICENSE.md,
-# README.md, the changelogs and dev/try/catalog/NOTICE.md), and only the build can tell.
+# A deleted file is never documentation: a release build or a link elsewhere may require it (the
+# release archive check needs LICENSE.md, the try image copies dev/try/catalog/NOTICE.md). The full
+# CI runs, and the try stack too when the file could reach the shop.
 while IFS= read -r f; do
   [ -z "$f" ] && continue
   docs_only=false
-  case "$f" in
-    .github/workflows/try.yml) ;;
-    .github/*) continue ;;
-  esac
-  if printf '%s' "$f" | grep -Eq "$not_runtime"; then continue; fi
-  runtime=true
+  if reaches_shop "$f"; then runtime=true; fi
 done <<< "$deleted"
 
 echo "changed: $(printf '%s' "$files" | grep -c . || true) file(s), deleted: $(printf '%s' "$deleted" | grep -c . || true); docs_only=$docs_only runtime=$runtime"
