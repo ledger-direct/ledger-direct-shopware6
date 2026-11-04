@@ -21,4 +21,5 @@ runs:
         EVENT: ${{ github.event_name }}
         BEFORE: ${{ github.event.before }}
         AFTER: ${{ github.sha }}
+        REF_TYPE: ${{ github.ref_type }}
       run: bash "$GITHUB_ACTION_PATH/classify.sh"
