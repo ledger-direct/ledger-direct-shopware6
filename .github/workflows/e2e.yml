@@ -5,10 +5,10 @@
 # keeps its own receiving account, which the harness restores after the run.
 #
 # Not a merge gate: the testnet and its faucet are not deterministic. It runs
-# - on a pushed version tag: the automated cases (no PS-10), before the release is announced; a red
-#   run reports, it does not stop the release;
-# - on a schedule: every case, PS-10 included (35 minutes). Whether this stays nightly is open
-#   (test economy, step D3);
+# - on a pushed version tag: the automated cases (all but PS-04 and PS-10), before the release is
+#   announced; a red run reports, it does not stop the release;
+# - on a schedule: every case, PS-04 and PS-10 included (PS-10 waits 35 minutes). Whether this
+#   stays nightly is open (test economy, step D3);
 # - by hand, with the cases to run.
 # The workflow is the same in every LedgerDirect plugin repository except for the target.
 #
@@ -27,18 +27,22 @@ on:
   workflow_dispatch:
     inputs:
       cases:
-        description: 'Case IDs, "automated" (no PS-10) or "all" (all includes PS-10, 35 minutes)'
+        description: 'Case IDs, "automated" (all but PS-04 and PS-10) or "all" (PS-10 waits 35 minutes)'
         default: 'automated'
 
 # Nothing here writes to GitHub.
 permissions:
   contents: read
 
-# One run at a time: every run pays from the same treasury account, and two runs sending from it at
-# once collide on its sequence numbers. A later run waits; none is cancelled.
+# One run at a time in this repository: every run pays from the same treasury account, and two runs
+# sending from it at once collide on its sequence numbers. Later runs queue instead of replacing
+# each other, so a version tag's run is not dropped for a later one; GitHub keeps up to 100 waiting
+# and cancels runs beyond that. The group does not reach across repositories; the other plugin
+# repositories' runs are kept apart by their schedules.
 concurrency:
   group: e2e-testnet
   cancel-in-progress: false
+  queue: max
 
 env:
   TARGET: shopware
@@ -54,6 +58,9 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # No token left in .git/config for the harness's npm dependencies to read.
+          persist-credentials: false
 
       - name: Log in to Docker Hub
         if: env.DOCKERHUB_USERNAME != ''
@@ -85,6 +92,7 @@ jobs:
         with:
           repository: ledger-direct/ledger-direct-e2e
           path: e2e
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -102,6 +110,11 @@ jobs:
           # The harness reads the testnet treasury variables; in CI they hold the dedicated CI wallet.
           LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_SEED }}
           LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_ADDRESS }}
+          # Spending limits, in the asset's units. A full run against a try shop spends about 5 XRP and
+          # 2 RLUSD and USDC each; a run that wants more (a pricier article, a falling XRP price, a
+          # loop) fails loudly instead of emptying the CI wallet. No other asset gets anything.
+          LD_E2E_MAX_PAYMENT: '5'
+          LD_E2E_RUN_BUDGET: XRP=15,RLUSD=5,USDC=5
           CASES: ${{ github.event_name == 'schedule' && 'all' || inputs.cases || 'automated' }}
         run: node dist/cli.js run --target "$TARGET" --try --cases "$CASES" --report out/report.json
 
