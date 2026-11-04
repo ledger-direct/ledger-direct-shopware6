@@ -31,9 +31,11 @@ else
   range="$(diff_range)"
   if [ -n "$range" ]; then
     # shellcheck disable=SC2086 # two commits, split on the space
-    files="$(git diff --name-only $range)"
+    # --no-renames lists a renamed file under both paths, so a runtime file moved into docs/
+    # still counts as a runtime change (--name-only alone would show only the new path).
+    files="$(git diff --no-renames --name-only $range)"
     # shellcheck disable=SC2086
-    deleted="$(git diff --name-only --diff-filter=D $range)"
+    deleted="$(git diff --no-renames --name-only --diff-filter=D $range)"
   else
     files='*'; deleted=''
   fi
