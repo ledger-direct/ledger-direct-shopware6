@@ -354,15 +354,18 @@ is how you see whether the throttle holds.
 
 ### Continuous integration and release
 
-Every push and pull request runs `.github/workflows/ci.yml`: `shopware-cli extension validate`
-(basic and store-compliance checks as a gate, the full validation non-blocking) and both PHPUnit
-suites in a dockware container with Shopware 6.7. `e2e.yml` runs the end-to-end harness against a
-fresh dockware shop and the XRPL testnet every night; it is not a merge gate, it detects drift. `try.yml`
-builds the try stack in `dev/try` from the checkout on every pull request, smoke-tests it
-(`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks the storefront
-in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it publishes no image. The
-stack also
-serves the end-to-end harness as its `shopware` target (see the comment in `dev/try/compose.yaml`).
+What runs depends on what changed: a `changes` job (`.github/actions/changes`, the same in every
+LedgerDirect plugin repository) classifies the diff of a push or pull request. Every push and pull
+request runs `.github/workflows/ci.yml`: `shopware-cli extension validate` (basic and
+store-compliance checks as a gate, the full validation non-blocking) always, and both PHPUnit suites
+in a dockware container with Shopware 6.7 unless only documentation changed. `try.yml` builds the try
+stack in `dev/try` from the checkout when something the shop runs changed (code, Composer, `dev/try`),
+smoke-tests it (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks
+the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it
+publishes no image. `e2e.yml` runs the end-to-end harness against that try stack and the XRPL testnet:
+on a version tag (every case but PS-10's 35-minute wait), weekly on Monday at 02:17 UTC (every case)
+and by hand. It is not a merge gate: the testnet is not deterministic. The stack also serves the
+end-to-end harness locally as its `shopware` target (see the comment in `dev/try/compose.yaml`).
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field
 for a plugin under `custom/plugins`; Packagist reads the tag). Pushing the tag runs `release.yml`:
