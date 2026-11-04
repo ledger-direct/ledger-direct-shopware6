@@ -62,7 +62,9 @@ jobs:
   phpunit:
     name: PHPUnit (Shopware 6.7)
     needs: changes
-    if: needs.changes.outputs.docs_only != 'true'
+    # Runs unless the run was cancelled: a failed classification must not skip the tests, because a
+    # skipped job counts as passed for required checks.
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout plugin

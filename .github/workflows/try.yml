@@ -50,7 +50,9 @@ jobs:
   smoke:
     name: Build, start and smoke-test the try stack
     needs: changes
-    if: needs.changes.outputs.runtime == 'true'
+    # Runs for runtime changes, and whenever the classification itself failed: a skipped job counts
+    # as passed for required checks, so a broken `changes` job must not switch the stack off.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.runtime == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
