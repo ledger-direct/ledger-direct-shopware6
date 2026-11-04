@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Writes docs_only=true|false and runtime=true|false to $GITHUB_OUTPUT (or stdout when unset).
 # Reads the changed files from git, or from CHANGED_FILES and DELETED_FILES (newline-separated)
-# for tests. REF_TYPE is github.ref_type ("branch" or "tag").
+# for tests.
 set -euo pipefail
 
 docs='^([^/]+/)*[^/]+\.md$|^docs/|^readme\.txt$|^CHANGELOG|^LICENSE|^\.coderabbit\.yaml$|^\.github/(ISSUE_TEMPLATE/|PULL_REQUEST_TEMPLATE|CODEOWNERS|dependabot\.yml)'
@@ -16,8 +16,11 @@ diff_range() {
       # actions/checkout checks out the merge commit; its first parent is the base branch.
       echo 'HEAD^1 HEAD' ;;
     push)
-      # A tag names a state to test as a whole, not a change: a moved tag has a base, a new one not.
-      if [ "${REF_TYPE-}" = tag ]; then return; fi
+      # A version tag always counts as runtime, even when it was moved onto a docs-only commit:
+      # the try workflow publishes the image for it.
+      case "${GITHUB_REF-}" in
+        refs/tags/*) echo "::notice::tag push; classifying as runtime" >&2; return ;;
+      esac
       if [ -z "${BEFORE-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
          || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
         echo "::notice::no base to diff against; classifying as runtime" >&2; return
