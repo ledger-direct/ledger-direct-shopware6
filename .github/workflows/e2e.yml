@@ -1,76 +1,84 @@
-# Nightly end-to-end run against the XRPL testnet (Handover-E2E-Teststrategie.md, stage 1).
+# End-to-end run against the XRPL testnet, on the try stack (dev/try): the shop a visitor gets with
+# `docker compose up`, built from this checkout, not a development shop. The harness
+# ledger-direct-e2e then drives the case catalogue PS-01…PS-11 against it with `--try`, the same
+# command that works locally. Real transactions on the testnet, paid from the CI treasury; the shop
+# keeps its own receiving account, which the harness restores after the run.
 #
-# The same dockware Shopware as the PHPUnit job in ci.yml, published on port 80, the
-# plugin installed into it; then the harness `ledger-direct-e2e` drives the case
-# catalogue PS-01…PS-11 over the Store API, the Admin API and the container's
-# console. Real transactions on the testnet: a fresh receiving account per run, paid
-# from the treasury the organisation secrets name. Not a merge gate — the testnet
-# and its faucet are not deterministic — so it runs on a schedule and on demand.
+# Not a merge gate: the testnet and its faucet are not deterministic. It runs
+# - on a pushed version tag: the automated cases (no PS-10), before the release is announced; a red
+#   run reports, it does not stop the release;
+# - on a schedule: every case, PS-10 included (35 minutes). Whether this stays nightly is open
+#   (test economy, step D3);
+# - by hand, with the cases to run.
+# The workflow is the same in every LedgerDirect plugin repository except for the target.
 #
 # Secrets (organisation-wide, shared by the plugin repos):
 #   LEDGERDIRECT_CI_XRPL_TREASURY_SEED / _ADDRESS   the CI payer wallet (XRP, RLUSD, USDC), separate from the local one
+#   DOCKERHUB_USERNAME / DOCKERHUB_TOKEN             pulls count against the organisation, not the runner's IP
 # The harness repository ledger-direct/ledger-direct-e2e is public; its checkout needs no token.
 name: E2E (testnet)
 
 on:
+  push:
+    # version tags only (1.9.0)
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
   schedule:
     - cron: '47 3 * * *'
   workflow_dispatch:
     inputs:
       cases:
-        description: 'Case IDs, "automated" or "all" (all includes PS-10, 35 minutes)'
-        default: 'all'
+        description: 'Case IDs, "automated" (no PS-10) or "all" (all includes PS-10, 35 minutes)'
+        default: 'automated'
+
+# Nothing here writes to GitHub.
+permissions:
+  contents: read
+
+# One run at a time: every run pays from the same treasury account, and two runs sending from it at
+# once collide on its sequence numbers. A later run waits; none is cancelled.
+concurrency:
+  group: e2e-testnet
+  cancel-in-progress: false
+
+env:
+  TARGET: shopware
+  IMAGE: ledger-direct/try-shopware:e2e
 
 jobs:
   e2e:
-    name: ld-e2e against dockware
+    name: ld-e2e against the try stack
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      # Secrets are not available in step conditions; their presence is, through the environment.
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
-      - name: Checkout plugin
-        uses: actions/checkout@v4
-        with:
-          path: LedgerDirect
+      - uses: actions/checkout@v4
 
-      # Docker Hub counts anonymous pulls per IP, and GitHub-hosted runners share
-      # theirs with everyone, so the dockware pull failed at random with
-      # "toomanyrequests". Logged in, it counts against the organisation's account.
       - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Start dockware (Shopware 6.7 + DB)
-        run: |
-          docker run -d --name shopware -p 80:80 dockware/shopware:6.7-latest
-          for i in $(seq 1 60); do
-            status="$(docker inspect -f '{{.State.Health.Status}}' shopware 2>/dev/null || echo starting)"
-            [ "$status" = "healthy" ] && break
-            sleep 5
-          done
-          docker exec shopware test -f /var/www/html/bin/console
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Copy plugin into the container
-        run: |
-          docker exec shopware mkdir -p /var/www/html/custom/plugins
-          docker cp LedgerDirect shopware:/var/www/html/custom/plugins/LedgerDirect
+      # The same image the try workflow builds; its layer cache is read, not written.
+      - name: Build the shop image from this checkout
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dev/try/Dockerfile
+          tags: ${{ env.IMAGE }}
+          load: true
+          cache-from: type=gha,scope=try-shopware
 
-      # Shopware's dev config uses an in-memory cache per request, which turns the
-      # sync throttle and the rate cache into no-ops (PS-08 fails). The same override
-      # the local harness installs: a cache that survives a request.
-      - name: Install and activate the plugin, with a persistent cache
-        run: |
-          docker exec shopware bash -lc 'mkdir -p /var/www/html/config/packages/dev && printf "framework:\n    cache:\n        app: cache.adapter.filesystem\n" > /var/www/html/config/packages/dev/zz_ledger_direct_cache.yaml'
-          docker exec shopware bash -lc 'cd /var/www/html && php bin/console plugin:refresh && php bin/console plugin:install --activate LedgerDirect && php bin/console theme:compile && php bin/console cache:clear'
-
-      # The Storefront sales channel's access key, which the Store API requires.
-      - name: Read the sales channel access key
-        id: channel
-        run: |
-          key="$(docker exec shopware bash -lc 'mysql -h127.0.0.1 -uroot -proot shopware -N -e "SELECT access_key FROM sales_channel WHERE type_id = UNHEX(\"8A243080F92E4C719546314B577CF82B\") LIMIT 1"' | tr -d '[:space:]')"
-          test -n "$key"
-          echo "access_key=$key" >> "$GITHUB_OUTPUT"
+      - name: Start the try stack
+        working-directory: dev/try
+        env:
+          LD_TRY_IMAGE: ${{ env.IMAGE }}
+        run: docker compose up -d --wait --no-build
 
       - name: Check out the harness
         uses: actions/checkout@v4
@@ -94,13 +102,8 @@ jobs:
           # The harness reads the testnet treasury variables; in CI they hold the dedicated CI wallet.
           LEDGERDIRECT_TESTNET_XRPL_TREASURY_SEED: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_SEED }}
           LEDGERDIRECT_TESTNET_XRPL_TREASURY_ADDRESS: ${{ secrets.LEDGERDIRECT_CI_XRPL_TREASURY_ADDRESS }}
-        run: >
-          node dist/cli.js run --target shopware
-          --cases "${{ github.event.inputs.cases || 'all' }}"
-          --base-url http://localhost
-          --access-key "${{ steps.channel.outputs.access_key }}"
-          --container shopware
-          --report out/report.json
+          CASES: ${{ github.event_name == 'schedule' && 'all' || inputs.cases || 'automated' }}
+        run: node dist/cli.js run --target "$TARGET" --try --cases "$CASES" --report out/report.json
 
       - name: Upload the report
         if: always()
@@ -110,6 +113,9 @@ jobs:
           path: e2e/out/report.json
           if-no-files-found: ignore
 
-      - name: Show the shop log
+      - name: Shop log
         if: failure()
-        run: docker exec shopware bash -lc 'tail -n 200 /var/www/html/var/log/dev.log' || true
+        working-directory: dev/try
+        run: |
+          docker compose logs --no-color --tail 200
+          docker compose exec -T shopware bash -c 'tail -n 50 /var/www/html/var/log/prod-*.log 2>/dev/null' || true
