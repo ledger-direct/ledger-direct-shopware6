@@ -1,10 +1,35 @@
 name: CI
 
+# The `changes` job classifies what a run changed (.github/actions/changes). `validate` always runs;
+# it is the lint gate and takes seconds. PHPUnit is skipped when only documentation changed.
+# A newer commit on the same pull request cancels the older run.
+
 on:
   push:
   pull_request:
 
+# A newer push to the same pull request cancels its run in progress. Every other run (push to master,
+# tag, manual) gets a group of its own: GitHub keeps only one pending run per group, so a shared
+# group would cancel a pending master run whose changes the next run never classifies again.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+      runtime: ${{ steps.changes.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # pull_request: the merge commit and both parents; push: the pushed range
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
+      - id: changes
+        uses: ./.github/actions/changes
+
   # ---------------------------------------------------------------------------
   # Static validation: store readiness, coding standards, deprecations, lint.
   # Mirrors `shopware-cli extension validate` from local. Primary gate.
@@ -39,6 +64,10 @@ jobs:
   # ---------------------------------------------------------------------------
   phpunit:
     name: PHPUnit (Shopware 6.7)
+    needs: changes
+    # Runs unless the run was cancelled: a failed classification must not skip the tests, because a
+    # skipped job counts as passed for required checks.
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout plugin

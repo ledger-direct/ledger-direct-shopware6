@@ -9,6 +9,11 @@ name: Try stack
 # No image is published: dockware's base layers carry the Tideways daemon (proprietary) and Filebeat
 # (Elastic License Agreement), which a derived public image would redistribute. Visitors build the
 # shop from the checkout on its first `docker compose up`.
+#
+# The `changes` job classifies what a run changed (.github/actions/changes): the stack is built and
+# tested only when something the shop runs may have changed (plugin code, composer, dev/try, this
+# workflow), not for documentation, tests or other CI changes. Tags and manual runs always count as
+# such a change. A newer commit on the same pull request cancels the older run.
 
 on:
   pull_request:
@@ -17,6 +22,13 @@ on:
     tags: ['[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
 
+# A newer push to the same pull request cancels its run in progress. Every other run (push to master,
+# tag, manual) gets a group of its own: GitHub keeps only one pending run per group, so a shared
+# group would cancel a pending master run whose changes the next run never classifies again.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -24,8 +36,26 @@ env:
   IMAGE: ledger-direct/try-shopware
 
 jobs:
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+      runtime: ${{ steps.changes.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # pull_request: the merge commit and both parents; push: the pushed range
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
+      - id: changes
+        uses: ./.github/actions/changes
+
   smoke:
     name: Build, start and smoke-test the try stack
+    needs: changes
+    # Runs for runtime changes, and whenever the classification itself failed: a skipped job counts
+    # as passed for required checks, so a broken `changes` job must not switch the stack off.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.runtime == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
