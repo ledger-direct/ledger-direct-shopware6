@@ -134,3 +134,36 @@ jobs:
         run: |
           docker compose logs --no-color --tail 200 shopware
           docker compose exec -T shopware bash -c 'tail -n 50 /var/www/html/var/log/prod-*.log 2>/dev/null' || true
+
+  # The one check a merge into master requires (see ci.yml, job "passed"). Its name is in
+  # .github/rulesets/master.json: renaming the job blocks every merge until the ruleset on GitHub is
+  # changed too. Skipped on purpose (nothing the stack runs changed) counts as passed; failed or
+  # cancelled does not.
+  passed:
+    name: Try passed
+    needs: [changes, smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    # Reads this run's job list, nothing else.
+    permissions:
+      actions: read
+    steps:
+      - name: Every job passed or was skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          GH_TOKEN: ${{ github.token }}
+          JOBS: repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100
+          # Jobs this check leaves out, by the start of their name: none; listed here so a later job is added on purpose
+          UNGATED: '[]'
+        # needs.<job>.result can say "success" for a matrix one of whose legs was cancelled before a
+        # runner took it (https://github.com/orgs/community/discussions/211624), so every finished job
+        # of this run, each matrix leg on its own, is checked as well, except the ones in UNGATED:
+        # whether they are finished at this point is a matter of timing.
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
+          gh api "$JOBS" > jobs.json
+          jq --argjson ungated "$UNGATED" '[.jobs[] | select(.status == "completed")
+            | select(.name as $n | $ungated | any(. as $p | $n | startswith($p)) | not)]' jobs.json > gated.json
+          jq -r '.[] | "\(.name): \(.conclusion)"' gated.json
+          jq -e 'all(.[]; .conclusion == "success" or .conclusion == "skipped")' gated.json > /dev/null
