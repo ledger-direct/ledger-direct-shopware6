@@ -7,6 +7,11 @@ name: CI
 on:
   push:
   pull_request:
+  # Weekly, Monday: the whole suite on master, and the check that the branch rules on GitHub
+  # are the ones in .github/rulesets/master.json.
+  schedule:
+    - cron: '47 4 * * 1'
+  workflow_dispatch:
 
 # Every job only reads the repository; nothing here writes to GitHub.
 permissions:
@@ -119,3 +124,52 @@ jobs:
 
       - name: PHPUnit — Integration
         run: docker exec shopware bash -lc 'cd /var/www/html/custom/plugins/LedgerDirect && /var/www/html/vendor/bin/phpunit --testsuite Integration'
+
+  # Weekly and on demand: the ruleset GitHub enforces on master is the one in .github/rulesets/master.json.
+  # Not part of "CI passed": a pull request that changes the file differs from GitHub until the
+  # ruleset is applied after the merge.
+  ruleset:
+    name: Branch rules match .github/rulesets
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare the ruleset on GitHub with the file
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/rulesets/check.sh "${{ github.repository }}" .github/rulesets/master.json
+
+  # The one check a merge into master requires. Its name is in .github/rulesets/master.json: renaming the
+  # job blocks every merge until the ruleset on GitHub is changed too. A job's own name changes with
+  # its matrix and shows unexpanded when the job is skipped, so the branch rules name this job
+  # instead. Skipped on purpose (a documentation-only pull request) counts as passed; failed or
+  # cancelled does not. always(), not !cancelled(): a skipped job counts as passed, so this job has
+  # to run and report in every case.
+  passed:
+    name: CI passed
+    needs: [changes, validate, phpunit]
+    if: always()
+    runs-on: ubuntu-latest
+    # Reads this run's job list, nothing else.
+    permissions:
+      actions: read
+    steps:
+      - name: Every job passed or was skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          GH_TOKEN: ${{ github.token }}
+          JOBS: repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100
+          # Jobs this check leaves out, by the start of their name: the weekly ruleset check, not in needs
+          UNGATED: '["Branch rules match"]'
+        # needs.<job>.result can say "success" for a matrix one of whose legs was cancelled before a
+        # runner took it (https://github.com/orgs/community/discussions/211624), so every finished job
+        # of this run, each matrix leg on its own, is checked as well, except the ones in UNGATED:
+        # whether they are finished at this point is a matter of timing.
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
+          gh api "$JOBS" > jobs.json
+          jq --argjson ungated "$UNGATED" '[.jobs[] | select(.status == "completed")
+            | select(.name as $n | $ungated | any(. as $p | $n | startswith($p)) | not)]' jobs.json > gated.json
+          jq -r '.[] | "\(.name): \(.conclusion)"' gated.json
+          jq -e 'all(.[]; .conclusion == "success" or .conclusion == "skipped")' gated.json > /dev/null
