@@ -20,6 +20,10 @@ use Shopware\Core\Framework\Uuid\Uuid;
  * One instance per chain that speaks the XRPL protocol: the XRP Ledger's
  * tables by default, Xahau's for `XAHAU`. The table names are the core's
  * (Xrpl\Schema); the two chains never share a row or a tag counter.
+ *
+ * The two transaction tables differ in their key. The XRP Ledger's is older
+ * than the core's schema and keeps Shopware's binary UUID; Xahau's is created
+ * from the core's DDL and numbers its rows itself.
  */
 class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterface
 {
@@ -29,10 +33,14 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
 
     private string $tagTable;
 
+    /** True for the XRP Ledger's table, whose `id` is a UUID this class has to supply. */
+    private bool $uuidKey;
+
     public function __construct(Connection $connection, string $chain = ChainCatalog::XRPL)
     {
         $this->connection = $connection;
         [$this->txTable, $this->tagTable] = array_keys(Schema::tables($chain));
+        $this->uuidKey = $chain === ChainCatalog::XRPL;
     }
 
     /**
@@ -100,8 +108,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     {
         foreach ($transactions as $transaction) {
             try {
-                $this->connection->insert($this->txTable, [
-                    'id' => Uuid::randomBytes(),
+                $this->connection->insert($this->txTable, ($this->uuidKey ? ['id' => Uuid::randomBytes()] : []) + [
                     'network' => $transaction->network,
                     'ledger_index' => $transaction->ledgerIndex,
                     'hash' => $transaction->hash,
@@ -128,8 +135,9 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
      * candidate set, filtered by nothing else. Which of them actually pays a
      * given order is the core's decision, not storage's.
      *
-     * `id` is a random UUID, so as a tie-breaker it only makes the order
-     * total, not chronological; the chronology comes from `ledger_index`.
+     * `id` only breaks ties, so the order is total; on the XRP Ledger's
+     * table it is a random UUID and says nothing about time. The chronology
+     * comes from `ledger_index`.
      *
      * @return XrplTransaction[]
      */

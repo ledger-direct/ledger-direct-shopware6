@@ -105,7 +105,7 @@ class PaymentInfoPresenterTest extends TestCase
         self::assertSame('0000000000000000000000000000000000000000', PaymentInfoPresenter::currencyName('0000000000000000000000000000000000000000'));
     }
 
-    public function testTheExplorerKnowsTwoChainsWithTwoNetworksEachAndNothingElse(): void
+    public function testTheExplorerKnowsThreeChainsWithTwoNetworksEachAndNothingElse(): void
     {
         self::assertSame('https://testnet.xrpl.org/transactions/ABC', Explorer::transactionUrl('XRPL', 'testnet', 'ABC'));
         self::assertSame('https://livenet.xrpl.org/transactions/ABC', Explorer::transactionUrl('XRPL', 'mainnet', 'ABC'));
@@ -113,7 +113,9 @@ class PaymentInfoPresenterTest extends TestCase
         self::assertSame('https://stellar.expert/explorer/public/tx/ABC', Explorer::transactionUrl('STELLAR', 'mainnet', 'ABC'));
         self::assertSame('https://stellar.expert/explorer/public/tx/', Explorer::transactionBase('STELLAR', 'mainnet'));
         self::assertNull(Explorer::transactionUrl('XRPL', 'devnet', 'ABC'));
-        self::assertNull(Explorer::transactionUrl('XAHAU', 'testnet', 'ABC'));
+        self::assertSame('https://explorer.xahau-test.net/tx/ABC', Explorer::transactionUrl('XAHAU', 'testnet', 'ABC'));
+        self::assertSame('https://explorer.xahau.network/tx/ABC', Explorer::transactionUrl('XAHAU', 'mainnet', 'ABC'));
+        self::assertNull(Explorer::transactionUrl('SOLANA', 'testnet', 'ABC'));
         self::assertNull(Explorer::transactionUrl('XRPL', 'testnet', null));
     }
 
