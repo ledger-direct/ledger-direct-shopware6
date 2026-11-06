@@ -72,6 +72,46 @@ class PaymentPageViewTest extends TestCase
         $this->assertNotSame('', $values['explorerBase']);
     }
 
+    /**
+     * Xahau speaks the XRPL protocol, so its page carries the XRPL payment
+     * request — with the network named in it, which is what makes Xaman offer
+     * the switch to Xahau. The values only the browser-wallet module reads
+     * stay empty: that module serves the XRP Ledger alone.
+     */
+    public function testAXahauPageCarriesTheXrplRequestWithItsNetworkAndNoWalletValues(): void
+    {
+        $intent = PaymentIntent::quote(
+            type: 'xahau-xah-payment',
+            chain: 'XAHAU',
+            network: 'testnet',
+            baseAsset: 'XAH',
+            quoteCurrency: 'EUR',
+            pairing: 'XAH/EUR',
+            exchangeRate: 0.0091,
+            amountRequested: 1.5,
+            destinationAccount: 'r4ERx8577eKBSAT1pLefizNPYCYfhk1op2',
+            destinationTag: 1050508800,
+            expiry: time() + 300,
+        );
+
+        $values = $this->view()->values($this->order(), $this->transaction(), $intent, $this->salesChannel('Shop'));
+
+        $this->assertSame(self::CONTRACT_KEYS, array_keys($values));
+        $this->assertSame('XAHAU', $values['chain']);
+        $this->assertSame('xah', $values['mode']);
+        $this->assertSame('XAH', $values['assetLabel']);
+        $this->assertSame('1.5', $values['amountDueDisplay']);
+        $this->assertSame(
+            'https://xrplf.org//send?to=r4ERx8577eKBSAT1pLefizNPYCYfhk1op2&dt=1050508800&amount=1.5&network=XAHAUTESTNET',
+            $values['paymentUri'],
+        );
+        $this->assertSame('https://explorer.xahau-test.net/tx/', $values['explorerBase']);
+        $this->assertSame(1050508800, $values['destinationTag']);
+        $this->assertNull($values['amountDrops'], 'read by the XRPL wallet module only');
+        $this->assertNull($values['currencyHex']);
+        $this->assertNull($values['issuer']);
+    }
+
     public function testATokenPageNamesIssuerAndCurrencyAndHasNoDrops(): void
     {
         $values = $this->view()->values($this->order(), $this->transaction(), $this->usdc(), $this->salesChannel('Shop'));

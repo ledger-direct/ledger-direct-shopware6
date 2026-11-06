@@ -20,9 +20,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * copied from a wallet, and a stray space or line break is not part of it.
  *
  * The same account on two chains is logged, not refused: between the XRPL
- * and Stellar the formats make it impossible; the rule exists for a chain
- * that shares the XRPL's address format (Xahau), where a merchant may mean
- * it — but should see in the log that both chains will sync the same key.
+ * and Stellar the formats make it impossible; the rule exists for Xahau,
+ * which shares the XRPL's address format and whose accounts open with the
+ * same keys. A merchant may mean it — but should see in the log that both
+ * chains will sync the same address.
  */
 class ConfigurationValidator implements EventSubscriberInterface
 {

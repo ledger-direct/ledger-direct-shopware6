@@ -5,6 +5,7 @@ namespace Hardcastle\LedgerDirect\Installer;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\XahauPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\AssetDescriptor;
@@ -29,8 +30,8 @@ use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
  *
  * The three XRPL methods keep the ids they have had since the first release
  * — orders reference them. Every later method derives its id from the
- * intent type (`md5('stellar-usdc-payment')`), so it is the same on every
- * installation without a constant per asset.
+ * intent type (`md5('stellar-usdc-payment')`, `md5('xahau-xah-payment')`),
+ * so it is the same on every installation without a constant per asset.
  */
 class PaymentMethodInstaller
 {
@@ -47,6 +48,7 @@ class PaymentMethodInstaller
     public const HANDLER_BY_CHAIN = [
         ChainCatalog::XRPL => XrplPaymentHandler::class,
         ChainCatalog::STELLAR => StellarPaymentHandler::class,
+        ChainCatalog::XAHAU => XahauPaymentHandler::class,
     ];
 
     /**
@@ -57,7 +59,7 @@ class PaymentMethodInstaller
      * (PreviewChainActivator), and their card says "Preview". Removing a
      * chain from this list is what releases it.
      */
-    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR];
+    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR, ChainCatalog::XAHAU];
 
     /** Ids from before the catalogue, kept for the orders that carry them. */
     private const LEGACY_ID_BY_TYPE = [

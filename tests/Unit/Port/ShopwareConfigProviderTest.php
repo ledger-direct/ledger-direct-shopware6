@@ -105,4 +105,27 @@ class ShopwareConfigProviderTest extends TestCase
         $this->assertFalse($provider->isAssetEnabled('STELLAR', 'RLUSD'), 'not a Stellar asset');
         $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $provider->getDestinationAccount('XRPL'), 'the other chain is untouched');
     }
+
+    /**
+     * Xahau's card has no asset toggles: XAH is the native asset and on with
+     * the chain. An XRPL asset is not a Xahau one, although the address
+     * format is the same.
+     */
+    public function testXahauIsAnsweredFromItsOwnCardAndOffersXahOnly(): void
+    {
+        $provider = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance(Fixtures::getStaticXahauConfiguration()));
+
+        $this->assertSame(Fixtures::XAHAU_ACCOUNT, $provider->getDestinationAccount('XAHAU'));
+        $this->assertSame('testnet', $provider->getNetwork('XAHAU'));
+        $this->assertTrue($provider->isAssetEnabled('XAHAU', 'XAH'));
+        $this->assertFalse($provider->isAssetEnabled('XAHAU', 'XRP'), 'not a Xahau asset');
+        $this->assertFalse($provider->isAssetEnabled('XAHAU', 'RLUSD'), 'not a Xahau asset');
+        $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $provider->getDestinationAccount('XRPL'), 'the other chain is untouched');
+
+        $off = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance(
+            ['LedgerDirect.config.xahauEnabled' => false] + Fixtures::getStaticXahauConfiguration()
+        ));
+        $this->assertSame('', $off->getDestinationAccount('XAHAU'), 'switched off');
+        $this->assertFalse($off->isAssetEnabled('XAHAU', 'XAH'));
+    }
 }

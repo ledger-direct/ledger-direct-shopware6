@@ -139,6 +139,37 @@ class ConfigurationValidatorTest extends TestCase
     }
 
     /**
+     * The real case: an `r…` address is valid on the XRP Ledger and on
+     * Xahau, and the same keys open the same address on both. A merchant may
+     * mean it, so it is saved — and logged, because a payment sent on the
+     * wrong network would then arrive at an account the shop does watch, in
+     * the other chain's table.
+     */
+    public function testAnXrplAccountSavedForXahauIsKeptAndLogged(): void
+    {
+        /** @var LoggerInterface&MockInterface $logger */
+        $logger = Mockery::mock(LoggerInterface::class);
+        $logger->shouldReceive('warning')->once()->with(
+            'LedgerDirect: the same receiving account is configured on two chains',
+            ['account' => 'rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', 'chains' => ['XAHAU/testnet', 'XRPL/testnet']],
+        );
+        $validator = new ConfigurationValidator(ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration()), $logger);
+
+        $event = new BeforeSystemConfigChangedEvent('LedgerDirect.config.xahauTestnetDestinationAccount', ' rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr ', null);
+        $validator->onBeforeChange($event);
+
+        $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $event->getValue());
+    }
+
+    public function testAStellarKeyIsNotAXahauAccount(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $validator = new ConfigurationValidator(ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration()), new NullLogger());
+        $validator->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.xahauMainnetDestinationAccount', Fixtures::STELLAR_ACCOUNT, null));
+    }
+
+    /**
      * The administration saves a card as one batch; the batch is checked
      * before anything is written, so a bad account in the middle of it does
      * not leave the keys before it stored. Valid accounts come out trimmed,

@@ -30,6 +30,8 @@ class XrplTransactionSyncCommand extends Command
         ShopwareConfigProvider $configProvider,
         private readonly StellarSyncService $stellarSync,
         private readonly DbalStellarPaymentRepository $stellarRepository,
+        private readonly SyncService $xahauSync,
+        private readonly DbalXrplTransactionRepository $xahauRepository,
     ) {
         parent::__construct(self::$defaultName);
         $this->syncService = $syncService;
@@ -45,7 +47,7 @@ class XrplTransactionSyncCommand extends Command
         parent::configure();
 
         $this->setDescription('Sync the incoming payments of a receiving account from the ledger');
-        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL or STELLAR', ChainCatalog::XRPL);
+        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL, STELLAR or XAHAU', ChainCatalog::XRPL);
         $this->addOption('address', null, InputOption::VALUE_REQUIRED, 'The receiving account to check for incoming payments');
         $this->addOption(
             'force',
@@ -77,13 +79,17 @@ class XrplTransactionSyncCommand extends Command
          * check was always true and every run truncated the table. getOption()
          * is what actually reports whether the flag was passed.
          */
+        [$sync, $repository] = match ($chain) {
+            ChainCatalog::STELLAR => [$this->stellarSync, $this->stellarRepository],
+            ChainCatalog::XAHAU => [$this->xahauSync, $this->xahauRepository],
+            default => [$this->syncService, $this->transactionRepository],
+        };
+
         if ($input->getOption('force')) {
-            $chain === ChainCatalog::STELLAR ? $this->stellarRepository->truncate() : $this->transactionRepository->truncate();
+            $repository->truncate();
         }
 
-        $chain === ChainCatalog::STELLAR
-            ? $this->stellarSync->sync($address, $network)
-            : $this->syncService->syncTransactions($address, $network);
+        $sync->sync($address, $network);
 
         return Command::SUCCESS;
     }

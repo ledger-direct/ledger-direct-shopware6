@@ -23,6 +23,7 @@ class XrplTransactionLookupCommand extends Command
         XrplClient $xrplClient,
         ShopwareConfigProvider $configProvider,
         private readonly DbalStellarPaymentRepository $stellarRepository,
+        private readonly XrplClient $xahauClient,
     ) {
         parent::__construct(self::$defaultName);
         $this->xrplClient = $xrplClient;
@@ -36,10 +37,10 @@ class XrplTransactionLookupCommand extends Command
     {
         parent::configure();
 
-        $this->setDescription('Transaction lookup: XRPL on the ledger by --hash or --ctid; Stellar in the synced table by --account and --id');
-        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL or STELLAR', ChainCatalog::XRPL);
-        $this->addOption('hash', null, InputOption::VALUE_OPTIONAL, 'XRPL: hash identifying a tx');
-        $this->addOption('ctid', null, InputOption::VALUE_OPTIONAL, 'XRPL: CTID identifying a validated tx');
+        $this->setDescription('Transaction lookup: XRPL and Xahau on the ledger by --hash or --ctid; Stellar in the synced table by --account and --id');
+        $this->addOption('chain', null, InputOption::VALUE_REQUIRED, 'XRPL, STELLAR or XAHAU', ChainCatalog::XRPL);
+        $this->addOption('hash', null, InputOption::VALUE_OPTIONAL, 'XRPL, Xahau: hash identifying a tx');
+        $this->addOption('ctid', null, InputOption::VALUE_OPTIONAL, 'XRPL, Xahau: CTID identifying a validated tx');
         $this->addOption('account', null, InputOption::VALUE_OPTIONAL, 'Stellar: the receiving account');
         $this->addOption('id', null, InputOption::VALUE_OPTIONAL, 'Stellar: the memo id shown on the payment page');
     }
@@ -52,8 +53,8 @@ class XrplTransactionLookupCommand extends Command
     {
         $chain = strtoupper((string) $input->getOption('chain'));
 
-        if (!in_array($chain, [ChainCatalog::XRPL, ChainCatalog::STELLAR], true)) {
-            $output->writeln('Unknown chain ' . $chain . '; one of XRPL, STELLAR');
+        if (!in_array($chain, [ChainCatalog::XRPL, ChainCatalog::STELLAR, ChainCatalog::XAHAU], true)) {
+            $output->writeln('Unknown chain ' . $chain . '; one of XRPL, STELLAR, XAHAU');
 
             return Command::FAILURE;
         }
@@ -90,10 +91,8 @@ class XrplTransactionLookupCommand extends Command
             return Command::FAILURE;
         }
 
-        $transaction = $this->xrplClient->tx(
-            (string) ($hash ?: $ctid),
-            $this->configProvider->getNetwork(ShopwareConfigProvider::CHAIN)
-        );
+        $client = $chain === ChainCatalog::XAHAU ? $this->xahauClient : $this->xrplClient;
+        $transaction = $client->tx((string) ($hash ?: $ctid), $this->configProvider->getNetwork($chain));
 
         if ($transaction === null) {
             $output->writeln('Transaction not found on the ledger.');

@@ -78,6 +78,15 @@
           "qrCaption": "Mit einer Stellar-Wallet scannen, die Zahlungslinks (SEP-7) unterstützt. Konto, Memo und Betrag sind vorausgefüllt – bitte vor dem Senden prüfen.",
           "qrLabel": "QR-Code mit Konto, Memo-ID und Betrag",
           "partialSendRest": "Bitte senden Sie den Rest an dasselbe Konto mit derselben Memo-ID."
+        },
+        "XAHAU": {
+          "step": "Destination Tag",
+          "copy": "Destination Tag kopieren",
+          "hint": "Ohne dieses Tag können wir die Zahlung nicht Ihrer Bestellung zuordnen.",
+          "exchangeHint": "Das Destination Tag ist Pflicht, und der Betrag muss nach der Gebühr der Börse noch vollständig ankommen.",
+          "qrCaption": "Mit Xaman scannen. Adresse, Destination Tag und Betrag sind vorausgefüllt, und Xaman bietet den Wechsel ins Xahau-Netzwerk an, falls ein anderes eingestellt ist – bitte vor dem Senden prüfen.",
+          "qrLabel": "QR-Code mit Adresse, Destination Tag und Betrag",
+          "partialSendRest": "Bitte senden Sie den Rest an dieselbe Adresse mit demselben Destination Tag."
         }
       },
       "network": {
@@ -88,11 +97,16 @@
         "STELLAR": {
           "mainnet": "Stellar Mainnet",
           "testnet": "Stellar Testnet"
+        },
+        "XAHAU": {
+          "mainnet": "Xahau Mainnet",
+          "testnet": "Xahau Testnet"
         }
       },
       "poweredBy": {
         "XRPL": "Zahlung direkt auf dem XRP Ledger, ohne Zwischenhändler.",
-        "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler."
+        "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler.",
+        "XAHAU": "Zahlung direkt im Xahau-Netzwerk, ohne Zwischenhändler."
       }
     }
   }

@@ -72,6 +72,8 @@ final class PaymentPageView
         $shortfall = AmountFormatter::shortfall($intent, $this->settlementPolicy);
         $isToken = !$asset->native;
         $isXrpl = $intent->chain === ChainCatalog::XRPL;
+        // Xahau speaks the XRPL protocol: the same payment request, with its network named in it.
+        $usesXrplRequest = $isXrpl || $intent->chain === ChainCatalog::XAHAU;
         $amountDue = $status->state() === PaymentStatus::PARTIAL && $shortfall !== null ? $shortfall : $amountRequested;
 
         return [
@@ -113,15 +115,15 @@ final class PaymentPageView
             'network' => $intent->network,
             'explorerBase' => Explorer::transactionBase($intent->chain, $intent->network),
             'destinationAccount' => $intent->destinationAccount,
-            // The order identifier as shown: the destination tag on the XRPL, the memo id on Stellar.
+            // The order identifier as shown: the destination tag on the XRPL and Xahau, the memo id on Stellar.
             'destinationTag' => $intent->destinationTag,
             // Tokens: the quoted issuer and currency, from the intent (source: the core's registry), never typed in.
             'issuer' => $isToken ? (string) $intent->amountRequested['issuer'] : null,
-            // XRPL only, read by the browser-wallet module alone: the token's hex code and, for XRP, the amount in drops.
+            // XRPL only, read by the browser-wallet module alone (it serves no other chain): the token's hex code and, for XRP, the amount in drops.
             'currencyHex' => $isXrpl && $isToken ? (string) $intent->amountRequested['currency'] : null,
             'amountDrops' => $isXrpl && !$isToken ? XrplAmount::xrpToDrops($amountDue) : null,
             // The payment request behind the QR code: the XRPL one or the SEP-0007 one, built by the core.
-            'paymentUri' => $isXrpl ? PaymentUri::forIntent($intent, $amountDue) : StellarPaymentUri::forIntent($intent, $amountDue),
+            'paymentUri' => $usesXrplRequest ? PaymentUri::forIntent($intent, $amountDue) : StellarPaymentUri::forIntent($intent, $amountDue),
             'amountRequested' => $intent->amountRequested,
             'exchangeRate' => $intent->exchangeRate,
         ];

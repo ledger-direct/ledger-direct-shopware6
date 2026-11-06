@@ -25,7 +25,8 @@
             "unavailable": "The payment information could not be loaded.",
             "identifier": {
                 "XRPL": "Destination tag",
-                "STELLAR": "Memo ID"
+                "STELLAR": "Memo ID",
+                "XAHAU": "Destination tag"
             }
         }
     }

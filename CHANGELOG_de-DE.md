@@ -6,6 +6,17 @@
   an, die mit 404 antwortete, und der Anteil des Plugins lud nie. Das Manifest nennt wieder die
   ausgelieferte Datei, und ein Test prüft, dass die Einstiegspunkte ausgelieferte Dateien nennen und
   das gebaute Skript die Texte jeder Chain enthält
+- Xahau als Vorschau: XAH im [Xahau](https://xahau.network)-Netzwerk, einer eigenen Chain mit dem
+  Protokoll des XRP Ledger, bezahlt per Destination Tag. Eine dritte Konfigurationskarte „LedgerDirect -
+  Xahau (Vorschau)“, standardmäßig aus; das Einschalten legt die Zahlart XAH an. Der QR-Code nennt das
+  Xahau-Netzwerk, sodass Xaman den Wechsel anbietet, falls ein anderes eingestellt ist; die
+  Wallet-Schaltflächen bleiben auf einer Xahau-Seite aus. Xahau hat eigene Tabellen
+  (`ledger_direct_xahau_tx`, `ledger_direct_xahau_destination_tag`, per Migration angelegt) und teilt
+  nichts mit dem XRP Ledger, auch nicht für ein Konto, das es auf beiden gibt. Benötigt
+  `hardcastle/ledger-direct-core` 0.11
+- `ledger-direct:xrpl-transaction:sync` und `ledger-direct:xrpl-transaction:lookup` nehmen `--chain XAHAU`
+- Die Zahlarten XLM und EURC der Stellar-Vorschau haben im Checkout ihr Icon; bisher erschien ein
+  defektes Bild
 - In fünf Minuten ausprobieren: `dev/try` startet einen vollständigen Shopware-6.7-Shop mit dem Plugin im
   XRP-Ledger-Testnet (`docker compose up -d --wait`): eine Startseite auf Englisch und Deutsch, die die Demo
   erklärt und drei handbemalte Miniaturen anbietet, ein Demo-Artikel für 1 EUR in einer eigenen Kategorie,

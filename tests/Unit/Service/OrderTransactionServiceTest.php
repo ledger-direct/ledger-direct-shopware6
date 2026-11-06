@@ -14,6 +14,7 @@ use Hardcastle\LedgerDirect\Core\Stellar\MemoIdService;
 use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryStellarPaymentRepository;
+use Hardcastle\LedgerDirect\Core\Testing\InMemoryXrplTransactionRepository;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
@@ -481,6 +482,76 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertNull($intent['hash']);
     }
 
+    /**
+     * Xahau: quoted in XAH (the stub answers Coingecko's `xahau`; Bitrue quotes
+     * no euro and is not asked), with a destination tag from Xahau's own
+     * counter, stored as a `xahau-xah-payment` intent on the Xahau account.
+     */
+    public function testPrepareQuotesAXahauOrderInXahWithADestinationTag(): void
+    {
+        $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::paymentMethodIdFor('xahau-xah-payment'));
+        $this->expectUpsertCapturing($customFields);
+        // The XRP Ledger's repository is a strict mock: any call on it from a Xahau order fails the test.
+
+        $this->createService(Fixtures::getStaticXahauConfiguration())->prepareOrderTransaction(
+            $this->givenOrder(),
+            $orderTransaction,
+            $this->context
+        );
+
+        $intent = $customFields[0]['customFields'][OrderTransactionService::CUSTOM_FIELDS_KEY];
+
+        $this->assertSame('xahau-xah-payment', $intent['type']);
+        $this->assertSame('XAHAU', $intent['chain']);
+        $this->assertSame('testnet', $intent['network']);
+        $this->assertSame('XAH', $intent['base_asset']);
+        $this->assertSame('XAH/EUR', $intent['pairing']);
+        $this->assertSame(2.5, $intent['exchange_rate']);
+        $this->assertSame(40.0, $intent['amount_requested']);
+        $this->assertSame(Fixtures::XAHAU_ACCOUNT, $intent['destination_account']);
+        $this->assertGreaterThan(0, $intent['destination_tag'], 'a tag from Xahau\'s counter');
+        $this->assertNull($intent['hash']);
+    }
+
+    /**
+     * The same `r…` address can receive on the XRP Ledger and on Xahau. A
+     * throttled sync on one chain must not hold back the other's: each chain
+     * asks its node once per window.
+     */
+    public function testXahauAndTheXrpLedgerAreThrottledApartOnOneAccount(): void
+    {
+        $xrpl = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID, $this->givenStoredIntent()->toArray());
+        $xahau = $this->givenOrderTransaction(
+            PaymentMethodInstaller::paymentMethodIdFor('xahau-xah-payment'),
+            PaymentIntent::quote(
+                type: 'xahau-xah-payment',
+                chain: 'XAHAU',
+                network: 'testnet',
+                baseAsset: 'XAH',
+                quoteCurrency: 'EUR',
+                pairing: 'XAH/EUR',
+                exchangeRate: 2.5,
+                amountRequested: 40.0,
+                destinationAccount: self::DESTINATION_ACCOUNT,
+                destinationTag: 4294967295,
+                expiry: time() + 300,
+            )->toArray()
+        );
+        $this->transactionRepository->shouldReceive('getLastSyncedLedgerIndex')->andReturn(null);
+        $this->transactionRepository->shouldReceive('findTransactions')->twice()->andReturn([]);
+
+        $service = $this->createService();
+        $service->syncOrderTransaction($xrpl, $this->context, throttled: true);
+        $this->assertSame(1, $this->httpClient->ledgerRequests);
+
+        $service->syncOrderTransaction($xahau, $this->context, throttled: true);
+        $this->assertSame(2, $this->httpClient->ledgerRequests, 'the XRP Ledger\'s mark does not hold Xahau back');
+
+        $service->syncOrderTransaction($xrpl, $this->context, throttled: true);
+        $service->syncOrderTransaction($xahau, $this->context, throttled: true);
+        $this->assertSame(2, $this->httpClient->ledgerRequests, 'each chain is throttled on its own mark');
+    }
+
     private function createService(?array $configuration = null): OrderTransactionService
     {
         $httpClient = $this->httpClient;
@@ -505,6 +576,9 @@ class OrderTransactionServiceTest extends TestCase
             $configProvider
         );
 
+        // Xahau: the same classes on the chain's own repository, never the XRP Ledger's.
+        $xahauRepository = new InMemoryXrplTransactionRepository();
+
         $syncService = new SyncService(
             new XrplClient($httpClient, $httpFactory, $httpFactory),
             $this->transactionRepository,
@@ -520,7 +594,16 @@ class OrderTransactionServiceTest extends TestCase
             $stellarIntents,
             $stellarSync,
             new SyncThrottle($this->throttleStore, $logger),
-            $logger
+            $logger,
+            new PaymentIntentService(
+                new PriceService($httpClient, $httpFactory, $logger),
+                new DestinationTagService($xahauRepository),
+                $configProvider,
+                null,
+                'XAHAU'
+            ),
+            new SyncService(new XrplClient($httpClient, $httpFactory, $httpFactory, 'XAHAU'), $xahauRepository, $logger),
+            new SyncThrottle($this->throttleStore, $logger, chain: 'XAHAU')
         );
     }
 
