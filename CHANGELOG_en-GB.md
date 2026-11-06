@@ -9,6 +9,10 @@
 - `ledger-direct:xrpl-transaction:sync` and `ledger-direct:xrpl-transaction:lookup` take `--chain XAHAU`
 - The Stellar preview's XLM and EURC payment methods have their icon at checkout; they showed a broken
   image
+- The order card in the administration loads again. Since 1.7.0 the built administration files named a
+  script the release did not contain (`.vite/entrypoints.json` pointed to a file that had been replaced),
+  so on Shopware 6.7 the LedgerDirect card on the order detail was missing. Rebuilt, and a test now
+  checks that the entry points name files that are shipped
 - Try it in five minutes: `dev/try` starts a complete Shopware 6.7 shop with the plugin on the XRP Ledger
   testnet (`docker compose up -d --wait`): a home page in English and German that explains the demo and
   offers three hand-painted miniatures, a demo article for 1 EUR in a category of its own, the shop's own
