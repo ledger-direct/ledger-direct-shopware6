@@ -6,7 +6,9 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
+use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Port\XrplTransactionRepositoryInterface;
+use Hardcastle\LedgerDirect\Core\Xrpl\Schema;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Shopware\Core\Framework\Uuid\Uuid;
 
@@ -14,18 +16,23 @@ use Shopware\Core\Framework\Uuid\Uuid;
  * Platform side of {@see XrplTransactionRepositoryInterface}, on Shopware's
  * DBAL connection. Storage primitives only — the sync, dedup and tag
  * derivation around them live in the core.
+ *
+ * One instance per chain that speaks the XRPL protocol: the XRP Ledger's
+ * tables by default, Xahau's for `XAHAU`. The table names are the core's
+ * (Xrpl\Schema); the two chains never share a row or a tag counter.
  */
 class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterface
 {
-    private const TX_TABLE = 'ledger_direct_xrpl_tx';
-
-    private const TAG_TABLE = 'ledger_direct_xrpl_destination_tag';
-
     private Connection $connection;
 
-    public function __construct(Connection $connection)
+    private string $txTable;
+
+    private string $tagTable;
+
+    public function __construct(Connection $connection, string $chain = ChainCatalog::XRPL)
     {
         $this->connection = $connection;
+        [$this->txTable, $this->tagTable] = array_keys(Schema::tables($chain));
     }
 
     /**
@@ -54,7 +61,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     public function nextDestinationTagSequence(string $destinationAccount): int
     {
         $this->connection->executeStatement(
-            'INSERT INTO `' . self::TAG_TABLE . '` (`destination_account`, `sequence`)
+            'INSERT INTO `' . $this->tagTable . '` (`destination_account`, `sequence`)
              VALUES (:destination_account, LAST_INSERT_ID(:start))
              ON DUPLICATE KEY UPDATE `sequence` = LAST_INSERT_ID(`sequence` + 1)',
             [
@@ -78,7 +85,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
         }
 
         $matches = $this->connection->fetchFirstColumn(
-            'SELECT `hash` FROM `' . self::TX_TABLE . '` WHERE `hash` IN (:hashes)',
+            'SELECT `hash` FROM `' . $this->txTable . '` WHERE `hash` IN (:hashes)',
             ['hashes' => array_values($hashes)],
             ['hashes' => ArrayParameterType::STRING]
         );
@@ -93,7 +100,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     {
         foreach ($transactions as $transaction) {
             try {
-                $this->connection->insert(self::TX_TABLE, [
+                $this->connection->insert($this->txTable, [
                     'id' => Uuid::randomBytes(),
                     'network' => $transaction->network,
                     'ledger_index' => $transaction->ledgerIndex,
@@ -129,7 +136,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     public function findTransactions(string $destination, int $destinationTag): array
     {
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT * FROM `' . self::TX_TABLE . '`
+            'SELECT * FROM `' . $this->txTable . '`
              WHERE `destination` = :destination AND `destination_tag` = :destination_tag
              ORDER BY `ledger_index` DESC, `id` DESC',
             ['destination' => $destination, 'destination_tag' => $destinationTag],
@@ -148,7 +155,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
     public function getLastSyncedLedgerIndex(string $destinationAccount, string $network): ?string
     {
         $lastSyncedLedgerIndex = $this->connection->fetchOne(
-            'SELECT MAX(`ledger_index`) FROM `' . self::TX_TABLE . '`
+            'SELECT MAX(`ledger_index`) FROM `' . $this->txTable . '`
              WHERE `destination` = :destination AND `network` = :network',
             ['destination' => $destinationAccount, 'network' => $network],
             ['destination' => ParameterType::STRING, 'network' => ParameterType::STRING]
@@ -161,7 +168,7 @@ class DbalXrplTransactionRepository implements XrplTransactionRepositoryInterfac
 
     public function truncate(): void
     {
-        $this->connection->executeStatement('TRUNCATE TABLE `' . self::TX_TABLE . '`');
+        $this->connection->executeStatement('TRUNCATE TABLE `' . $this->txTable . '`');
     }
 
     /**

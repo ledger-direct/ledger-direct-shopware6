@@ -48,5 +48,7 @@ class PreviewChainActivatorTest extends TestCase
         $this->assertSame('STELLAR', PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', '1'));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', 0));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xrplEnabled', true), 'XRPL is released, not a preview');
+        $this->assertSame('XAHAU', PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xahauEnabled', true));
+        $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.useXahauTestnet', true), 'another key of the card');
     }
 }

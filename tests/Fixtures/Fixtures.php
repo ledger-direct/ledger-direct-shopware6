@@ -7,6 +7,9 @@ class Fixtures
     /** A testnet Stellar account (the core's recorded merchant account). */
     public const STELLAR_ACCOUNT = 'GCGEFYLIJXTISHBB3LENEJNGDBU7XHEI4F2PTLY4OSZ5Q5YF7ZWVNQIA';
 
+    /** A testnet Xahau account (the core's recorded merchant account). An `r…` address, as on the XRP Ledger. */
+    public const XAHAU_ACCOUNT = 'r4ERx8577eKBSAT1pLefizNPYCYfhk1op2';
+
     public static function getIntegrationTestConfiguration(): array
     {
         return [
@@ -39,6 +42,16 @@ class Fixtures
             'LedgerDirect.config.stellarTestnetDestinationAccount' => self::STELLAR_ACCOUNT,
             'LedgerDirect.config.stellarIsUsdcEnabled' => true,
             'LedgerDirect.config.stellarIsEurcEnabled' => false,
+        ];
+    }
+
+    /** The static configuration plus a switched-on Xahau card on the testnet. */
+    public static function getStaticXahauConfiguration(): array
+    {
+        return self::getStaticConfiguration() + [
+            'LedgerDirect.config.xahauEnabled' => true,
+            'LedgerDirect.config.useXahauTestnet' => true,
+            'LedgerDirect.config.xahauTestnetDestinationAccount' => self::XAHAU_ACCOUNT,
         ];
     }
 

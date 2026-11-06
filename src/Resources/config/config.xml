@@ -114,6 +114,41 @@
     </card>
 
     <card>
+        <title>LedgerDirect - Xahau (Preview)</title>
+        <title lang="de-DE">LedgerDirect - Xahau (Vorschau)</title>
+
+        <input-field type="bool">
+            <name>xahauEnabled</name>
+            <label>Accept payments on Xahau (preview)</label>
+            <label lang="de-DE">Zahlungen über Xahau annehmen (Vorschau)</label>
+            <helpText>Preview, not for production use: Xahau support is complete and tested on the testnet, but not yet released. XAH on the Xahau network, paid by destination tag. Off by default; switching it on creates the Xahau payment method. It appears at checkout once a receiving account is set and the method is assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
+            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Xahau-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XAH im Xahau-Netzwerk, bezahlt per Destination Tag. Standardmäßig aus; das Einschalten legt die Xahau-Zahlart an. Sie erscheint im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlart unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen ist.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>useXahauTestnet</name>
+            <label>Use Testnet</label>
+            <label lang="de-DE">Testnet verwenden</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>xahauMainnetDestinationAccount</name>
+            <label>Receiving account (Mainnet)</label>
+            <label lang="de-DE">Empfangskonto (Mainnet)</label>
+            <helpText>The address of your Xahau account, starting with r. Checked when saved. Use an account of its own for Xahau: an address has the same form on the XRP Ledger, and a payment sent on the wrong network is not found.</helpText>
+            <helpText lang="de-DE">Die Adresse Ihres Xahau-Kontos, beginnt mit r. Wird beim Speichern geprüft. Nutzen Sie für Xahau ein eigenes Konto: Eine Adresse hat auf dem XRP Ledger dieselbe Form, und eine Zahlung im falschen Netzwerk wird nicht gefunden.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>xahauTestnetDestinationAccount</name>
+            <label>Receiving account (Testnet)</label>
+            <label lang="de-DE">Empfangskonto (Testnet)</label>
+        </input-field>
+    </card>
+
+    <card>
         <title>LedgerDirect - Payment page</title>
         <title lang="de-DE">LedgerDirect - Zahlungsseite</title>
 

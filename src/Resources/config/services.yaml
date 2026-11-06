@@ -5,6 +5,7 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
             - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
+            - '@ledger_direct.xahau.client'
         tags:
             - console.command
 
@@ -22,6 +23,8 @@ services:
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
             - '@Hardcastle\LedgerDirect\Core\Stellar\SyncService'
             - '@Hardcastle\LedgerDirect\Port\DbalStellarPaymentRepository'
+            - '@ledger_direct.xahau.sync'
+            - '@ledger_direct.xahau.transaction_repository'
         tags:
             - console.command
 
@@ -182,6 +185,62 @@ services:
         tags:
             - shopware.payment.method
 
+    # Xahau: the XRPL classes again, with the chain as their last argument. Its own
+    # tables, node, tag counter and throttle; nothing is shared with the XRP Ledger.
+    ledger_direct.xahau.transaction_repository:
+        class: Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository
+        arguments:
+            - '@Doctrine\DBAL\Connection'
+            - 'XAHAU'
+
+    ledger_direct.xahau.client:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\XrplClient
+        arguments:
+            - '@shopware.app_system.guzzle'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+            - '@GuzzleHttp\Psr7\HttpFactory'
+            - 'XAHAU'
+
+    ledger_direct.xahau.sync:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\SyncService
+        arguments:
+            - '@ledger_direct.xahau.client'
+            - '@ledger_direct.xahau.transaction_repository'
+            - '@logger'
+
+    ledger_direct.xahau.destination_tags:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService
+        arguments:
+            - '@ledger_direct.xahau.transaction_repository'
+
+    ledger_direct.xahau.intents:
+        class: Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Price\PriceService'
+            - '@ledger_direct.xahau.destination_tags'
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - ~
+            - 'XAHAU'
+
+    # The same r-address is valid on both chains, so Xahau's sync marks must not be the XRP Ledger's.
+    ledger_direct.xahau.sync_throttle:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle
+        arguments:
+            - '@ledger_direct.rate_cache'
+            - '@logger'
+            - !php/const Hardcastle\LedgerDirect\Core\Payment\PaymentStatus::MIN_SYNC_INTERVAL_SECONDS
+            - ~
+            - 'XAHAU'
+
+    Hardcastle\LedgerDirect\Components\PaymentHandler\XahauPaymentHandler:
+        arguments:
+            - '@router'
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
+            - '@Hardcastle\LedgerDirect\Service\HeadlessTargets'
+        tags:
+            - shopware.payment.method
+
     GuzzleHttp\Psr7\HttpFactory: ~
 
     ledger_direct.rate_cache:
@@ -281,3 +340,6 @@ services:
             - '@Hardcastle\LedgerDirect\Core\Stellar\SyncService'
             - '@Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle'
             - '@logger'
+            - '@ledger_direct.xahau.intents'
+            - '@ledger_direct.xahau.sync'
+            - '@ledger_direct.xahau.sync_throttle'

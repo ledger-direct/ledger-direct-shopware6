@@ -114,6 +114,7 @@ code, the same one Shopware uses for its guest order links, and no login is requ
   respective issuer on that account, or payments will fail on the ledger.
 - For the Stellar preview (see Configuration): a Stellar account, with a trust line to Circle's
   issuer for USDC or EURC.
+- For the Xahau preview: a Xahau account, best one of its own (see Configuration).
 
 ## Installation
 
@@ -190,6 +191,29 @@ the preview without a change for anyone who never switched it on.
 | Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
 | Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
 
+**LedgerDirect – Xahau (Preview)**
+
+[Xahau](https://xahau.network) speaks the XRP Ledger's protocol on a network of its own, with XAH as
+its native asset. Like Stellar it ships as a **preview**: tested on the testnet, not for production use
+yet, and invisible until the card's switch is on. Switching it on creates the XAH payment method.
+
+| Setting | |
+|---|---|
+| Accept payments on Xahau (preview) | Off by default. On, with a receiving account, XAH is offered. |
+| Use testnet | On by default. |
+| Receiving account, mainnet and testnet | The address of your Xahau account (`r…`). Checked when saved. |
+
+Use an account of its own for Xahau. An address has the same form on Xahau and on the XRP Ledger, and
+the same keys open the same address on both, so the plugin cannot tell from an address which network
+it is meant for. The same account on both chains is accepted and written to the log as a warning. The
+two chains never share data: Xahau has its own tables and its own destination tags, and a payment
+sent on the wrong network is not matched to the order.
+
+On Xahau the customer pays with a destination tag, as on the XRP Ledger. The QR code carries the same
+payment request with the Xahau network named in it; Xaman then offers to switch networks if it is set
+to another one. The buttons for browser wallets and wallet apps are not shown on a Xahau payment page.
+XAH is priced from Coingecko and checked against Bitrue, the one exchange it trades on.
+
 A payment method is offered at checkout only while its chain is on, has a receiving address and the
 asset is enabled — and, for a Stellar issued asset, while the receiving account has its trust line.
 The assets, the payment methods and the address format come from the core's `ChainCatalog`. On
@@ -226,6 +250,10 @@ For the Stellar preview, a testnet account comes from [Friendbot](https://labora
 (10 000 XLM); Circle's faucet above also serves USDC and EURC on the Stellar testnet. The customer
 puts the order's **memo id** on the payment where the XRPL uses a destination tag; the QR code is a
 SEP-7 payment request that a Stellar wallet reads with address, memo and amount.
+
+For the Xahau preview, a testnet account comes from the [Xahau testnet faucet](https://xahau-test.net)
+(1 000 XAH). Set Xaman to the Xahau testnet to pay; it reads the QR code with address, destination
+tag and amount.
 
 ## The payment page
 
