@@ -3,6 +3,7 @@
 namespace Hardcastle\LedgerDirect\Tests\Integration\Port;
 
 use Doctrine\DBAL\Connection;
+use Hardcastle\LedgerDirect\Core\Xrpl\Schema;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository;
 use PHPUnit\Framework\TestCase;
@@ -37,16 +38,36 @@ class DbalXahauTransactionRepositoryTest extends TestCase
         }
     }
 
-    public function testTheMigrationCreatedXahausTablesWithTheXrplColumns(): void
+    /**
+     * Xahau's tables are the core's, column for column — not a copy of this
+     * plugin's XRP Ledger table, which is older than the core's schema and
+     * keeps a UUID key.
+     */
+    public function testTheMigrationCreatedXahausTablesAsTheCoreDescribesThem(): void
     {
-        $columns = fn (string $table): array => array_column(
-            $this->connection->fetchAllAssociative('SHOW COLUMNS FROM `' . $table . '`'),
-            'Type',
-            'Field'
-        );
+        foreach (Schema::tables('XAHAU') as $table => $definition) {
+            $this->assertSame(
+                array_column($definition['columns'], 'name'),
+                $this->connection->fetchFirstColumn('SHOW COLUMNS FROM `' . $table . '`'),
+                $table
+            );
+        }
 
-        $this->assertSame($columns('ledger_direct_xrpl_tx'), $columns('ledger_direct_xahau_tx'));
-        $this->assertSame($columns('ledger_direct_xrpl_destination_tag'), $columns('ledger_direct_xahau_destination_tag'));
+        $id = $this->connection->fetchAssociative('SHOW COLUMNS FROM `ledger_direct_xahau_tx` WHERE Field = \'id\'');
+        $this->assertSame(['int unsigned', 'auto_increment'], [$id['Type'], $id['Extra']]);
+    }
+
+    public function testTwoXahauTransactionsOnOneTagComeBackNewestFirst(): void
+    {
+        $this->xahau->saveTransactions([
+            $this->transaction('HASH_FIRST', 'C0D316CE0004535A', '13833934'),
+            $this->transaction('HASH_SECOND', 'C0D316CF0004535A', '13833935'),
+            $this->transaction('HASH_FIRST', 'C0D316CE0004535A', '13833934'), // a second sync storing the same hash again
+        ]);
+
+        $hashes = array_map(static fn (XrplTransaction $t): string => $t->hash, $this->xahau->findTransactions(self::ACCOUNT, 1000001));
+
+        $this->assertSame(['HASH_SECOND', 'HASH_FIRST'], $hashes);
     }
 
     public function testATransactionIsStoredOnItsOwnChainOnly(): void
@@ -72,11 +93,11 @@ class DbalXahauTransactionRepositoryTest extends TestCase
         $this->assertSame(1, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM `ledger_direct_xrpl_destination_tag`'));
     }
 
-    private function transaction(string $hash, string $ctid): XrplTransaction
+    private function transaction(string $hash, string $ctid, string $ledgerIndex = '13833930'): XrplTransaction
     {
         return new XrplTransaction(
             network: 'testnet',
-            ledgerIndex: '13833930',
+            ledgerIndex: $ledgerIndex,
             hash: $hash,
             ctid: $ctid,
             account: 'rDF9bEuYAmkEfeQgf7C64BsJWJoWqS5NaV',
