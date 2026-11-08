@@ -59,7 +59,7 @@ class PaymentMethodInstaller
      * (PreviewChainActivator), and their card says "Preview". Removing a
      * chain from this list is what releases it.
      */
-    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR, ChainCatalog::XAHAU];
+    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR];
 
     /** Ids from before the catalogue, kept for the orders that carry them. */
     private const LEGACY_ID_BY_TYPE = [

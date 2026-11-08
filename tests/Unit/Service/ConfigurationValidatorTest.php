@@ -161,6 +161,36 @@ class ConfigurationValidatorTest extends TestCase
         $this->assertSame('rpgmK4KczivhfUv4iLLgFRANGE4gmyTgnr', $event->getValue());
     }
 
+    /**
+     * A preview chain runs on its testnet only. The administration saves the toggle
+     * as a bool; a client may send it as a string or a number, all read as off.
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('offValues')]
+    public function testSwitchingAPreviewChainToTheMainnetIsRefused(mixed $off): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/Stellar is a preview and runs on the testnet only/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.useStellarTestnet', $off, null));
+    }
+
+    /** @return array<string, array{0: mixed}> */
+    public static function offValues(): array
+    {
+        return ['bool' => [false], 'int' => [0], 'string zero' => ['0'], 'string false' => ['false'], 'empty' => ['']];
+    }
+
+    public function testAReleasedChainMaySwitchToTheMainnetAndAPreviewStayOnTheTestnet(): void
+    {
+        $validator = $this->validator();
+
+        foreach ([['LedgerDirect.config.useXahauTestnet', false], ['LedgerDirect.config.useXrplTestnet', false], ['LedgerDirect.config.useStellarTestnet', true]] as [$key, $value]) {
+            $event = new BeforeSystemConfigChangedEvent($key, $value, null);
+            $validator->onBeforeChange($event);
+            $this->assertSame($value, $event->getValue(), $key);
+        }
+    }
+
     public function testAStellarKeyIsNotAXahauAccount(): void
     {
         $this->expectException(InvalidConfigurationException::class);

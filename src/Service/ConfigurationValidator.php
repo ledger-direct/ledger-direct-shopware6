@@ -4,6 +4,7 @@ namespace Hardcastle\LedgerDirect\Service;
 
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Exception\InvalidConfigurationException;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigChangedEvent;
 use Shopware\Core\System\SystemConfig\Event\BeforeSystemConfigMultipleChangedEvent;
@@ -18,6 +19,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * belongs to the merchant. An invalid one is refused — a typo here sends
  * every customer's money nowhere. The value is trimmed first: an account is
  * copied from a wallet, and a stray space or line break is not part of it.
+ *
+ * A preview chain (PaymentMethodInstaller::PREVIEW_CHAINS) runs on its testnet
+ * only: switching its testnet toggle off is refused. "Not for production use"
+ * is then a rule, not a sentence in a help text.
  *
  * The same account on two chains is logged, not refused: between the XRPL
  * and Stellar the formats make it impossible; the rule exists for Xahau,
@@ -83,6 +88,15 @@ class ConfigurationValidator implements EventSubscriberInterface
             if ($template !== null) {
                 return $template;
             }
+        }
+
+        $previewChain = self::testnetToggleFor($key);
+
+        if ($previewChain !== null && PaymentMethodInstaller::isPreviewChain($previewChain) && self::isOff($value)) {
+            throw new InvalidConfigurationException(
+                '{{ chain }} is a preview and runs on the testnet only. The mainnet comes with its release.',
+                ['chain' => ChainCatalog::chain($previewChain)->label]
+            );
         }
 
         $chainAndNetwork = self::accountKeyFor($key);
@@ -159,6 +173,30 @@ class ConfigurationValidator implements EventSubscriberInterface
         }
 
         return $template;
+    }
+
+    /** `LedgerDirect.config.useStellarTestnet` → 'STELLAR'; null for every other key. */
+    private static function testnetToggleFor(string $key): ?string
+    {
+        if (!str_starts_with($key, self::DOMAIN)) {
+            return null;
+        }
+
+        $short = substr($key, strlen(self::DOMAIN));
+
+        foreach (ChainCatalog::chains() as $chain) {
+            if ($short === 'use' . ucfirst(strtolower($chain->chain)) . 'Testnet') {
+                return $chain->chain;
+            }
+        }
+
+        return null;
+    }
+
+    /** The administration saves the toggle as a bool; a CLI or an API client may send a string or a number. */
+    private static function isOff(mixed $value): bool
+    {
+        return $value === false || $value === 0 || $value === '0' || $value === '' || (is_string($value) && strtolower($value) === 'false');
     }
 
     /**

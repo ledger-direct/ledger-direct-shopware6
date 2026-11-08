@@ -114,7 +114,7 @@ code, the same one Shopware uses for its guest order links, and no login is requ
   respective issuer on that account, or payments will fail on the ledger.
 - For the Stellar preview (see Configuration): a Stellar account, with a trust line to Circle's
   issuer for USDC or EURC.
-- For the Xahau preview: a Xahau account, best one of its own (see Configuration).
+- For Xahau: a Xahau account, best one of its own (see Configuration).
 
 ## Installation
 
@@ -176,30 +176,15 @@ Settings → Extensions → My extensions → LedgerDirect → Configure. One ca
 | Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods are offered; the receiving account needs the trustline first. XRP needs no switch. |
 | Quote validity in seconds | How long a quoted amount stays fixed, on every chain. Default 300. |
 
-**LedgerDirect – Stellar (Preview)**
-
-Stellar support is complete and tested on the testnet, but shipped as a **preview**: not for
-production use yet. Until the card's switch is on, nothing of it shows anywhere — no payment
-methods under Settings → Payment methods, nothing at checkout. Switching it on creates the XLM, USDC
-and EURC payment methods; switching it off hides them at checkout again. The card can be removed from
-the preview without a change for anyone who never switched it on.
-
-| Setting | |
-|---|---|
-| Accept payments on Stellar (preview) | Off by default. On, with a receiving account, XLM is offered; USDC and EURC are offered as well once their switch below is on and the receiving account has a trust line to the issuer. |
-| Use testnet | On by default. |
-| Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
-| Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
-
-**LedgerDirect – Xahau (Preview)**
+**LedgerDirect – Xahau**
 
 [Xahau](https://xahau.network) speaks the XRP Ledger's protocol on a network of its own, with XAH as
-its native asset. Like Stellar it ships as a **preview**: tested on the testnet, not for production use
-yet, and invisible until the card's switch is on. Switching it on creates the XAH payment method.
+its native asset. Its payment method is created with the plugin like the XRP Ledger's; the card's
+switch is off by default, so nothing is offered until a merchant turns it on.
 
 | Setting | |
 |---|---|
-| Accept payments on Xahau (preview) | Off by default. On, with a receiving account, XAH is offered. |
+| Accept payments on Xahau | Off by default. On, with a receiving account, XAH is offered. |
 | Use testnet | On by default. |
 | Receiving account, mainnet and testnet | The address of your Xahau account (`r…`). Checked when saved. |
 
@@ -212,7 +197,23 @@ sent on the wrong network is not matched to the order.
 On Xahau the customer pays with a destination tag, as on the XRP Ledger. The QR code carries the same
 payment request with the Xahau network named in it; Xaman then offers to switch networks if it is set
 to another one. The buttons for browser wallets and wallet apps are not shown on a Xahau payment page.
-XAH is priced from Coingecko and checked against Bitrue, the one exchange it trades on.
+XAH is priced from Coingecko and Bitrue, the one exchange it trades on, averaged like every oracle set.
+
+**LedgerDirect – Stellar (Preview)**
+
+Stellar support is complete and tested on the testnet, but shipped as a **preview**: not for
+production use yet, and on the testnet only: the card's testnet toggle cannot be switched off while
+Stellar is a preview. Until the card's switch is on, nothing of it shows anywhere — no payment
+methods under Settings → Payment methods, nothing at checkout. Switching it on creates the XLM, USDC
+and EURC payment methods; switching it off hides them at checkout again. The card can be removed from
+the preview without a change for anyone who never switched it on.
+
+| Setting | |
+|---|---|
+| Accept payments on Stellar (preview) | Off by default. On, with a receiving account, XLM is offered; USDC and EURC are offered as well once their switch below is on and the receiving account has a trust line to the issuer. |
+| Use testnet | On by default. |
+| Receiving account, mainnet and testnet | The public key of your Stellar account (`G…`). Checked when saved. |
+| Enable USDC payments, Enable EURC payments | Circle's USDC and EURC. Offered at checkout only while the receiving account has a trust line to the issuer; the plugin checks that through Horizon, cached. |
 
 A payment method is offered at checkout only while its chain is on, has a receiving address and the
 asset is enabled — and, for a Stellar issued asset, while the receiving account has its trust line.
@@ -251,7 +252,7 @@ For the Stellar preview, a testnet account comes from [Friendbot](https://labora
 puts the order's **memo id** on the payment where the XRPL uses a destination tag; the QR code is a
 SEP-7 payment request that a Stellar wallet reads with address, memo and amount.
 
-For the Xahau preview, a testnet account comes from the [Xahau testnet faucet](https://xahau-test.net)
+For Xahau, a testnet account comes from the [Xahau testnet faucet](https://xahau-test.net)
 (1 000 XAH). Set Xaman to the Xahau testnet to pay; it reads the QR code with address, destination
 tag and amount.
 
@@ -391,7 +392,7 @@ stack in `dev/try` from the checkout when something the shop runs changed (code,
 smoke-tests it (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks
 the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it
 publishes no image. `e2e.yml` runs the end-to-end harness against that try stack, on the XRPL testnet
-and then on the Xahau testnet (the harness switches the preview on for its run; PS-04 is skipped
+and then on the Xahau testnet (the harness switches the chain on for its run; PS-04 is skipped
 there, Xahau having no issued asset): on a version tag (every case but PS-10's 35-minute wait),
 weekly on Monday at 02:17 UTC (every case) and by hand. One CI treasury per chain, as repository
 secrets (`LEDGERDIRECT_CI_XRPL_TREASURY_*`, `LEDGERDIRECT_CI_XAHAU_TREASURY_*`). It is not a merge

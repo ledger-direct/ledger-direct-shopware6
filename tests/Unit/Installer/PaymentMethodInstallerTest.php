@@ -40,7 +40,7 @@ class PaymentMethodInstallerTest extends TestCase
      */
     public function testEveryCatalogueChainIsHandledOrExplicitlyPending(): void
     {
-        $pending = []; // Every chain the core 0.11 catalogue lists is handled: XRPL since 1.0, Stellar since 1.7.0, Xahau as a preview.
+        $pending = []; // Every chain the core 0.11 catalogue lists is handled: XRPL since 1.0, Stellar since 1.7.0 (preview), Xahau since 1.10.0.
 
         foreach (ChainCatalog::chains() as $chain) {
             $handled = isset(PaymentMethodInstaller::HANDLER_BY_CHAIN[$chain->chain]);
@@ -118,8 +118,9 @@ class PaymentMethodInstallerTest extends TestCase
     }
 
     /**
-     * Xahau: one method, for XAH, derived from the catalogue like Stellar's.
-     * Its technical name ends in the asset, which names the checkout icon.
+     * Xahau: one method, for XAH, derived from the catalogue like Stellar's,
+     * and released: install creates it with the XRPL ones. Its technical
+     * name ends in the asset, which names the checkout icon.
      */
     public function testTheXahauMethodIsDerivedFromTheCatalogue(): void
     {
@@ -137,18 +138,18 @@ class PaymentMethodInstallerTest extends TestCase
     }
 
     /**
-     * Stellar and Xahau ship as previews: install creates the three XRPL
-     * methods and none of theirs, so a merchant who never switches a
-     * preview chain on never sees it in Settings > Payment methods.
+     * Stellar ships as a preview: install creates the XRPL and Xahau methods
+     * and none of Stellar's, so a merchant who never switches the preview
+     * chain on never sees it in Settings > Payment methods.
      */
     public function testInstallCreatesTheReleasedChainsMethodsOnly(): void
     {
-        $this->assertSame(['STELLAR', 'XAHAU'], PaymentMethodInstaller::PREVIEW_CHAINS);
+        $this->assertSame(['STELLAR'], PaymentMethodInstaller::PREVIEW_CHAINS);
         $repository = $this->repositoryRecording($written);
 
         $this->installer($repository)->install(new InstallContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class)));
 
-        $this->assertSame(['ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+        $this->assertSame(['ledgerdirect_xahau_xah', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
     }
 
     /**
@@ -165,17 +166,6 @@ class PaymentMethodInstallerTest extends TestCase
         $this->assertCount(3, $written);
         $this->assertSame(['ledgerdirect_stellar_eurc', 'ledgerdirect_stellar_usdc', 'ledgerdirect_stellar_xlm'], $this->sorted(array_column($written, 'technicalName')));
         $this->assertSame([true, true, true], array_column($written, 'active'));
-    }
-
-    public function testInstallChainCreatesXahausOneMethodActive(): void
-    {
-        $repository = $this->repositoryRecording($written);
-        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
-
-        $this->installer($repository)->installChain(ChainCatalog::XAHAU, Context::createDefaultContext());
-
-        $this->assertSame(['ledgerdirect_xahau_xah'], array_column($written, 'technicalName'));
-        $this->assertSame([true], array_column($written, 'active'));
     }
 
     /**
@@ -210,7 +200,7 @@ class PaymentMethodInstallerTest extends TestCase
 
         $this->installer($repository)->update(new UpdateContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class), '1.6.0'));
 
-        $this->assertSame(['ledgerdirect_stellar_xlm', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+        $this->assertSame(['ledgerdirect_stellar_xlm', 'ledgerdirect_xahau_xah', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
     }
 
     /**

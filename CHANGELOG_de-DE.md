@@ -6,15 +6,17 @@
   an, die mit 404 antwortete, und der Anteil des Plugins lud nie. Das Manifest nennt wieder die
   ausgelieferte Datei, und ein Test prüft, dass die Einstiegspunkte ausgelieferte Dateien nennen und
   das gebaute Skript die Texte jeder Chain enthält
-- Xahau als Vorschau: XAH im [Xahau](https://xahau.network)-Netzwerk, einer eigenen Chain mit dem
-  Protokoll des XRP Ledger, bezahlt per Destination Tag. Eine dritte Konfigurationskarte „LedgerDirect -
-  Xahau (Vorschau)“, standardmäßig aus; das Einschalten legt die Zahlart XAH an. Der QR-Code nennt das
+- Xahau: XAH im [Xahau](https://xahau.network)-Netzwerk, einer eigenen Chain mit dem Protokoll des XRP
+  Ledger, bezahlt per Destination Tag. Eine Konfigurationskarte „LedgerDirect - Xahau“ direkt unter der
+  des XRP Ledger, standardmäßig aus; die Zahlart wird mit dem Plugin angelegt. Der QR-Code nennt das
   Xahau-Netzwerk, sodass Xaman den Wechsel anbietet, falls ein anderes eingestellt ist; die
   Wallet-Schaltflächen bleiben auf einer Xahau-Seite aus. Xahau hat eigene Tabellen
   (`ledger_direct_xahau_tx`, `ledger_direct_xahau_destination_tag`, per Migration angelegt) und teilt
   nichts mit dem XRP Ledger, auch nicht für ein Konto, das es auf beiden gibt. Benötigt
   `hardcastle/ledger-direct-core` 0.11
 - `ledger-direct:xrpl-transaction:sync` und `ledger-direct:xrpl-transaction:lookup` nehmen `--chain XAHAU`
+- Eine Vorschau-Chain läuft nur in ihrem Testnet: Den Testnet-Schalter der Stellar-Karte auszuschalten
+  wird beim Speichern abgelehnt, wie ein falsches Konto
 - `e2e.yml` lässt den Fallkatalog nach dem XRP Ledger auch auf Xahau laufen, aus einem eigenen CI-Treasury
   (`LEDGERDIRECT_CI_XAHAU_TREASURY_SEED` / `_ADDRESS`)
 - Die Zahlarten XLM und EURC der Stellar-Vorschau haben im Checkout ihr Icon; bisher erschien ein

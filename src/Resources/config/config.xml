@@ -61,6 +61,41 @@
     </card>
 
     <card>
+        <title>LedgerDirect - Xahau</title>
+        <title lang="de-DE">LedgerDirect - Xahau</title>
+
+        <input-field type="bool">
+            <name>xahauEnabled</name>
+            <label>Accept payments on Xahau</label>
+            <label lang="de-DE">Zahlungen über Xahau annehmen</label>
+            <helpText>Switches the Xahau payment method on or off. XAH on the Xahau network, a chain of its own that speaks the XRP Ledger's protocol, paid by destination tag. Off by default. The method appears at checkout once this is on, a receiving account is set and the method is assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
+            <helpText lang="de-DE">Schaltet die Xahau-Zahlart an oder aus. XAH im Xahau-Netzwerk, einer eigenen Chain mit dem Protokoll des XRP Ledger, bezahlt per Destination Tag. Standardmäßig aus. Die Zahlart erscheint im Checkout, sobald dies an ist, ein Empfangskonto hinterlegt ist und die Zahlart unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen ist.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>useXahauTestnet</name>
+            <label>Use Testnet</label>
+            <label lang="de-DE">Testnet verwenden</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>xahauMainnetDestinationAccount</name>
+            <label>Receiving account (Mainnet)</label>
+            <label lang="de-DE">Empfangskonto (Mainnet)</label>
+            <helpText>The address of your Xahau account, starting with r. Checked when saved. Use an account of its own for Xahau: an address has the same form on the XRP Ledger, and a payment sent on the wrong network is not found.</helpText>
+            <helpText lang="de-DE">Die Adresse Ihres Xahau-Kontos, beginnt mit r. Wird beim Speichern geprüft. Nutzen Sie für Xahau ein eigenes Konto: Eine Adresse hat auf dem XRP Ledger dieselbe Form, und eine Zahlung im falschen Netzwerk wird nicht gefunden.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>xahauTestnetDestinationAccount</name>
+            <label>Receiving account (Testnet)</label>
+            <label lang="de-DE">Empfangskonto (Testnet)</label>
+        </input-field>
+    </card>
+
+    <card>
         <title>LedgerDirect - Stellar (Preview)</title>
         <title lang="de-DE">LedgerDirect - Stellar (Vorschau)</title>
 
@@ -68,8 +103,8 @@
             <name>stellarEnabled</name>
             <label>Accept payments on Stellar (preview)</label>
             <label lang="de-DE">Zahlungen über Stellar annehmen (Vorschau)</label>
-            <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods. They appear at checkout once a receiving account is set and the methods are assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
-            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an. Sie erscheinen im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlarten unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen sind.</helpText>
+            <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released; it runs on the testnet only, the toggle below cannot be switched off. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods. They appear at checkout once a receiving account is set and the methods are assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
+            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben; sie läuft nur im Testnet, der Schalter darunter lässt sich nicht ausschalten. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an. Sie erscheinen im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlarten unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen sind.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
@@ -110,41 +145,6 @@
             <helpText>EURC by Circle, pegged to the euro. Offered at checkout only while the receiving account has a trust line to the issuer.</helpText>
             <helpText lang="de-DE">EURC von Circle, an den Euro gebunden. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
             <defaultValue>true</defaultValue>
-        </input-field>
-    </card>
-
-    <card>
-        <title>LedgerDirect - Xahau (Preview)</title>
-        <title lang="de-DE">LedgerDirect - Xahau (Vorschau)</title>
-
-        <input-field type="bool">
-            <name>xahauEnabled</name>
-            <label>Accept payments on Xahau (preview)</label>
-            <label lang="de-DE">Zahlungen über Xahau annehmen (Vorschau)</label>
-            <helpText>Preview, not for production use: Xahau support is complete and tested on the testnet, but not yet released. XAH on the Xahau network, paid by destination tag. Off by default; switching it on creates the Xahau payment method. It appears at checkout once a receiving account is set and the method is assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
-            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Xahau-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben. XAH im Xahau-Netzwerk, bezahlt per Destination Tag. Standardmäßig aus; das Einschalten legt die Xahau-Zahlart an. Sie erscheint im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlart unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen ist.</helpText>
-            <defaultValue>false</defaultValue>
-        </input-field>
-
-        <input-field type="bool">
-            <name>useXahauTestnet</name>
-            <label>Use Testnet</label>
-            <label lang="de-DE">Testnet verwenden</label>
-            <defaultValue>true</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>xahauMainnetDestinationAccount</name>
-            <label>Receiving account (Mainnet)</label>
-            <label lang="de-DE">Empfangskonto (Mainnet)</label>
-            <helpText>The address of your Xahau account, starting with r. Checked when saved. Use an account of its own for Xahau: an address has the same form on the XRP Ledger, and a payment sent on the wrong network is not found.</helpText>
-            <helpText lang="de-DE">Die Adresse Ihres Xahau-Kontos, beginnt mit r. Wird beim Speichern geprüft. Nutzen Sie für Xahau ein eigenes Konto: Eine Adresse hat auf dem XRP Ledger dieselbe Form, und eine Zahlung im falschen Netzwerk wird nicht gefunden.</helpText>
-        </input-field>
-
-        <input-field type="text">
-            <name>xahauTestnetDestinationAccount</name>
-            <label>Receiving account (Testnet)</label>
-            <label lang="de-DE">Empfangskonto (Testnet)</label>
         </input-field>
     </card>
 
