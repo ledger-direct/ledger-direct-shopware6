@@ -390,9 +390,12 @@ in a dockware container with Shopware 6.7 unless only documentation changed. `tr
 stack in `dev/try` from the checkout when something the shop runs changed (code, Composer, `dev/try`),
 smoke-tests it (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks
 the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it
-publishes no image. `e2e.yml` runs the end-to-end harness against that try stack and the XRPL testnet:
-on a version tag (every case but PS-10's 35-minute wait), weekly on Monday at 02:17 UTC (every case)
-and by hand. It is not a merge gate: the testnet is not deterministic. The stack also serves the
+publishes no image. `e2e.yml` runs the end-to-end harness against that try stack, on the XRPL testnet
+and then on the Xahau testnet (the harness switches the preview on for its run; PS-04 is skipped
+there, Xahau having no issued asset): on a version tag (every case but PS-10's 35-minute wait),
+weekly on Monday at 02:17 UTC (every case) and by hand. One CI treasury per chain, as repository
+secrets (`LEDGERDIRECT_CI_XRPL_TREASURY_*`, `LEDGERDIRECT_CI_XAHAU_TREASURY_*`). It is not a merge
+gate: the testnets are not deterministic. The stack also serves the
 end-to-end harness locally as its `shopware` target (see the comment in `dev/try/compose.yaml`).
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field

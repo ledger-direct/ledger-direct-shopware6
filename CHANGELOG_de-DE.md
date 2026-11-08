@@ -15,6 +15,8 @@
   nichts mit dem XRP Ledger, auch nicht für ein Konto, das es auf beiden gibt. Benötigt
   `hardcastle/ledger-direct-core` 0.11
 - `ledger-direct:xrpl-transaction:sync` und `ledger-direct:xrpl-transaction:lookup` nehmen `--chain XAHAU`
+- `e2e.yml` lässt den Fallkatalog nach dem XRP Ledger auch auf Xahau laufen, aus einem eigenen CI-Treasury
+  (`LEDGERDIRECT_CI_XAHAU_TREASURY_SEED` / `_ADDRESS`)
 - Die Zahlarten XLM und EURC der Stellar-Vorschau haben im Checkout ihr Icon; bisher erschien ein
   defektes Bild
 - In fünf Minuten ausprobieren: `dev/try` startet einen vollständigen Shopware-6.7-Shop mit dem Plugin im
