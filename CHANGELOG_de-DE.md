@@ -1,4 +1,4 @@
-# Unreleased
+# 1.10.0
 - Die LedgerDirect-Karte in den Bestelldetails ist auf Shopware 6.7 wieder da. Seit 1.7.0 nannten
   die gebauten Administrationsdateien ein Skript, das im Release nicht enthalten war:
   `.vite/entrypoints.json` und `manifest.json` zeigten noch auf `ledger-direct-rTdLB6k2.js`, nachdem
