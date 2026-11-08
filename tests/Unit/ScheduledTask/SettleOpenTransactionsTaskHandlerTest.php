@@ -37,6 +37,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
 
     private string $configuredStellarAccount = '';
 
+    private string $configuredXahauAccount = '';
+
     protected function setUp(): void
     {
         $this->orderTransactionService = Mockery::mock(OrderTransactionService::class);
@@ -149,6 +151,25 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $this->handler()->run();
     }
 
+    /**
+     * An `r…` address is valid on the XRP Ledger and on Xahau. Configured on
+     * both, the account is synced on both: the chain is part of what makes a
+     * sync target, not the address alone.
+     */
+    public function testTheSameAccountOnTheXrpLedgerAndXahauIsSyncedOnBoth(): void
+    {
+        $this->configuredAccount = 'rSharedAccount';
+        $this->configuredXahauAccount = 'rSharedAccount';
+
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([]));
+
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XRPL', 'rSharedAccount', 'testnet', false);
+        $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XAHAU', 'rSharedAccount', 'testnet', false);
+
+        $this->handler()->run();
+    }
+
     private function stellarQuote(string $account): PaymentIntent
     {
         return PaymentIntent::quote(
@@ -184,6 +205,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $configuration->shouldReceive('getNetwork')->with('XRPL')->andReturn('testnet');
         $configuration->shouldReceive('getDestinationAccount')->with('STELLAR')->andReturn($this->configuredStellarAccount);
         $configuration->shouldReceive('getNetwork')->with('STELLAR')->andReturn('testnet');
+        $configuration->shouldReceive('getDestinationAccount')->with('XAHAU')->andReturn($this->configuredXahauAccount);
+        $configuration->shouldReceive('getNetwork')->with('XAHAU')->andReturn('testnet');
 
         return $configuration;
     }

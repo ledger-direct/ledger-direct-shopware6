@@ -284,6 +284,7 @@ function configure(Api $api): void
         'LedgerDirect.config.xrplIsUsdcEnabled' => $stablecoins,
         'LedgerDirect.config.xrplQuoteExpiry' => 300,
         'LedgerDirect.config.stellarEnabled' => false,
+        'LedgerDirect.config.xahauEnabled' => false,
         'core.basicInformation.shopName' => 'LedgerDirect demo shop',
     ]]);
 

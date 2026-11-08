@@ -325,7 +325,7 @@
                     },
                     "destinationTag": {
                         "type": "integer",
-                        "description": "The order identifier: the destination tag on the XRP Ledger, the memo id on Stellar"
+                        "description": "The order identifier: the destination tag on the XRP Ledger and on Xahau, the memo id on Stellar"
                     },
                     "xrpAmount": {
                         "description": "The requested amount — a number for a native asset, a token amount for a token; the name is historical",
@@ -383,12 +383,13 @@
                         "type": "string",
                         "enum": [
                             "XRPL",
-                            "STELLAR"
+                            "STELLAR",
+                            "XAHAU"
                         ]
                     },
                     "mode": {
                         "type": "string",
-                        "description": "The asset code in lower case (xrp, rlusd, usdc, xlm, eurc)"
+                        "description": "The asset code in lower case (xrp, rlusd, usdc, xlm, eurc, xah)"
                     },
                     "assetLabel": {
                         "type": "string",

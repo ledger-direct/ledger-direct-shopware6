@@ -6,6 +6,21 @@
   plugin's part of it never loaded. The manifest names the shipped file again, and a test checks
   that the entry points name files that are shipped and that the built script carries the snippets
   of every chain
+- Xahau: XAH on the [Xahau](https://xahau.network) network, a chain of its own that speaks the XRP
+  Ledger's protocol, paid by destination tag. A configuration card "LedgerDirect - Xahau" right under
+  the XRP Ledger's, off by default; its payment method is created with the plugin. The QR code names the
+  Xahau network, so Xaman offers to switch if it is set to another one; the wallet buttons stay off on a
+  Xahau page. Xahau has its own tables (`ledger_direct_xahau_tx`, `ledger_direct_xahau_destination_tag`,
+  created by a migration) and shares nothing with the XRP Ledger, also for an account that exists on
+  both. Needs `hardcastle/ledger-direct-core` 0.11
+- `ledger-direct:xrpl-transaction:sync` and `ledger-direct:xrpl-transaction:lookup` take `--chain XAHAU`
+- A preview chain runs on its testnet only: switching the testnet toggle of the Stellar card off is
+  refused when saved, as a mistyped account is, and an installation whose Stellar card already says
+  mainnet offers nothing there; its open orders keep settling where they were paid
+- `e2e.yml` runs the case catalogue on Xahau too, after the XRP Ledger, from a CI treasury of its own
+  (`LEDGERDIRECT_CI_XAHAU_TREASURY_SEED` / `_ADDRESS`)
+- The Stellar preview's XLM and EURC payment methods have their icon at checkout; they showed a broken
+  image
 - Try it in five minutes: `dev/try` starts a complete Shopware 6.7 shop with the plugin on the XRP Ledger
   testnet (`docker compose up -d --wait`): a home page in English and German that explains the demo and
   offers three hand-painted miniatures, a demo article for 1 EUR in a category of its own, the shop's own

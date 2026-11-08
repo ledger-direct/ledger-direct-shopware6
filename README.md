@@ -114,6 +114,7 @@ code, the same one Shopware uses for its guest order links, and no login is requ
   respective issuer on that account, or payments will fail on the ledger.
 - For the Stellar preview (see Configuration): a Stellar account, with a trust line to Circle's
   issuer for USDC or EURC.
+- For Xahau: a Xahau account, best one of its own (see Configuration).
 
 ## Installation
 
@@ -175,10 +176,36 @@ Settings → Extensions → My extensions → LedgerDirect → Configure. One ca
 | Enable RLUSD payments, Enable USDC payments | Whether the stablecoin payment methods are offered; the receiving account needs the trustline first. XRP needs no switch. |
 | Quote validity in seconds | How long a quoted amount stays fixed, on every chain. Default 300. |
 
+**LedgerDirect – Xahau**
+
+[Xahau](https://xahau.network) speaks the XRP Ledger's protocol on a network of its own, with XAH as
+its native asset. Its payment method is created with the plugin like the XRP Ledger's; the card's
+switch is off by default, so nothing is offered until a merchant turns it on.
+
+| Setting | |
+|---|---|
+| Accept payments on Xahau | Off by default. On, with a receiving account, XAH is offered. |
+| Use testnet | On by default. |
+| Receiving account, mainnet and testnet | The address of your Xahau account (`r…`). Checked when saved. |
+
+Use an account of its own for Xahau. An address has the same form on Xahau and on the XRP Ledger, and
+the same keys open the same address on both, so the plugin cannot tell from an address which network
+it is meant for. The same account on both chains is accepted and written to the log as a warning. The
+two chains never share data: Xahau has its own tables and its own destination tags, and a payment
+sent on the wrong network is not matched to the order.
+
+On Xahau the customer pays with a destination tag, as on the XRP Ledger. The QR code carries the same
+payment request with the Xahau network named in it; Xaman then offers to switch networks if it is set
+to another one. The buttons for browser wallets and wallet apps are not shown on a Xahau payment page.
+XAH is priced from Coingecko and Bitrue, the one exchange it trades on, averaged like every oracle set;
+Bitrue quotes USDT only, so a euro price rests on Coingecko alone.
+
 **LedgerDirect – Stellar (Preview)**
 
 Stellar support is complete and tested on the testnet, but shipped as a **preview**: not for
-production use yet. Until the card's switch is on, nothing of it shows anywhere — no payment
+production use yet, and on the testnet only: the card's testnet toggle cannot be switched off while
+Stellar is a preview, and a card that already says mainnet offers nothing there (open orders still
+settle where they were paid). Until the card's switch is on, nothing of it shows anywhere — no payment
 methods under Settings → Payment methods, nothing at checkout. Switching it on creates the XLM, USDC
 and EURC payment methods; switching it off hides them at checkout again. The card can be removed from
 the preview without a change for anyone who never switched it on.
@@ -226,6 +253,10 @@ For the Stellar preview, a testnet account comes from [Friendbot](https://labora
 (10 000 XLM); Circle's faucet above also serves USDC and EURC on the Stellar testnet. The customer
 puts the order's **memo id** on the payment where the XRPL uses a destination tag; the QR code is a
 SEP-7 payment request that a Stellar wallet reads with address, memo and amount.
+
+For Xahau, a testnet account comes from the [Xahau testnet faucet](https://xahau-test.net)
+(1 000 XAH). Set Xaman to the Xahau testnet to pay; it reads the QR code with address, destination
+tag and amount.
 
 ## The payment page
 
@@ -362,9 +393,12 @@ in a dockware container with Shopware 6.7 unless only documentation changed. `tr
 stack in `dev/try` from the checkout when something the shop runs changed (code, Composer, `dev/try`),
 smoke-tests it (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks
 the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it
-publishes no image. `e2e.yml` runs the end-to-end harness against that try stack and the XRPL testnet:
-on a version tag (every case but PS-10's 35-minute wait), weekly on Monday at 02:17 UTC (every case)
-and by hand. It is not a merge gate: the testnet is not deterministic. The stack also serves the
+publishes no image. `e2e.yml` runs the end-to-end harness against that try stack, on the XRPL testnet
+and then on the Xahau testnet (the harness switches the chain on for its run; PS-04 is skipped
+there, Xahau having no issued asset): on a version tag (every case but PS-10's 35-minute wait),
+weekly on Monday at 02:17 UTC (every case) and by hand. One CI treasury per chain, as repository
+secrets (`LEDGERDIRECT_CI_XRPL_TREASURY_*`, `LEDGERDIRECT_CI_XAHAU_TREASURY_*`). It is not a merge
+gate: the testnets are not deterministic. The stack also serves the
 end-to-end harness locally as its `shopware` target (see the comment in `dev/try/compose.yaml`).
 
 A release is a git tag that matches the `version` in `composer.json` (Shopware reads that field

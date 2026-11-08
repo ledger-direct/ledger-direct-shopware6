@@ -6,8 +6,8 @@ namespace Hardcastle\LedgerDirect\Presentation;
  * Where a transaction hash can be looked up, per chain and network.
  *
  * The core knows no explorers; this is the plugin's mapping — the XRPL
- * ones the Magento, PrestaShop and WooCommerce plugins use too, and
- * stellar.expert for Stellar. Moves to the core once it gets a chain-wide
+ * ones the Magento, PrestaShop and WooCommerce plugins use too,
+ * stellar.expert for Stellar, and Xahau's own explorers. Moves to the core once it gets a chain-wide
  * answer to the question.
  */
 final class Explorer
@@ -20,6 +20,10 @@ final class Explorer
         'STELLAR' => [
             'mainnet' => 'https://stellar.expert/explorer/public/tx/',
             'testnet' => 'https://stellar.expert/explorer/testnet/tx/',
+        ],
+        'XAHAU' => [
+            'mainnet' => 'https://explorer.xahau.network/tx/',
+            'testnet' => 'https://explorer.xahau-test.net/tx/',
         ],
     ];
 

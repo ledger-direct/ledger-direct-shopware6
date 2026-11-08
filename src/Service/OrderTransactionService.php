@@ -58,11 +58,22 @@ class OrderTransactionService
 
     private LoggerInterface $logger;
 
+    private PaymentIntentService $xahauIntents;
+
+    private SyncService $xahauSync;
+
+    private SyncThrottle $xahauThrottle;
+
     /**
      * One intent service and one sync per chain; which pair serves an order
      * is decided by its payment method (a fresh quote) or by the chain the
-     * stored intent names (everything after). One throttle for both: its
-     * keys are (network, account), and an `r…` and a `G…` never collide.
+     * stored intent names (everything after). Xahau's pair is the XRPL
+     * classes again, built for that chain.
+     *
+     * The XRP Ledger and Stellar share a throttle: an `r…` and a `G…` never
+     * collide. Xahau has one of its own, because the same `r…` address is
+     * valid on the XRP Ledger too, and a sync there must not hold back
+     * the one here.
      */
     public function __construct(
         EntityRepository $orderRepository,
@@ -73,7 +84,10 @@ class OrderTransactionService
         StellarPaymentIntentService $stellarIntents,
         StellarSyncService $stellarSync,
         SyncThrottle $syncThrottle,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PaymentIntentService $xahauIntents,
+        SyncService $xahauSync,
+        SyncThrottle $xahauThrottle
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
@@ -84,6 +98,9 @@ class OrderTransactionService
         $this->stellarSync = $stellarSync;
         $this->syncThrottle = $syncThrottle;
         $this->logger = $logger;
+        $this->xahauIntents = $xahauIntents;
+        $this->xahauSync = $xahauSync;
+        $this->xahauThrottle = $xahauThrottle;
     }
 
     /**
@@ -240,11 +257,13 @@ class OrderTransactionService
     public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): void
     {
         if ($throttled) {
-            if (!$this->syncThrottle->shouldSync($network, $destinationAccount)) {
+            $throttle = $chain === ChainCatalog::XAHAU ? $this->xahauThrottle : $this->syncThrottle;
+
+            if (!$throttle->shouldSync($network, $destinationAccount)) {
                 return;
             }
 
-            $this->syncThrottle->markSynced($network, $destinationAccount);
+            $throttle->markSynced($network, $destinationAccount);
         }
 
         try {
@@ -273,6 +292,7 @@ class OrderTransactionService
         return match ($chain) {
             ChainCatalog::XRPL => $this->xrplIntents,
             ChainCatalog::STELLAR => $this->stellarIntents,
+            ChainCatalog::XAHAU => $this->xahauIntents,
             // The installer only creates methods for chains in HANDLER_BY_CHAIN,
             // so this is a wiring mistake, not a merchant's configuration.
             default => throw new Exception('No payment services for chain ' . $chain),
@@ -284,6 +304,7 @@ class OrderTransactionService
         return match ($chain) {
             ChainCatalog::XRPL => $this->xrplSync,
             ChainCatalog::STELLAR => $this->stellarSync,
+            ChainCatalog::XAHAU => $this->xahauSync,
             default => throw new Exception('No payment services for chain ' . $chain),
         };
     }

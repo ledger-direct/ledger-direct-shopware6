@@ -48,5 +48,6 @@ class PreviewChainActivatorTest extends TestCase
         $this->assertSame('STELLAR', PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', '1'));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.stellarEnabled', 0));
         $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xrplEnabled', true), 'XRPL is released, not a preview');
+        $this->assertNull(PreviewChainActivator::previewChainSwitchedOn('LedgerDirect.config.xahauEnabled', true), 'Xahau is released, its method comes with the plugin');
     }
 }
