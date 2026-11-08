@@ -16,7 +16,9 @@
   `hardcastle/ledger-direct-core` 0.11
 - `ledger-direct:xrpl-transaction:sync` und `ledger-direct:xrpl-transaction:lookup` nehmen `--chain XAHAU`
 - Eine Vorschau-Chain läuft nur in ihrem Testnet: Den Testnet-Schalter der Stellar-Karte auszuschalten
-  wird beim Speichern abgelehnt, wie ein falsches Konto
+  wird beim Speichern abgelehnt, wie ein falsches Konto, und eine Installation, deren Stellar-Karte schon
+  auf Mainnet steht, bietet dort nichts an; ihre offenen Bestellungen werden weiter dort abgeglichen, wo
+  sie bezahlt wurden
 - `e2e.yml` lässt den Fallkatalog nach dem XRP Ledger auch auf Xahau laufen, aus einem eigenen CI-Treasury
   (`LEDGERDIRECT_CI_XAHAU_TREASURY_SEED` / `_ADDRESS`)
 - Die Zahlarten XLM und EURC der Stellar-Vorschau haben im Checkout ihr Icon; bisher erschien ein

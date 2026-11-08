@@ -4,6 +4,7 @@ namespace Hardcastle\LedgerDirect\Port;
 
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Port\ConfigProviderInterface;
+use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
 
 /**
@@ -46,10 +47,20 @@ class ShopwareConfigProvider implements ConfigProviderInterface
     /**
      * The receiving account on the chain's active network — '' when the
      * chain is switched off or unknown, so nothing is quoted against it.
+     *
+     * A preview chain runs on its testnet only. The validator refuses to
+     * switch its toggle off; a configuration from before that rule may still
+     * say mainnet, and then no account is offered: nothing new is quoted
+     * against the mainnet, while getNetwork() still answers it, so the
+     * orders that exist keep syncing and settling where they were paid.
      */
     public function getDestinationAccount(string $chain): string
     {
         if (!ChainCatalog::has($chain) || !$this->configurationService->isChainEnabled($chain)) {
+            return '';
+        }
+
+        if (PaymentMethodInstaller::isPreviewChain($chain) && $this->configurationService->getNetwork($chain) === 'mainnet') {
             return '';
         }
 

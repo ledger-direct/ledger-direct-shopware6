@@ -204,7 +204,8 @@ Bitrue quotes USDT only, so a euro price rests on Coingecko alone.
 
 Stellar support is complete and tested on the testnet, but shipped as a **preview**: not for
 production use yet, and on the testnet only: the card's testnet toggle cannot be switched off while
-Stellar is a preview. Until the card's switch is on, nothing of it shows anywhere — no payment
+Stellar is a preview, and a card that already says mainnet offers nothing there (open orders still
+settle where they were paid). Until the card's switch is on, nothing of it shows anywhere — no payment
 methods under Settings → Payment methods, nothing at checkout. Switching it on creates the XLM, USDC
 and EURC payment methods; switching it off hides them at checkout again. The card can be removed from
 the preview without a change for anyone who never switched it on.

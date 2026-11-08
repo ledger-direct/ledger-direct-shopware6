@@ -15,7 +15,8 @@
   both. Needs `hardcastle/ledger-direct-core` 0.11
 - `ledger-direct:xrpl-transaction:sync` and `ledger-direct:xrpl-transaction:lookup` take `--chain XAHAU`
 - A preview chain runs on its testnet only: switching the testnet toggle of the Stellar card off is
-  refused when saved, as a mistyped account is
+  refused when saved, as a mistyped account is, and an installation whose Stellar card already says
+  mainnet offers nothing there; its open orders keep settling where they were paid
 - `e2e.yml` runs the case catalogue on Xahau too, after the XRP Ledger, from a CI treasury of its own
   (`LEDGERDIRECT_CI_XAHAU_TREASURY_SEED` / `_ADDRESS`)
 - The Stellar preview's XLM and EURC payment methods have their icon at checkout; they showed a broken

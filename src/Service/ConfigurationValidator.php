@@ -21,8 +21,9 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * copied from a wallet, and a stray space or line break is not part of it.
  *
  * A preview chain (PaymentMethodInstaller::PREVIEW_CHAINS) runs on its testnet
- * only: switching its testnet toggle off is refused. "Not for production use"
- * is then a rule, not a sentence in a help text.
+ * only: switching its testnet toggle off is refused, and a configuration that
+ * already says mainnet offers nothing (ShopwareConfigProvider). "Not for
+ * production use" is then a rule, not a sentence in a help text.
  *
  * The same account on two chains is logged, not refused: between the XRPL
  * and Stellar the formats make it impossible; the rule exists for Xahau,

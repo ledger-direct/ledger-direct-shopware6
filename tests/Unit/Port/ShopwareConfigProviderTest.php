@@ -107,6 +107,28 @@ class ShopwareConfigProviderTest extends TestCase
     }
 
     /**
+     * A preview chain configured for the mainnet before the testnet rule existed:
+     * nothing is offered there, while the network is still answered, so open orders
+     * keep syncing and settling where they were paid.
+     */
+    public function testAPreviewChainOnTheMainnetOffersNothingButKeepsItsNetwork(): void
+    {
+        $configuration = Fixtures::getStaticMultiChainConfiguration() + ['LedgerDirect.config.stellarMainnetDestinationAccount' => Fixtures::STELLAR_ACCOUNT];
+        $configuration['LedgerDirect.config.useStellarTestnet'] = false;
+        $provider = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration));
+
+        $this->assertSame('', $provider->getDestinationAccount('STELLAR'), 'no new quote against the mainnet');
+        $this->assertFalse($provider->isAssetEnabled('STELLAR', 'XLM'));
+        $this->assertSame('mainnet', $provider->getNetwork('STELLAR'), 'the orders that exist still sync there');
+
+        $released = $configuration;
+        $released['LedgerDirect.config.useXahauTestnet'] = false;
+        $released['LedgerDirect.config.xahauEnabled'] = true;
+        $released['LedgerDirect.config.xahauMainnetDestinationAccount'] = Fixtures::XAHAU_ACCOUNT;
+        $this->assertSame(Fixtures::XAHAU_ACCOUNT, (new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($released)))->getDestinationAccount('XAHAU'), 'a released chain may run on the mainnet');
+    }
+
+    /**
      * Xahau's card has no asset toggles: XAH is the native asset and on with
      * the chain. An XRPL asset is not a Xahau one, although the address
      * format is the same.
