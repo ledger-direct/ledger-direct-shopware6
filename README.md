@@ -197,7 +197,8 @@ sent on the wrong network is not matched to the order.
 On Xahau the customer pays with a destination tag, as on the XRP Ledger. The QR code carries the same
 payment request with the Xahau network named in it; Xaman then offers to switch networks if it is set
 to another one. The buttons for browser wallets and wallet apps are not shown on a Xahau payment page.
-XAH is priced from Coingecko and Bitrue, the one exchange it trades on, averaged like every oracle set.
+XAH is priced from Coingecko and Bitrue, the one exchange it trades on, averaged like every oracle set;
+Bitrue quotes USDT only, so a euro price rests on Coingecko alone.
 
 **LedgerDirect – Stellar (Preview)**
 

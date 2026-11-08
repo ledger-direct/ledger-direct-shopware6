@@ -193,10 +193,14 @@ class ConfigurationValidator implements EventSubscriberInterface
         return null;
     }
 
-    /** The administration saves the toggle as a bool; a CLI or an API client may send a string or a number. */
+    /**
+     * Off as ConfigurationService::getBool() will read it: null is unset, everything
+     * else is cast — the administration saves a bool, a CLI or an API client may send
+     * a string or a number, and what the reader turns into false is refused here.
+     */
     private static function isOff(mixed $value): bool
     {
-        return $value === false || $value === 0 || $value === '0' || $value === '' || (is_string($value) && strtolower($value) === 'false');
+        return $value !== null && (bool) $value === false;
     }
 
     /**

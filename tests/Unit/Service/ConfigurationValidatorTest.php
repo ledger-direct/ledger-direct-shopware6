@@ -163,7 +163,8 @@ class ConfigurationValidatorTest extends TestCase
 
     /**
      * A preview chain runs on its testnet only. The administration saves the toggle
-     * as a bool; a client may send it as a string or a number, all read as off.
+     * as a bool; a client may send it as a string or a number. Refused is what
+     * ConfigurationService::getBool() would read as off, so the two cannot disagree.
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('offValues')]
     public function testSwitchingAPreviewChainToTheMainnetIsRefused(mixed $off): void
@@ -177,14 +178,15 @@ class ConfigurationValidatorTest extends TestCase
     /** @return array<string, array{0: mixed}> */
     public static function offValues(): array
     {
-        return ['bool' => [false], 'int' => [0], 'string zero' => ['0'], 'string false' => ['false'], 'empty' => ['']];
+        return ['bool' => [false], 'int' => [0], 'float' => [0.0], 'string zero' => ['0'], 'empty' => ['']];
     }
 
     public function testAReleasedChainMaySwitchToTheMainnetAndAPreviewStayOnTheTestnet(): void
     {
         $validator = $this->validator();
 
-        foreach ([['LedgerDirect.config.useXahauTestnet', false], ['LedgerDirect.config.useXrplTestnet', false], ['LedgerDirect.config.useStellarTestnet', true]] as [$key, $value]) {
+        // The string 'false' is on to getBool() — (bool) 'false' is true — so it selects no mainnet and passes.
+        foreach ([['LedgerDirect.config.useXahauTestnet', false], ['LedgerDirect.config.useXrplTestnet', false], ['LedgerDirect.config.useStellarTestnet', true], ['LedgerDirect.config.useStellarTestnet', 'false']] as [$key, $value]) {
             $event = new BeforeSystemConfigChangedEvent($key, $value, null);
             $validator->onBeforeChange($event);
             $this->assertSame($value, $event->getValue(), $key);
