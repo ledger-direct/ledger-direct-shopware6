@@ -1,4 +1,4 @@
-# Unreleased
+# 1.10.0
 - The LedgerDirect card on the order detail is back on Shopware 6.7. Since 1.7.0 the built
   administration files named a script the release did not contain: `.vite/entrypoints.json` and
   `manifest.json` still pointed to `ledger-direct-rTdLB6k2.js` after the build had replaced it with
