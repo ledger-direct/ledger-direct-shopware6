@@ -1,4 +1,11 @@
 # Unreleased
+- Die LedgerDirect-Karte in den Bestelldetails ist auf Shopware 6.7 wieder da. Seit 1.7.0 nannten
+  die gebauten Administrationsdateien ein Skript, das im Release nicht enthalten war:
+  `.vite/entrypoints.json` und `manifest.json` zeigten noch auf `ledger-direct-rTdLB6k2.js`, nachdem
+  der Build es durch `ledger-direct-BK50jI7P.js` ersetzt hatte; die Administration forderte eine Datei
+  an, die mit 404 antwortete, und der Anteil des Plugins lud nie. Das Manifest nennt wieder die
+  ausgelieferte Datei, und ein Test prüft, dass die Einstiegspunkte ausgelieferte Dateien nennen und
+  das gebaute Skript die Texte jeder Chain enthält
 - In fünf Minuten ausprobieren: `dev/try` startet einen vollständigen Shopware-6.7-Shop mit dem Plugin im
   XRP-Ledger-Testnet (`docker compose up -d --wait`): eine Startseite auf Englisch und Deutsch, die die Demo
   erklärt und drei handbemalte Miniaturen anbietet, ein Demo-Artikel für 1 EUR in einer eigenen Kategorie,
