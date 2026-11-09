@@ -396,7 +396,8 @@ the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visi
 publishes no image. `e2e.yml` runs the end-to-end harness against that try stack, on the XRPL testnet
 and then on the Xahau testnet (the harness switches the chain on for its run; PS-04 is skipped
 there, Xahau having no issued asset): on a version tag (every case but PS-10's 35-minute wait),
-weekly on Monday at 02:17 UTC (every case) and by hand. One CI treasury per chain, as repository
+weekly on Monday at 02:17 UTC (every case on the XRPL testnet, on Xahau every case but PS-10) and
+by hand. One CI treasury per chain, as repository
 secrets (`LEDGERDIRECT_CI_XRPL_TREASURY_*`, `LEDGERDIRECT_CI_XAHAU_TREASURY_*`). It is not a merge
 gate: the testnets are not deterministic. The stack also serves the
 end-to-end harness locally as its `shopware` target (see the comment in `dev/try/compose.yaml`).
