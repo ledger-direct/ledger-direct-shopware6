@@ -1,4 +1,4 @@
-# Unreleased
+# 1.10.1
 - Benötigt `hardcastle/ledger-direct-core` 0.11.1. Sind sich die Kursquellen uneinig, bekommt das Plugin
   keinen Kurs statt eines veralteten
 - Ein Testnet-Reset, wie der für das Testnet des XRP Ledger am 25.11.2026 angekündigte, kostet je
