@@ -54,6 +54,7 @@
       "expiredRate": "The exchange rate may have moved since.",
       "expiredAlreadySent": "Already sent? Then do not send again – we will still recognise the payment.",
       "refreshQuoteButton": "Request a new amount",
+      "priceUnavailable": "The price is temporarily unavailable. Please try again in a moment.",
       "successTitle": "Payment received",
       "successAmount": "%amount% have arrived.",
       "successHash": "Transaction",
@@ -108,6 +109,9 @@
         "STELLAR": "Paid directly on the Stellar network, with no intermediary.",
         "XAHAU": "Paid directly on the Xahau network, with no intermediary."
       }
+    },
+    "checkout": {
+      "priceUnavailable": "We could not get a price for this payment method just now, so the payment was not started. Please try again in a moment, or choose another payment method."
     }
   }
 }

@@ -92,6 +92,10 @@
                                 <div>
                                     <p><strong>{{ "LedgerDirect.paymentPage.expiredTitle"|trans }}</strong> {{ "LedgerDirect.paymentPage.expiredRate"|trans }}</p>
                                     <p>{{ "LedgerDirect.paymentPage.expiredAlreadySent"|trans }}</p>
+                                    {# A refresh that got no price: the quote stays expired, the button stays, this says why. #}
+                                    {% for message in app.flashes('ledgerDirectPriceUnavailable') %}
+                                        <p data-ld-price-unavailable><strong>{{ message }}</strong></p>
+                                    {% endfor %}
                                     <form method="post" action="{{ refreshUrl }}">
                                         <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
                                         <input type="hidden" name="returnUrl" value="{{ returnUrl }}">

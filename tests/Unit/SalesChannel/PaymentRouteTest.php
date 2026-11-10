@@ -4,7 +4,9 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\SalesChannel;
 
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Price\OraclesDisagreeException;
 use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
+use Hardcastle\LedgerDirect\Exception\PriceTemporarilyUnavailableException;
 use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
 use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
@@ -376,6 +378,30 @@ class PaymentRouteTest extends TestCase
 
         $this->assertSame('partial', $payload['page']['state']);
         $this->assertSame('10', $payload['page']['amountDueDisplay']);
+    }
+
+    /**
+     * No price for the new quote: a defined client error, not a 500, and
+     * the order is left as it was — the expired quote is not re-read as if
+     * a new one had been stored, and the front end can offer to try again.
+     */
+    public function testRefreshWithoutAPriceAnswersWithAClientErrorAndChangesNothing(): void
+    {
+        $expired = $this->transaction('open', $this->xrpQuote(expiry: time() - 1));
+        $this->givenAuthorisedOrder($expired);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('prepareOrderTransaction')->once()
+            ->andThrow(new OraclesDisagreeException('No usable price for XRP/EUR: the oracles disagree.'));
+        $this->orderTransactionService->shouldReceive('getOrderTransactionById')->never();
+
+        try {
+            $this->refresh(['deepLinkCode' => 'the-code']);
+            $this->fail('expected the refresh to answer that there is no price');
+        } catch (PriceTemporarilyUnavailableException $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
+            $this->assertSame('LEDGER_DIRECT__PRICE_UNAVAILABLE', $exception->getErrorCode());
+            $this->assertStringContainsString('temporarily unavailable', $exception->getMessage());
+        }
     }
 
     public function testRefreshIsGuardedLikeQuote(): void

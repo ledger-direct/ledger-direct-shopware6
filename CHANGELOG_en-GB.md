@@ -5,6 +5,13 @@
   request per receiving account on the XRP Ledger and on Xahau: the sync remembers the reset in the
   shop's cache. Before, every sync of an account with payments from before the reset started with a
   failing request, a warning in the log and a full download of the account's history
+- When no price can be had for a new quote, the customer gets a way to try again instead of an error
+  page. "Request a new amount" on an expired payment page keeps the page as it was, with its button,
+  and says the price is temporarily unavailable. The Store API's `payment/refresh` answers
+  `409 LEDGER_DIRECT__PRICE_UNAVAILABLE` instead of 500 and leaves the order's quote unchanged. At
+  checkout the payment fails as before, and the order's payment page now says why and that trying
+  again in a moment may work. `ledger-direct:xrp-price:lookup` prints an error line instead of a
+  stack trace (#64)
 
 # 1.10.0
 - The LedgerDirect card on the order detail is back on Shopware 6.7. Since 1.7.0 the built

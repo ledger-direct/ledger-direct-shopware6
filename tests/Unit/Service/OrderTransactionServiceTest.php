@@ -8,6 +8,7 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Core\Port\XrplTransactionRepositoryInterface;
+use Hardcastle\LedgerDirect\Core\Price\OraclesDisagreeException;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
 use Hardcastle\LedgerDirect\Core\Stellar\HorizonClient;
 use Hardcastle\LedgerDirect\Core\Stellar\MemoIdService;
@@ -164,6 +165,29 @@ class OrderTransactionServiceTest extends TestCase
 
         $this->assertSame(4294967295, $intent['destination_tag']);
         $this->assertSame(40.0, $intent['amount_requested'], 'the price is still re-quoted');
+    }
+
+    /**
+     * Oracles that disagree give no price since core 0.11.1. The callers
+     * rely on that leaving the order as it was: the exception comes before
+     * anything is written, so an expired quote stays the one on record.
+     */
+    public function testPrepareWithoutAPriceStoresNothing(): void
+    {
+        $this->httpClient = StubHttpClient::withDisagreeingOracles();
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::XRP_PAYMENT_ID,
+            $this->givenStoredIntent()->toArray()
+        );
+        $this->orderTransactionRepository->shouldReceive('upsert')->never();
+
+        $this->expectException(OraclesDisagreeException::class);
+
+        $this->createService()->prepareOrderTransaction(
+            $this->givenOrder(),
+            $orderTransaction,
+            $this->context
+        );
     }
 
     public function testPrepareRejectsAnUnknownPaymentMethod(): void

@@ -6,6 +6,13 @@
   Reset im Cache des Shops. Bisher begann jeder Abgleich eines Kontos mit Zahlungen von vor dem Reset
   mit einer fehlschlagenden Anfrage, einer Warnung im Log und einem vollständigen Abruf der
   Kontohistorie
+- Ist für einen neuen Betrag kein Kurs zu bekommen, kann es der Kunde erneut versuchen, statt auf
+  einer Fehlerseite zu landen. „Neuen Betrag anfordern“ auf einer abgelaufenen Zahlungsseite lässt
+  die Seite samt Schaltfläche, wie sie war, und sagt, dass der Kurs vorübergehend nicht verfügbar
+  ist. `payment/refresh` der Store API antwortet mit `409 LEDGER_DIRECT__PRICE_UNAVAILABLE` statt 500
+  und lässt den Betrag der Bestellung unverändert. Im Checkout schlägt die Zahlung wie bisher fehl;
+  die Zahlungsseite der Bestellung sagt jetzt, warum, und dass ein neuer Versuch gleich klappen kann.
+  `ledger-direct:xrp-price:lookup` gibt eine Fehlerzeile statt eines Stacktraces aus (#64)
 
 # 1.10.0
 - Die LedgerDirect-Karte in den Bestelldetails ist auf Shopware 6.7 wieder da. Seit 1.7.0 nannten

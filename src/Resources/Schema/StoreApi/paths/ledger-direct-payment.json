@@ -85,6 +85,9 @@
                     "404": {
                         "description": "The order was never quoted with LedgerDirect"
                     },
+                    "409": {
+                        "description": "No price for the new quote right now (error code `LEDGER_DIRECT__PRICE_UNAVAILABLE`): nothing changed, the order keeps its expired quote; try again in a moment"
+                    },
                     "410": {
                         "description": "The order no longer waits for a payment"
                     }
