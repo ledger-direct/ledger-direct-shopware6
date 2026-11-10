@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Components\PaymentHandler;
 
+use Hardcastle\LedgerDirect\Core\Price\PriceUnavailableException;
+use Hardcastle\LedgerDirect\Exception\PriceTemporarilyUnavailableException;
 use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
@@ -58,6 +60,14 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
     }
 
     /**
+     * No price for the quote (the oracles disagree, or none answers) is left
+     * to Shopware's payment flow, as any failure here is: it marks the
+     * transaction failed and sends the customer to the order's payment page,
+     * where paying again quotes again. What this adds is the reason —
+     * thrown as LEDGER_DIRECT__PRICE_UNAVAILABLE, the error code reaches
+     * that page (and a headless front end's error URL), and the storefront
+     * says to try again in a moment instead of "payment failed".
+     *
      * @throws \Exception
      */
     public function pay(Request $request, PaymentTransactionStruct $transaction, Context $context, ?Struct $validateStruct): ?RedirectResponse
@@ -69,7 +79,11 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
             throw new \RuntimeException('LedgerDirect: order transaction not found for ' . $transaction->getOrderTransactionId());
         }
 
-        $this->transactionService->prepareOrderTransaction($order, $orderTransaction, $context);
+        try {
+            $this->transactionService->prepareOrderTransaction($order, $orderTransaction, $context);
+        } catch (PriceUnavailableException $exception) {
+            throw new PriceTemporarilyUnavailableException($exception);
+        }
 
         // A sales channel with an external front end: its payment page, from
         // the merchant's template, with the same three values the storefront

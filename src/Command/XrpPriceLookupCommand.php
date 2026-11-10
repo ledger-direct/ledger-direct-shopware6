@@ -4,6 +4,7 @@ namespace Hardcastle\LedgerDirect\Command;
 
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Price\PriceService;
+use Hardcastle\LedgerDirect\Core\Price\PriceUnavailableException;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -56,7 +57,14 @@ class XrpPriceLookupCommand extends Command
         $network = $this->configProvider->getNetwork($chain);
 
         // A total of 1.0 makes the returned quote's exchange rate the price of one unit.
-        $quote = $this->priceService->quoteAmount(1.0, $quoteCurrency, $asset, $network);
+        try {
+            $quote = $this->priceService->quoteAmount(1.0, $quoteCurrency, $asset, $network);
+        } catch (PriceUnavailableException $exception) {
+            // The oracles disagree, or none answers: what a checkout would get, too.
+            $output->writeln('<error>No ' . $asset . ' price right now: ' . $exception->getMessage() . '</error>');
+
+            return Command::FAILURE;
+        }
 
         $output->writeln('Current ' . $asset . ' price: ' . $quote->exchangeRate . ' ' . $quoteCurrency);
 

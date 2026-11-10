@@ -6,7 +6,9 @@ use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Price\PriceUnavailableException;
 use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
+use Hardcastle\LedgerDirect\Exception\PriceTemporarilyUnavailableException;
 use Hardcastle\LedgerDirect\Exception\TransactionLifetimeException;
 use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
@@ -156,6 +158,10 @@ class PaymentRoute
      * paid; such an order gets its current quote back unchanged. The
      * destination account and tag stay the same, unless the merchant changed
      * the receiving account in between (OrderTransactionService::prepareOrderTransaction()).
+     *
+     * No price for the new quote (the oracles disagree, or none answers):
+     * 409 LEDGER_DIRECT__PRICE_UNAVAILABLE, and nothing changes — the order
+     * keeps its expired quote and the front end can offer to try again.
      */
     #[Route(
         path: '/store-api/ledger-direct/payment/refresh/{orderId}',
@@ -167,7 +173,12 @@ class PaymentRoute
         [$order, $orderTransaction, $intent] = $this->openOrder($orderId, $request, $context);
 
         if (PaymentStatus::fromIntent($intent, $this->settlementPolicy)->state() === PaymentStatus::EXPIRED) {
-            $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
+            try {
+                $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
+            } catch (PriceUnavailableException $exception) {
+                // Nothing stored: the expired quote stays, and so does the way to try again.
+                throw new PriceTemporarilyUnavailableException($exception);
+            }
 
             $orderTransaction = $this->orderTransactionService->getOrderTransactionById($orderTransaction->getId(), $context->getContext()) ?? $orderTransaction;
             $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction) ?? $intent;

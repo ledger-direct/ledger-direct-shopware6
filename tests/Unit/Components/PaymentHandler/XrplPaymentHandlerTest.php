@@ -5,6 +5,8 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Components\PaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Price\OraclesDisagreeException;
+use Hardcastle\LedgerDirect\Exception\PriceTemporarilyUnavailableException;
 use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
@@ -20,6 +22,7 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\HttpException;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
@@ -128,6 +131,54 @@ class XrplPaymentHandlerTest extends TestCase
             'https://frontend.example/pay/order-id?code=the-deep-link-code&return=https%3A%2F%2Fshop.example%2Fpayment%2Ffinalize-transaction%3F_sw_payment_token%3Dt',
             $response?->getTargetUrl()
         );
+    }
+
+    /**
+     * No price at checkout stays a failure — Shopware marks the transaction
+     * failed and offers to pay again — but one with a reason: Shopware's
+     * payment processor puts the error code of an HttpException on the
+     * error URL, and the order's payment page shows the matching text.
+     */
+    public function testPayWithoutAPriceFailsWithTheErrorCodeForTryingAgain(): void
+    {
+        $order = new OrderEntity();
+        $order->setId('order-id');
+        $order->setDeepLinkCode('the-deep-link-code');
+        $order->setSalesChannelId('sales-channel-id');
+
+        $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
+        $orderTransaction->shouldReceive('getOrder')->andReturn($order);
+        $this->transactionService->shouldReceive('getOrderTransactionById')->andReturn($orderTransaction);
+        $this->transactionService->shouldReceive('prepareOrderTransaction')->once()
+            ->andThrow(new OraclesDisagreeException('No usable price for XRP/EUR: the oracles disagree.'));
+        $this->router->shouldReceive('generate')->never();
+
+        try {
+            $this->handler->pay(new Request(), new PaymentTransactionStruct(self::TX_ID, 'https://shop.example/return'), $this->context, null);
+            $this->fail('expected the payment to fail');
+        } catch (PriceTemporarilyUnavailableException $exception) {
+            $this->assertInstanceOf(HttpException::class, $exception);
+            $this->assertSame('LEDGER_DIRECT__PRICE_UNAVAILABLE', $exception->getErrorCode());
+            $this->assertInstanceOf(OraclesDisagreeException::class, $exception->getPrevious());
+        }
+    }
+
+    /**
+     * The order's payment page — where Shopware sends the customer after a
+     * failed payment — names the reason for exactly that error code.
+     */
+    public function testTheOrderPaymentPageExplainsAMissingPrice(): void
+    {
+        $template = (string) file_get_contents(__DIR__ . '/../../../../src/Resources/views/storefront/page/account/order/index.html.twig');
+
+        $this->assertStringContainsString("page.errorCode == '" . PriceTemporarilyUnavailableException::ERROR_CODE . "'", $template);
+        $this->assertStringContainsString("'LedgerDirect.checkout.priceUnavailable'|trans", $template);
+        $this->assertStringContainsString('{{ parent() }}', $template, 'every other error code keeps Shopware\'s text');
+
+        foreach (['en-GB', 'de-DE'] as $locale) {
+            $snippets = json_decode((string) file_get_contents(__DIR__ . "/../../../../src/Resources/snippet/storefront/ledger-direct.{$locale}.json"), true, 512, \JSON_THROW_ON_ERROR);
+            $this->assertNotEmpty($snippets['LedgerDirect']['checkout']['priceUnavailable'] ?? null, $locale);
+        }
     }
 
     public function testFinalizeMarksPaidWhenFullyPaid(): void

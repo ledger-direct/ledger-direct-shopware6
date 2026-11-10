@@ -54,6 +54,7 @@
       "expiredRate": "Der Kurs kann sich seitdem bewegt haben.",
       "expiredAlreadySent": "Schon gesendet? Dann nicht erneut senden – wir erkennen die Zahlung trotzdem.",
       "refreshQuoteButton": "Neuen Betrag anfordern",
+      "priceUnavailable": "Der Kurs ist vorübergehend nicht verfügbar. Bitte versuchen Sie es gleich noch einmal.",
       "successTitle": "Zahlung eingegangen",
       "successAmount": "%amount% sind angekommen.",
       "successHash": "Transaktion",
@@ -108,6 +109,9 @@
         "STELLAR": "Direkt im Stellar-Netzwerk bezahlt, ohne Zwischenhändler.",
         "XAHAU": "Zahlung direkt im Xahau-Netzwerk, ohne Zwischenhändler."
       }
+    },
+    "checkout": {
+      "priceUnavailable": "Für diese Zahlungsart war gerade kein Kurs verfügbar, die Zahlung wurde deshalb nicht gestartet. Bitte versuchen Sie es gleich noch einmal oder wählen Sie eine andere Zahlungsart."
     }
   }
 }

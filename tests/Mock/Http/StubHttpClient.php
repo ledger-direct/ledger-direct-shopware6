@@ -23,16 +23,29 @@ class StubHttpClient implements ClientInterface
     /** @var array<int, array<string, mixed>> */
     private array $ledgerTransactions;
 
+    /** Coingecko's price when it is to differ from Kraken's; null: the same. */
+    private ?float $coingeckoPrice;
+
     /** How often the XRPL node was asked — what a throttle is measured by. */
     public int $ledgerRequests = 0;
 
     /**
      * @param array<int, array<string, mixed>> $ledgerTransactions
      */
-    public function __construct(float $price = 2.5, array $ledgerTransactions = [])
+    public function __construct(float $price = 2.5, array $ledgerTransactions = [], ?float $coingeckoPrice = null)
     {
         $this->price = $price;
         $this->ledgerTransactions = $ledgerTransactions;
+        $this->coingeckoPrice = $coingeckoPrice;
+    }
+
+    /**
+     * Two oracles that both answer, too far apart for the core's divergence
+     * filter: since core 0.11.1 that is no price at all, not a stale one.
+     */
+    public static function withDisagreeingOracles(): self
+    {
+        return new self(1.0, [], 10.0);
     }
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -52,7 +65,7 @@ class StubHttpClient implements ClientInterface
             $baseId = (string) ($query['ids'] ?? '');
             $quoteId = (string) ($query['vs_currencies'] ?? '');
 
-            return self::json([$baseId => [$quoteId => $this->price]]);
+            return self::json([$baseId => [$quoteId => $this->coingeckoPrice ?? $this->price]]);
         }
 
         if ($request->getMethod() === 'POST') {

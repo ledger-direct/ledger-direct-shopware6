@@ -6,6 +6,7 @@ use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
+use Hardcastle\LedgerDirect\Core\Price\PriceUnavailableException;
 use Hardcastle\LedgerDirect\Exception\NoPaymentIntentException;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\PageLogo;
@@ -30,6 +31,13 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class XrplPaymentController extends StorefrontController
 {
+    /**
+     * The flash type the payment page reads into its "quote expired" block
+     * (payment.html.twig). A type of its own, not `warning`: the page shows
+     * no other flash messages.
+     */
+    public const FLASH_PRICE_UNAVAILABLE = 'ledgerDirectPriceUnavailable';
+
     private OrderTransactionService $orderTransactionService;
 
     private PaymentRoute $paymentRoute;
@@ -147,6 +155,10 @@ class XrplPaymentController extends StorefrontController
      * a refresh would re-quote an order that is already partly paid. The
      * destination account and tag stay the same either way
      * (see OrderTransactionService::prepareOrderTransaction()).
+     *
+     * No price for the new quote (the oracles disagree, or none answers):
+     * nothing is stored, the page comes back expired with its button, and
+     * a notice under it says to try again in a moment.
      */
     #[Route(path: '/ledger-direct/payment/refresh/{orderId}', name: 'frontend.checkout.ledger-direct.refresh-quote', methods: ['POST'], options: ['seo' => 'false'])]
     public function refreshQuote(SalesChannelContext $context, string $orderId, Request $request): Response
@@ -174,7 +186,11 @@ class XrplPaymentController extends StorefrontController
             return $backToPaymentPage;
         }
 
-        $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
+        try {
+            $this->orderTransactionService->prepareOrderTransaction($order, $orderTransaction, $context->getContext());
+        } catch (PriceUnavailableException) {
+            $this->addFlash(self::FLASH_PRICE_UNAVAILABLE, $this->trans('LedgerDirect.paymentPage.priceUnavailable'));
+        }
 
         return $backToPaymentPage;
     }

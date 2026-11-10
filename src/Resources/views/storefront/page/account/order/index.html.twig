@@ -1,0 +1,22 @@
+{% sw_extends '@Storefront/storefront/page/account/order/index.html.twig' %}
+
+{#
+    Where Shopware sends the customer when a payment could not be started.
+    For a LedgerDirect quote that found no price the page says so and that
+    trying again in a moment may work, instead of Shopware's generic
+    "payment failed". Every other error code keeps Shopware's own text.
+#}
+{% block page_checkout_confirm_header %}
+    {% if page.errorCode == 'LEDGER_DIRECT__PRICE_UNAVAILABLE' %}
+        {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+            type: 'warning',
+            content: 'LedgerDirect.checkout.priceUnavailable'|trans|sw_sanitize
+        } %}
+
+        <h1 class="confirm-main-header">
+            {{ 'account.completePayment'|trans|sw_sanitize }}
+        </h1>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
