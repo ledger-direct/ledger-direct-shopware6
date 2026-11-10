@@ -1,4 +1,4 @@
-# Unreleased
+# 1.10.1
 - Needs `hardcastle/ledger-direct-core` 0.11.1. When the price oracles disagree, the plugin gets no price
   instead of a stale rate
 - A testnet reset, such as the one scheduled for the XRP Ledger testnet on 2026-11-25, costs one failing
