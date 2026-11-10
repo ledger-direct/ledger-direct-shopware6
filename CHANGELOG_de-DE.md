@@ -1,10 +1,11 @@
 # Unreleased
 - Benötigt `hardcastle/ledger-direct-core` 0.11.1. Sind sich die Kursquellen uneinig, bekommt das Plugin
   keinen Kurs statt eines veralteten
-- Ein Testnet-Reset, wie im Testnet des XRP Ledger am 25.11.2026, kostet je Empfangskonto im XRP Ledger
-  und in Xahau eine fehlschlagende Anfrage: Der Abgleich merkt sich den Reset im Cache des Shops. Bisher
-  begann jeder Abgleich eines Kontos mit Zahlungen von vor dem Reset mit einer fehlschlagenden Anfrage,
-  einer Warnung im Log und einem vollständigen Abruf der Kontohistorie
+- Ein Testnet-Reset, wie der für das Testnet des XRP Ledger am 25.11.2026 angekündigte, kostet je
+  Empfangskonto im XRP Ledger und in Xahau eine fehlschlagende Anfrage: Der Abgleich merkt sich den
+  Reset im Cache des Shops. Bisher begann jeder Abgleich eines Kontos mit Zahlungen von vor dem Reset
+  mit einer fehlschlagenden Anfrage, einer Warnung im Log und einem vollständigen Abruf der
+  Kontohistorie
 
 # 1.10.0
 - Die LedgerDirect-Karte in den Bestelldetails ist auf Shopware 6.7 wieder da. Seit 1.7.0 nannten
