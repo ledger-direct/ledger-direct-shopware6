@@ -1,3 +1,11 @@
+# Unreleased
+- Needs `hardcastle/ledger-direct-core` 0.11.1. When the price oracles disagree, the plugin gets no price
+  instead of a stale rate
+- A testnet reset, such as the one scheduled for the XRP Ledger testnet on 2026-11-25, costs one failing
+  request per receiving account on the XRP Ledger and on Xahau: the sync remembers the reset in the
+  shop's cache. Before, every sync of an account with payments from before the reset started with a
+  failing request, a warning in the log and a full download of the account's history
+
 # 1.10.0
 - The LedgerDirect card on the order detail is back on Shopware 6.7. Since 1.7.0 the built
   administration files named a script the release did not contain: `.vite/entrypoints.json` and

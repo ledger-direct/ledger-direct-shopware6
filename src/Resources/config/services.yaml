@@ -201,12 +201,15 @@ services:
             - '@GuzzleHttp\Psr7\HttpFactory'
             - 'XAHAU'
 
+    # The cache remembers a testnet reset, so only the first sync after one sends a failing request.
     ledger_direct.xahau.sync:
         class: Hardcastle\LedgerDirect\Core\Xrpl\SyncService
         arguments:
             - '@ledger_direct.xahau.client'
             - '@ledger_direct.xahau.transaction_repository'
             - '@logger'
+            - '@ledger_direct.rate_cache'
+            - 'XAHAU'
 
     ledger_direct.xahau.destination_tags:
         class: Hardcastle\LedgerDirect\Core\Xrpl\DestinationTagService
@@ -273,11 +276,14 @@ services:
             - '@GuzzleHttp\Psr7\HttpFactory'
             - '@GuzzleHttp\Psr7\HttpFactory'
 
+    # The cache remembers a testnet reset, so only the first sync after one sends a failing request.
     Hardcastle\LedgerDirect\Core\Xrpl\SyncService:
         arguments:
             - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
             - '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
             - '@logger'
+            - '@ledger_direct.rate_cache'
+            - 'XRPL'
 
     Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle:
         arguments:
