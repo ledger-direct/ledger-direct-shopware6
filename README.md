@@ -59,6 +59,8 @@ LD_TESTNET_ACCOUNT=r... docker compose up -d --wait
 ```
 
 Setting `LD_TESTNET_ACCOUNT` later works too: the next `up` applies it to the existing shop.
+It sets the XRP Ledger account only; XAH keeps going to the shop's own Xahau account. If the Xahau
+testnet or its faucet does not answer, the shop starts without XAH and the next `up` tries again.
 `LD_TRY_PORT` moves the shop off port 8091 (`LD_TRY_TLS_PORT` its https port, 8491, with a
 self-signed certificate). `docker compose down` stops the stack and keeps the shop and its orders;
 `docker compose down -v` resets everything, and the next `up` starts from a fresh shop.
