@@ -427,6 +427,10 @@ repos/<owner>/<repo>/rulesets`). Every Monday, and on demand, `ci.yml` checks th
 GitHub matches the file (`.github/rulesets/check.sh`). Who may bypass the rules is not part of that
 check: GitHub shows the bypass list only to admins of the repository.
 
+Tags have a ruleset of their own, `.github/rulesets/tags.json`: a tag can be created, never moved
+or deleted, so a version on Packagist always stands for the same commit. It is applied and checked
+the same way.
+
 ## Translations
 
 English and German, as snippet files under `src/Resources/snippet/`.
