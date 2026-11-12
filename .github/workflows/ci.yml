@@ -105,6 +105,10 @@ jobs:
     # skipped job counts as passed for required checks.
     if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-latest
+    # Empty in a Dependabot pull request, which runs without the repository's secrets; the Docker Hub
+    # login below is then skipped and the images are pulled anonymously.
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - name: Checkout plugin
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -116,6 +120,7 @@ jobs:
       # theirs with everyone, so the dockware pull failed at random with
       # "toomanyrequests". Logged in, it counts against the organisation's account.
       - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
