@@ -61,6 +61,7 @@ class PaymentPageViewTest extends TestCase
         $this->assertNull($values['currencyHex']);
         $this->assertStringContainsString('rMerchant', $values['paymentUri']);
         $this->assertStringContainsString('114729', $values['paymentUri']);
+        $this->assertStringEndsWith('&network=TESTNET', $values['paymentUri'], 'Xaman pays on the named network, not on the one the wallet has open');
         $this->assertSame(114729, $values['destinationTag']);
         $this->assertSame('Beispielshop', $values['shopName']);
         $this->assertSame('#336699', $values['accentColor']);
