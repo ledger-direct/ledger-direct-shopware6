@@ -3,7 +3,7 @@
 // A screenshot of every step goes to the output folder; exits non-zero on the first failure.
 //
 //   npm install
-//   CHROME=/path/to/chrome node visitor.mjs [base url] [screenshot dir] [xrp|rlusd|usdc]
+//   CHROME=/path/to/chrome node visitor.mjs [base url] [screenshot dir] [xrp|rlusd|usdc|xah]
 import puppeteer from 'puppeteer-core';
 import { readFileSync } from 'node:fs';
 // The article to buy: the first miniature of the catalogue, found on the home page by its name —
@@ -13,8 +13,8 @@ const BASE = (process.argv[2] ?? 'http://localhost:8091').replace(/\/$/, '');
 const OUT = process.argv[3] ?? '.';
 const ASSET = (process.argv[4] ?? 'xrp').toLowerCase();
 // The plugin's payment method ids (PaymentMethodInstaller).
-const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca60321a9d2dac0fe3622a5110f55bd', usdc: '7ca60321a9d2dac0fe3622a5110f55be' };
-if (!METHODS[ASSET]) throw new Error(`unknown asset ${ASSET}: xrp, rlusd or usdc`);
+const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca60321a9d2dac0fe3622a5110f55bd', usdc: '7ca60321a9d2dac0fe3622a5110f55be', xah: 'd9e4a5f06e6c4a36dfa37a410d88de42' };
+if (!METHODS[ASSET]) throw new Error(`unknown asset ${ASSET}: xrp, rlusd, usdc or xah`);
 
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
