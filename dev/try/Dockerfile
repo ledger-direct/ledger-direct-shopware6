@@ -14,11 +14,10 @@
 # Build from the repository root:
 #   docker build -f dev/try/Dockerfile -t try-shopware .
 
-ARG DOCKWARE_IMAGE=dockware/shopware:6.7.14.2
-
-FROM ${DOCKWARE_IMAGE}
+# Base images by tag and digest, written out in the FROM lines: Dependabot (docker) keeps them
+# current only there. The base.name label below repeats the tag.
+FROM dockware/shopware:6.7.14.2@sha256:5258cc4c936357d3c18f34b76f39013fe31443758f5baa32509f6d06d1e9c0ad
 ARG LD_VERSION=dev
-ARG DOCKWARE_IMAGE
 # gmp for the wallet tool's signing (hardcastle/xrpl_php), for the PHP version the image runs.
 RUN sudo apt-get update -qq \
  && sudo apt-get install -y -qq --no-install-recommends "php$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;')-gmp" >/dev/null \
@@ -68,7 +67,7 @@ LABEL org.opencontainers.image.title="LedgerDirect for Shopware 6 — try it" \
       org.opencontainers.image.source="https://github.com/ledger-direct/ledger-direct-shopware6" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${LD_VERSION}" \
-      org.opencontainers.image.base.name="${DOCKWARE_IMAGE}"
+      org.opencontainers.image.base.name="dockware/shopware:6.7.14.2"
 # The scheduled tasks and the message queue run from the container's cron: the plugin's settlement
 # task settles orders whose payment arrived while no payment page was open.
 ENV SW_TASKS_ENABLED=1 \

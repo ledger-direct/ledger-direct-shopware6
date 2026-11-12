@@ -11,20 +11,24 @@ on:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
 
+# Read-only by default; only the release job may write, to publish the release.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     name: Zip and GitHub release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           fetch-depth: 0 # the zip is built from the tag, not from the checkout as it is
 
       - name: Setup shopware-cli
-        uses: shopware/shopware-cli-action@v1
+        uses: shopware/shopware-cli-action@72d5fa2c934424f3b1360ccae288aa304b91a4c9 # v1.0.6
 
       # The tag is the version everywhere - Packagist, the plugin list, the zip
       # name. A composer.json that says something else is a release that would
