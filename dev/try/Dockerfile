@@ -16,7 +16,7 @@
 
 # Base images by tag and digest, written out in the FROM lines: Dependabot (docker) keeps them
 # current only there. The base.name label below repeats the tag.
-FROM dockware/shopware:6.7.14.2@sha256:5258cc4c936357d3c18f34b76f39013fe31443758f5baa32509f6d06d1e9c0ad
+FROM dockware/shopware:6.7.16.0@sha256:9b2d23f778479c3bfed436f27e60a2a5978ed8d503972bc5670bbd84255ad379
 ARG LD_VERSION=dev
 # gmp for the wallet tool's signing (hardcastle/xrpl_php), for the PHP version the image runs.
 RUN sudo apt-get update -qq \
