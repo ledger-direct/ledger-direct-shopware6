@@ -11,6 +11,8 @@
  *       trust lines to the RLUSD and USDC issuers of the core's StablecoinRegistry, and created anew
  *       when the testnet was reset (see wallet.php)
  *     - XRP always; RLUSD and USDC when the account has the trust lines; every other payment method off
+ *     - XAH to the shop's own Xahau testnet account (wallet.php xahau), made and funded on the first
+ *       start; while the Xahau testnet does not answer, XAH stays as it was and the next start tries again
  *
  *   setup.php catalog   when the image brings a new catalogue: the category "LedgerDirect demo" with the
  *     demo article for 1 EUR (the smoke test and the harness order it), the category "Miniatures" with
@@ -29,6 +31,7 @@ const API = 'http://127.0.0.1';
 const STATE = '/var/www/ledger-direct-try';
 const ACCOUNT_FILE = STATE . '/account';
 const WALLET_FILE = STATE . '/wallet.json';
+const XAHAU_WALLET_FILE = STATE . '/wallet-xahau.json';
 const WALLET = '/usr/local/share/ledger-direct/wallet.php';
 const CATALOG = '/usr/local/share/ledger-direct/catalog';
 const ADDRESS = '/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/';
@@ -40,6 +43,7 @@ const TAX_RATE = 19.0;
 const XRP = '7ca60321a9d2dac0fe3622a5110f55bb';
 const RLUSD = '7ca60321a9d2dac0fe3622a5110f55bd';
 const USDC = '7ca60321a9d2dac0fe3622a5110f55be';
+const XAH = 'd9e4a5f06e6c4a36dfa37a410d88de42';    // md5('xahau-xah-payment')
 const LOCALES = ['en-GB', 'de-DE'];
 
 function out(string $message): void
@@ -165,6 +169,20 @@ function ownWallet(): array
     return [$address, $trusted];
 }
 
+/**
+ * The shop's own Xahau testnet account, separate from the XRP Ledger one: the same r-address is a
+ * different account on each chain (one account per chain, the core's INVARIANTS.md "Xahau"). null while
+ * it is not on the Xahau testnet; the next start tries again.
+ */
+function xahauAccount(): ?string
+{
+    if (wallet('xahau', XAHAU_WALLET_FILE) !== 0) {
+        return null;
+    }
+
+    return json_decode((string) file_get_contents(XAHAU_WALLET_FILE), true)['address'];
+}
+
 /** The storefront sales channel (the oldest one), with what the setup needs of it. */
 function storefront(Api $api): array
 {
@@ -213,6 +231,13 @@ function configure(Api $api): void
     }
     file_put_contents(ACCOUNT_FILE, $account);
 
+    // XAH out of the box, so a visitor pays with their wallet without configuring anything. While the
+    // Xahau testnet account is not ready, the XAH settings stay as they were.
+    $xahau = xahauAccount();
+    if ($xahau === null) {
+        out('the Xahau testnet account is not ready; XAH stays as it was, the next start tries again');
+    }
+
     $channel = storefront($api);
     $languages = languages($api);
     $snippetSets = [];
@@ -221,7 +246,7 @@ function configure(Api $api): void
     }
 
     // The sales channel knows both languages before a domain uses one.
-    $methods = $stablecoins ? [XRP, RLUSD, USDC] : [XRP];
+    $methods = array_merge($stablecoins ? [XRP, RLUSD, USDC] : [XRP], $xahau === null ? [] : [XAH]);
     $api->sync('sales_channel', [[
         'id' => $channel['id'],
         'name' => 'LedgerDirect demo shop',
@@ -260,12 +285,13 @@ function configure(Api $api): void
         ['id' => XRP, 'active' => true],
         ['id' => RLUSD, 'active' => $stablecoins],
         ['id' => USDC, 'active' => $stablecoins],
+        ...($xahau === null ? [] : [['id' => XAH, 'active' => true]]),
     ]);
     // Only LedgerDirect at the checkout: Shopware's cash on delivery, invoice, prepayment … go off.
     $others = $api->search('payment-method', [
         'filter' => [
             ['type' => 'equals', 'field' => 'active', 'value' => true],
-            ['type' => 'not', 'operator' => 'and', 'queries' => [['type' => 'equalsAny', 'field' => 'id', 'value' => [XRP, RLUSD, USDC]]]],
+            ['type' => 'not', 'operator' => 'and', 'queries' => [['type' => 'equalsAny', 'field' => 'id', 'value' => [XRP, RLUSD, USDC, XAH]]]],
         ],
     ]);
     foreach ($others as $method) {
@@ -284,13 +310,19 @@ function configure(Api $api): void
         'LedgerDirect.config.xrplIsUsdcEnabled' => $stablecoins,
         'LedgerDirect.config.xrplQuoteExpiry' => 300,
         'LedgerDirect.config.stellarEnabled' => false,
-        'LedgerDirect.config.xahauEnabled' => false,
+        // Xahau on its testnet on every start, also while the Xahau account is not ready: the try shop
+        // never takes real XAH, whatever an earlier start or the administration set.
+        'LedgerDirect.config.useXahauTestnet' => true,
         'core.basicInformation.shopName' => 'LedgerDirect demo shop',
-    ]]);
+    ] + ($xahau === null ? [] : [
+        'LedgerDirect.config.xahauEnabled' => true,
+        'LedgerDirect.config.xahauTestnetDestinationAccount' => $xahau,
+    ])]);
 
     out('storefront ' . implode(', ', array_column($domains, 'url')));
     out("receiving account {$account} (" . ($own !== '' ? 'yours' : "the shop's own testnet wallet") . '); XRP'
-        . ($stablecoins ? ', RLUSD and USDC' : ' only'));
+        . ($stablecoins ? ', RLUSD and USDC' : ' only')
+        . ($xahau !== null ? "; XAH to the shop's Xahau testnet account {$xahau}" : ''));
 }
 
 function catalog(Api $api): void
@@ -507,33 +539,35 @@ function homePage(Api $api, string $rootId, string $miniatures): void
     $text = [
         'en-GB' => <<<HTML
 <h2>Pay with LedgerDirect</h2>
-<p><strong>A demo shop on the XRP Ledger testnet.</strong> It runs {$repository}:
-customers pay with XRP, RLUSD or USDC straight into the shop's own wallet — no payment provider in between.
+<p><strong>A demo shop on the XRP Ledger and Xahau testnets.</strong> It runs {$repository}:
+customers pay with XRP, RLUSD, USDC or XAH straight into the shop's own wallet — no payment provider in between.
 Nothing here costs real money, and no order is shipped.</p>
 <ol>
 <li>Put a miniature in the cart and check out as a guest — any name and address will do.</li>
-<li>Choose <em>XRP on XRPL</em> (or RLUSD or USDC) and place the order.</li>
+<li>Choose <em>XRP on XRPL</em> (or RLUSD, USDC or XAH) and place the order.</li>
 <li>The payment page shows the amount, the shop's account and a destination tag. Pay it from a testnet wallet,
 with the destination tag, or connect the wallet with the buttons on the page. The page notices the payment within seconds.</li>
 </ol>
 <p>A testnet wallet: {$wallets} in testnet mode or <a href="https://crossmark.io/">Crossmark</a>,
 with XRP from the <a href="https://xrpl.org/resources/dev-tools/xrp-faucets">XRP testnet faucet</a>. RLUSD and USDC come from the
-<a href="https://tryrlusd.com/">RLUSD faucet</a> and the <a href="https://faucet.circle.com/">Circle faucet</a>.</p>
+<a href="https://tryrlusd.com/">RLUSD faucet</a> and the <a href="https://faucet.circle.com/">Circle faucet</a>,
+XAH from the <a href="https://xahau-test.net/">Xahau testnet faucet</a>, with the wallet on the Xahau testnet.</p>
 HTML,
         'de-DE' => <<<HTML
 <h2>Bezahlen mit LedgerDirect</h2>
-<p><strong>Ein Demo-Shop im XRP-Ledger-Testnet.</strong> Hier läuft {$repository}:
-Kundinnen und Kunden bezahlen mit XRP, RLUSD oder USDC direkt in die eigene Wallet des Shops — ohne Zahlungsdienstleister dazwischen.
+<p><strong>Ein Demo-Shop in den Testnets von XRP Ledger und Xahau.</strong> Hier läuft {$repository}:
+Kundinnen und Kunden bezahlen mit XRP, RLUSD, USDC oder XAH direkt in die eigene Wallet des Shops — ohne Zahlungsdienstleister dazwischen.
 Nichts hier kostet echtes Geld, und keine Bestellung wird versendet.</p>
 <ol>
 <li>Eine Miniatur in den Warenkorb legen und als Gast bestellen — Name und Adresse sind beliebig.</li>
-<li><em>XRP (XRPL)</em> (oder RLUSD oder USDC) wählen und die Bestellung abschicken.</li>
+<li><em>XRP (XRPL)</em> (oder RLUSD, USDC oder XAH) wählen und die Bestellung abschicken.</li>
 <li>Die Zahlungsseite zeigt Betrag, Konto des Shops und einen Destination Tag. Aus einer Testnet-Wallet bezahlen,
 mit dem Destination Tag, oder die Wallet über die Knöpfe auf der Seite verbinden. Die Seite bemerkt die Zahlung nach wenigen Sekunden.</li>
 </ol>
 <p>Eine Testnet-Wallet: {$wallets} im Testnet-Modus oder <a href="https://crossmark.io/">Crossmark</a>,
 mit XRP aus dem <a href="https://xrpl.org/resources/dev-tools/xrp-faucets">XRP-Testnet-Faucet</a>. RLUSD und USDC gibt es beim
-<a href="https://tryrlusd.com/">RLUSD-Faucet</a> und beim <a href="https://faucet.circle.com/">Circle-Faucet</a>.</p>
+<a href="https://tryrlusd.com/">RLUSD-Faucet</a> und beim <a href="https://faucet.circle.com/">Circle-Faucet</a>,
+XAH beim <a href="https://xahau-test.net/">Xahau-Testnet-Faucet</a>, mit der Wallet im Xahau-Testnet.</p>
 HTML,
     ];
     $static = static fn (mixed $value): array => ['source' => 'static', 'value' => $value];

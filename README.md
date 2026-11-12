@@ -21,8 +21,8 @@ Project website: https://www.ledger-direct.com
 
 ## Try it in five minutes
 
-A complete Shopware 6.7 shop with the plugin, on the XRP Ledger **testnet** — no Shopware account, no
-real money. You need Docker and about 4 GB of disk.
+A complete Shopware 6.7 shop with the plugin, on the XRP Ledger and Xahau **testnets** — no Shopware
+account, no real money. You need Docker and about 4 GB of disk.
 
 ```
 git clone https://github.com/ledger-direct/ledger-direct-shopware6.git
@@ -34,28 +34,34 @@ docker compose up -d --wait        # first start builds and sets up the shop: ab
    and offers three hand-painted **miniatures** (2–4 EUR). They are demo articles, nothing is sold or
    shipped; their pictures and texts are not under the MIT licence, see
    [`dev/try/catalog/NOTICE.md`](dev/try/catalog/NOTICE.md). Put one in the cart and check out as a
-   guest with *XRP on XRPL*, *RLUSD* or *USDC*.
+   guest with *XRP on XRPL*, *RLUSD*, *USDC* or *XAH*.
 2. The payment page shows the amount, the receiving account and the destination tag. Pay it from a
    testnet wallet — [Xaman](https://xaman.app/) in testnet mode or [Crossmark](https://crossmark.io/)
    — funded from the [XRP Testnet faucet](https://xrpl.org/xrp-testnet-faucet.html); RLUSD and USDC
-   come from the [RLUSD faucet](https://tryrlusd.com/) and the [Circle faucet](https://faucet.circle.com/).
-   Send the amount exactly as shown, **with the destination tag**, or connect the wallet with the
-   buttons on the page.
+   come from the [RLUSD faucet](https://tryrlusd.com/) and the [Circle faucet](https://faucet.circle.com/);
+   XAH from the Xahau testnet faucet at [xahau-test.net](https://xahau-test.net/), with the wallet
+   switched to the Xahau testnet. Send the amount exactly as shown, **with the destination tag**, or
+   connect the wallet with the buttons on the page.
 3. The page notices the payment within seconds and moves on to the order; the order's payment is
    *Paid* in the administration at http://localhost:8091/admin (demo login `demo` /
    `demo-ledgerdirect-1` — a local demo login, never reuse it).
 
 On its first start the shop creates its own testnet wallet from the faucet and sets the trust lines
 to the RLUSD and USDC issuers on it, so all three assets can be paid right away (`docker compose logs
-shopware` names the address). The wallet's seed stays in the stack's volume, testnet only. When the
-testnet has been reset, the next start notices and creates a new wallet. To receive into an address
-of your own instead — it then needs the trust lines itself:
+shopware` names the address). XAH goes to a second account that the shop makes and funds on the
+Xahau testnet: one account per chain, because the same address is a different account there. The
+seeds stay in the stack's volume, testnet only. When the testnet has been reset, the next start
+notices and creates a new wallet. To receive into an address of your own instead — it then needs the
+trust lines itself:
 
 ```
 LD_TESTNET_ACCOUNT=r... docker compose up -d --wait
 ```
 
 Setting `LD_TESTNET_ACCOUNT` later works too: the next `up` applies it to the existing shop.
+It sets the XRP Ledger account only; XAH keeps going to the shop's own Xahau account, and every start
+sets it again. If the Xahau testnet or its faucet does not answer, the XAH settings stay as they were
+(on a fresh shop: XAH off) and the next `up` tries again.
 `LD_TRY_PORT` moves the shop off port 8091 (`LD_TRY_TLS_PORT` its https port, 8491, with a
 self-signed certificate). `docker compose down` stops the stack and keeps the shop and its orders;
 `docker compose down -v` resets everything, and the next `up` starts from a fresh shop.

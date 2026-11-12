@@ -3,7 +3,7 @@ name: Try stack
 # The try-it stack in dev/try: every pull request and every push to master builds the image from the
 # checkout, starts the stack the way a visitor does and runs dev/try/smoke.sh against it (storefront,
 # catalogue, guest order, payment page markup contract, status endpoint PS-01 and PS-07), then walks
-# the storefront in a real browser with XRP, RLUSD and USDC. It installs the plugin into a fresh
+# the storefront in a real browser with XRP, RLUSD, USDC and XAH. It installs the plugin into a fresh
 # Shopware the way a merchant does from the store zip.
 #
 # No image is published: dockware's base layers carry the Tideways daemon (proprietary) and Filebeat
@@ -111,14 +111,17 @@ jobs:
 
       # The storefront the way a prospect sees it, in a real browser: home page, cart, guest
       # checkout with each LedgerDirect method, payment page. GitHub's runners ship Chrome.
-      - name: Browser walk (XRP, RLUSD, USDC)
+      # XAH is walked like the other assets, on purpose: the step checks that the try shop takes XAH
+      # out of the box. While the Xahau testnet or its faucet does not answer, the shop starts
+      # without XAH and this step fails; rerun it once Xahau answers.
+      - name: Browser walk (XRP, RLUSD, USDC, XAH)
         working-directory: dev/try/browser
         env:
           CHROME: /usr/bin/google-chrome
         run: |
           npm install --no-audit --no-fund
           mkdir -p screenshots
-          for asset in xrp rlusd usdc; do
+          for asset in xrp rlusd usdc xah; do
             echo "== $asset"
             node visitor.mjs http://localhost:8091 screenshots "$asset"
           done
