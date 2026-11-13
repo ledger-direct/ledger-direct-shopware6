@@ -98,13 +98,22 @@ jobs:
   # docker-exec into it. (Using dockware as a GitHub `container:` does NOT work,
   # because Actions overrides the entrypoint and Shopware stays as a .tar.zst.)
   # ---------------------------------------------------------------------------
+  #
+  # Twice: with the newest core the plugin allows, as a shop gets it on install, and with the
+  # oldest, together with the oldest versions of the core's own dependencies the shop permits.
+  # The shop resolves the core itself (the plugin's own lock is never read), so the lower bound in
+  # composer.json is a promise only the second leg checks.
   phpunit:
-    name: PHPUnit (Shopware 6.7)
+    name: PHPUnit (Shopware 6.7, ${{ matrix.core }} core)
     needs: changes
     # Runs unless the run was cancelled: a failed classification must not skip the tests, because a
     # skipped job counts as passed for required checks.
     if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [newest, lowest]
     # Empty in a Dependabot pull request, which runs without the repository's secrets; the Docker Hub
     # login below is then skipped and the images are pulled anonymously.
     env:
@@ -151,6 +160,13 @@ jobs:
         run: |
           docker exec shopware bash -lc 'cd /var/www/html && COMPOSER_ALLOW_SUPERUSER=1 composer require --dev --no-interaction mockery/mockery'
           docker exec shopware bash -lc 'cd /var/www/html && php bin/console plugin:refresh && php bin/console plugin:install --activate LedgerDirect && php bin/console cache:clear'
+
+      # The core at the lower bound of composer.json, and its dependencies as low as the shop's own
+      # constraints allow (brick/math, Guzzle, PSR packages, ...). Shopware's packages stay as installed.
+      - name: Move the core and its dependencies to the lowest allowed versions
+        if: matrix.core == 'lowest'
+        run: |
+          docker exec shopware bash -lc 'cd /var/www/html && COMPOSER_ALLOW_SUPERUSER=1 composer update hardcastle/ledger-direct-core --with-dependencies --prefer-lowest --prefer-stable --no-interaction && composer show hardcastle/ledger-direct-core | grep -E "^versions" && php bin/console cache:clear'
 
       - name: PHPUnit — Unit
         run: docker exec shopware bash -lc 'cd /var/www/html/custom/plugins/LedgerDirect && /var/www/html/vendor/bin/phpunit --testsuite Unit'
