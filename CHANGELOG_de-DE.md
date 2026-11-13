@@ -15,6 +15,8 @@
   Referenz der Bestellung reist in der Zahlungsanfrage mit, die der Shop angelegt hat. Der Record ist
   dasselbe Schema v1, das jedes LedgerDirect-Plugin liest, mit dem Incoming Payment als Empfängerkonto
   und dem erhaltenen Betrag als Issued Currency der Händler-Wallet
+- `quote` der Store-API nennt die Chain `INTERLEDGER` und liefert `identifierRequired`: false über
+  Interledger, wo der Kunde keine Kennung an die Zahlung hängt, true auf jedem Ledger
 - Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
   Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
   nichts

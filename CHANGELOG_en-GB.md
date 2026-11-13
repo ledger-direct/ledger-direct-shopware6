@@ -15,6 +15,8 @@
   reference travels in the payment request the shop created. The record is the same schema v1 every
   LedgerDirect plugin reads, with the incoming payment as the destination account and the received
   amount as an issued currency of the merchant's wallet
+- The Store API's `quote` names the chain `INTERLEDGER` and carries `identifierRequired`: false over
+  Interledger, where the customer puts no identifier on the payment, true on every ledger
 - The plugin's chain list is its own (`Chain\ChainRegistry`) instead of the core's `ChainCatalog`: a chain
   can now come from a package next to the core. Nothing changes for the XRPL, Stellar and Xahau
 - Known gaps of the prototype: no top-up after a quote expires (an expired incoming payment accepts
