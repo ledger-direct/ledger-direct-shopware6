@@ -45,14 +45,17 @@ class ChainRegistryTest extends TestCase
         [$chain, $asset] = ChainRegistry::forType('stellar-usdc-payment');
         $this->assertSame(['STELLAR', 'USDC'], [$chain->chain, $asset->code]);
 
-        $this->assertNull(ChainRegistry::forType('xahau-xah-payment'));
+        [$chain, $asset] = ChainRegistry::forType('xahau-xah-payment');
+        $this->assertSame(['XAHAU', 'XAH'], [$chain->chain, $asset->code]);
+
+        $this->assertNull(ChainRegistry::forType('solana-sol-payment'));
     }
 
     public function testAnUnknownChainIsRefused(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        ChainRegistry::chain('XAHAU');
+        ChainRegistry::chain('SOLANA');
     }
 
     public function testAnInterledgerPaymentPointerIsStoredAsItsUrl(): void
@@ -67,6 +70,7 @@ class ChainRegistryTest extends TestCase
     {
         $this->assertSame('rMerchant', ChainRegistry::normalizeAccount('XRPL', 'rMerchant'));
         $this->assertSame('GMERCHANT', ChainRegistry::normalizeAccount('STELLAR', 'GMERCHANT'));
+        $this->assertSame('rMerchant', ChainRegistry::normalizeAccount('XAHAU', 'rMerchant'));
     }
 
     public function testTheInterledgerDescriptorAcceptsAWalletAddressOnly(): void
