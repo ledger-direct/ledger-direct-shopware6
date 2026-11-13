@@ -60,17 +60,11 @@
         "phpunit/phpunit": "^11.0",
         "phpstan/phpstan": "^2.0",
         "mockery/mockery": "^1.6",
-        "hardcastle/ledger-direct-interledger": "^0.1 || dev-main || dev-feat/open-payments-chain"
+        "hardcastle/ledger-direct-interledger": "^0.1"
     },
     "suggest": {
         "hardcastle/ledger-direct-interledger": "Interledger payments over Open Payments (preview, prototype, test money only). Needs PHP 8.3; composer require it in the shop to use the Interledger card."
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/ledger-direct/ledger-direct-interledger"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Hardcastle\\LedgerDirect\\": "src/"
@@ -81,8 +75,6 @@
             "Hardcastle\\LedgerDirect\\Tests\\": "tests/"
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "config": {
         "allow-plugins": {
             "symfony/runtime": true,
