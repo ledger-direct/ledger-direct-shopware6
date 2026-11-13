@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Tests\Unit\Installer;
 
+use Hardcastle\LedgerDirect\Components\PaymentHandler\InterledgerPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
@@ -9,6 +10,7 @@ use Hardcastle\LedgerDirect\Components\PaymentHandler\XahauPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrplPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\XrpPaymentHandler;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\LedgerDirect;
 use Mockery;
@@ -91,7 +93,7 @@ class PaymentMethodInstallerTest extends TestCase
         $this->assertSame(['ledgerdirect_xrpl_rlusd', RlusdPaymentHandler::class], [$byId[PaymentMethodInstaller::RLUSD_PAYMENT_ID]['technicalName'], $byId[PaymentMethodInstaller::RLUSD_PAYMENT_ID]['handlerIdentifier']]);
         $this->assertSame(['ledgerdirect_xrpl_usdc', UsdcPaymentHandler::class], [$byId[PaymentMethodInstaller::USDC_PAYMENT_ID]['technicalName'], $byId[PaymentMethodInstaller::USDC_PAYMENT_ID]['handlerIdentifier']]);
         $this->assertSame('XRP on XRPL', $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['en-GB']['name']);
-        $this->assertCount(7, $byId, 'three XRPL methods, three Stellar ones, one on Xahau');
+        $this->assertCount(11, $byId, 'three XRPL methods, three Stellar ones, one on Xahau, four Interledger ones');
 
         foreach ([XrpPaymentHandler::class, RlusdPaymentHandler::class, UsdcPaymentHandler::class] as $legacy) {
             $this->assertContains(XrplPaymentHandler::class, (array) class_parents($legacy), "{$legacy} is the chain handler under its old name");
@@ -138,18 +140,77 @@ class PaymentMethodInstallerTest extends TestCase
     }
 
     /**
-     * Stellar ships as a preview: install creates the XRPL and Xahau methods
-     * and none of Stellar's, so a merchant who never switches the preview
+     * The Interledger methods: one per asset of the registry's descriptor,
+     * all on the chain handler. Only the one in the wallet address's own
+     * asset is ever offered at checkout (PaymentMethodRouteDecorator) — the
+     * others exist so a merchant who moves to a wallet in another currency
+     * does not need a plugin update.
+     */
+    public function testTheInterledgerMethodsAreDerivedFromTheRegistry(): void
+    {
+        $byId = array_column(PaymentMethodInstaller::paymentMethods(), null, 'id');
+        $eur = $byId[md5('interledger-eur-payment')];
+
+        $this->assertSame(InterledgerPaymentHandler::class, $eur['handlerIdentifier']);
+        $this->assertSame('ledgerdirect_interledger_eur', $eur['technicalName']);
+        $this->assertSame('EUR on Interledger (Open Payments)', $eur['translations']['en-GB']['name']);
+        $this->assertSame('ledgerdirect_interledger_dsusd', $byId[md5('interledger-dsusd-payment')]['technicalName']);
+
+        [$chain, $asset] = PaymentMethodInstaller::chainAndAssetFor(md5('interledger-xrp-payment'));
+        $this->assertSame(['INTERLEDGER', 'XRP'], [$chain->chain, $asset->code]);
+    }
+
+    /**
+     * Stellar and Interledger ship as previews: install creates the XRPL
+     * and Xahau methods and none of theirs, so a merchant who never switches a
      * chain on never sees it in Settings > Payment methods.
      */
     public function testInstallCreatesTheReleasedChainsMethodsOnly(): void
     {
-        $this->assertSame(['STELLAR'], PaymentMethodInstaller::PREVIEW_CHAINS);
+        $this->assertSame(['STELLAR', 'INTERLEDGER'], PaymentMethodInstaller::PREVIEW_CHAINS);
         $repository = $this->repositoryRecording($written);
 
         $this->installer($repository)->install(new InstallContext($this->plugin(), Context::createDefaultContext(), '6.7.0.0', '1.7.0', Mockery::mock(MigrationCollection::class)));
 
         $this->assertSame(['ledgerdirect_xahau_xah', 'ledgerdirect_xrpl_rlusd', 'ledgerdirect_xrpl_usdc', 'ledgerdirect_xrpl_xrp'], $this->sorted(array_column($written, 'technicalName')));
+    }
+
+    /**
+     * The repair the update lifecycle owes a preview chain whose package
+     * arrived after the switch: switched on, no methods, because the activator
+     * had no chain to create at the time.
+     */
+    public function testUpdateCreatesTheMethodsOfAPreviewChainThatIsAlreadySwitchedOn(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
+
+        $this->installer($repository)->installEnabledPreviewChains(
+            ConfigurationServiceMock::createInstance(['LedgerDirect.config.interledgerEnabled' => true]),
+            Context::createDefaultContext(),
+        );
+
+        $this->assertSame(
+            ['ledgerdirect_interledger_dsusd', 'ledgerdirect_interledger_eur', 'ledgerdirect_interledger_usd', 'ledgerdirect_interledger_xrp'],
+            $this->sorted(array_column($written, 'technicalName')),
+        );
+        $this->assertSame([true, true, true, true], array_column($written, 'active'));
+    }
+
+    public function testAPreviewChainThatIsOffGetsNoMethods(): void
+    {
+        $repository = $this->repositoryRecording($written);
+        $repository->shouldReceive('searchIds')->andReturn($this->idSearchResultWithTotal(0));
+
+        $this->installer($repository)->installEnabledPreviewChains(
+            ConfigurationServiceMock::createInstance([
+                'LedgerDirect.config.interledgerEnabled' => false,
+                'LedgerDirect.config.stellarEnabled' => false,
+            ]),
+            Context::createDefaultContext(),
+        );
+
+        $this->assertSame([], $written);
     }
 
     /**

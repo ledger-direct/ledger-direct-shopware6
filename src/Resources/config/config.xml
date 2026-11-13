@@ -149,6 +149,61 @@
     </card>
 
     <card>
+        <title>LedgerDirect - Interledger (Preview)</title>
+        <title lang="de-DE">LedgerDirect - Interledger (Vorschau)</title>
+
+        <input-field type="bool">
+            <name>interledgerEnabled</name>
+            <label>Accept payments over Interledger (preview)</label>
+            <label lang="de-DE">Zahlungen über Interledger annehmen (Vorschau)</label>
+            <helpText>Preview, prototype, test money only. Takes an Open Payments payment into your own wallet - a Dassie node, the Interledger test wallet, or any Rafiki-based wallet. Needs the package hardcastle/ledger-direct-interledger (composer require) and PHP 8.3; without it this card does nothing. Off by default; switching it on creates the Interledger payment methods, and only the one in the currency your wallet address holds is offered at checkout.</helpText>
+            <helpText lang="de-DE">Vorschau, Prototyp, nur Spielgeld. Nimmt eine Open-Payments-Zahlung in Ihre eigene Wallet an - einen Dassie-Knoten, das Interledger-Test-Wallet oder ein Rafiki-Wallet. Benötigt das Paket hardcastle/ledger-direct-interledger (composer require) und PHP 8.3; ohne das Paket tut diese Karte nichts. Standardmäßig aus; das Einschalten legt die Interledger-Zahlarten an, im Checkout erscheint nur die in der Währung Ihrer Wallet-Adresse.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>useInterledgerTestnet</name>
+            <label>Use test network</label>
+            <label lang="de-DE">Testnetz verwenden</label>
+            <helpText>The Interledger test wallet and a Dassie node both move test money only. Leave this on until you run against a wallet that does not.</helpText>
+            <helpText lang="de-DE">Das Interledger-Test-Wallet und ein Dassie-Knoten bewegen ausschließlich Spielgeld. Lassen Sie das an, solange Sie nicht gegen ein anderes Wallet laufen.</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerMainnetDestinationAccount</name>
+            <label>Wallet address (live)</label>
+            <label lang="de-DE">Wallet-Adresse (Live)</label>
+            <helpText>Your Open Payments wallet address as an https URL, for example https://ilp.example.com/acme. A payment pointer ($ilp.example.com/acme) is accepted and stored as its URL. Checked when saved.</helpText>
+            <helpText lang="de-DE">Ihre Open-Payments-Wallet-Adresse als https-URL, zum Beispiel https://ilp.example.com/acme. Ein Payment Pointer ($ilp.example.com/acme) wird angenommen und als URL gespeichert. Wird beim Speichern geprüft.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerTestnetDestinationAccount</name>
+            <label>Wallet address (test)</label>
+            <label lang="de-DE">Wallet-Adresse (Test)</label>
+            <helpText>For example https://ilp.interledger-test.dev/your-wallet.</helpText>
+            <helpText lang="de-DE">Zum Beispiel https://ilp.interledger-test.dev/ihre-wallet.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerKeyId</name>
+            <label>Key ID</label>
+            <label lang="de-DE">Key-ID</label>
+            <helpText>The key id your wallet registered for this client - the wallet shows it as "Key ID" and it is a UUID, not the wallet's name. A wrong id is refused by the authorization server with "invalid_client".</helpText>
+            <helpText lang="de-DE">Die Key-ID, die Ihr Wallet für diesen Client registriert hat - das Wallet zeigt sie als „Key ID“ an, sie ist eine UUID und nicht der Wallet-Name. Eine falsche ID weist der Autorisierungsserver mit „invalid_client“ ab.</helpText>
+        </input-field>
+
+        <input-field type="password">
+            <name>interledgerPrivateKey</name>
+            <label>Private key (base64 of the PEM)</label>
+            <label lang="de-DE">Privater Schlüssel (Base64 des PEM)</label>
+            <helpText>The Ed25519 private key belonging to that key id, as base64 of its PEM on one line: base64 -w0 private.key. The PEM itself is not accepted. It signs every request to your wallet and never leaves this shop.</helpText>
+            <helpText lang="de-DE">Der zu dieser Key-ID gehörende Ed25519-Schlüssel als Base64 seines PEM in einer Zeile: base64 -w0 private.key. Das PEM selbst wird nicht angenommen. Er signiert jede Anfrage an Ihr Wallet und verlässt diesen Shop nicht.</helpText>
+        </input-field>
+    </card>
+
+    <card>
         <title>LedgerDirect - Payment page</title>
         <title lang="de-DE">LedgerDirect - Zahlungsseite</title>
 

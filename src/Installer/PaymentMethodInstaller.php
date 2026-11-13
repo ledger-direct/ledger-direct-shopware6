@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Installer;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Components\PaymentHandler\InterledgerPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\RlusdPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\StellarPaymentHandler;
 use Hardcastle\LedgerDirect\Components\PaymentHandler\UsdcPaymentHandler;
@@ -12,6 +14,7 @@ use Hardcastle\LedgerDirect\Core\AssetDescriptor;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\ChainDescriptor;
 use Hardcastle\LedgerDirect\LedgerDirect;
+use Hardcastle\LedgerDirect\Service\ConfigurationService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -23,10 +26,13 @@ use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 
 /**
- * One payment method per (chain, asset) the core's ChainCatalog lists for a
- * chain this plugin has a handler for. The catalogue is the only list of
+ * One payment method per (chain, asset) the plugin's ChainRegistry lists for
+ * a chain this plugin has a handler for. The registry is the only list of
  * assets; what the plugin holds is the mapping onto Shopware's objects: the
  * payment method id, the technical name, the handler per chain.
+ *
+ * A chain whose package is not installed is not in the registry, so it has
+ * no methods — HANDLER_BY_CHAIN naming it changes nothing on its own.
  *
  * The three XRPL methods keep the ids they have had since the first release
  * — orders reference them. Every later method derives its id from the
@@ -49,6 +55,7 @@ class PaymentMethodInstaller
         ChainCatalog::XRPL => XrplPaymentHandler::class,
         ChainCatalog::STELLAR => StellarPaymentHandler::class,
         ChainCatalog::XAHAU => XahauPaymentHandler::class,
+        ChainRegistry::INTERLEDGER => InterledgerPaymentHandler::class,
     ];
 
     /**
@@ -59,7 +66,7 @@ class PaymentMethodInstaller
      * (PreviewChainActivator), and their card says "Preview". Removing a
      * chain from this list is what releases it.
      */
-    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR];
+    public const PREVIEW_CHAINS = [ChainCatalog::STELLAR, ChainRegistry::INTERLEDGER];
 
     /** Ids from before the catalogue, kept for the orders that carry them. */
     private const LEGACY_ID_BY_TYPE = [
@@ -117,7 +124,7 @@ class PaymentMethodInstaller
     public static function supportedChains(): array
     {
         return array_values(array_filter(
-            ChainCatalog::chains(),
+            ChainRegistry::chains(),
             static fn (ChainDescriptor $chain): bool => isset(self::HANDLER_BY_CHAIN[$chain->chain]),
         ));
     }
@@ -247,6 +254,28 @@ class PaymentMethodInstaller
      * flag stays as the merchant set it, so switching the chain off and on
      * again does not undo a deactivation made in between.
      */
+    /**
+     * Creates the payment methods of every preview chain the merchant has
+     * switched on but that has none yet — the repair the update lifecycle owes
+     * a chain whose package arrived after the switch.
+     *
+     * PreviewChainActivator creates them when the switch is saved, but it can
+     * only create what the registry knows: a merchant who switches Interledger
+     * on before installing its package gets nothing, and `update()` would not
+     * help either, since it writes preview methods only where they already
+     * exist. So the methods stay missing while the card says the chain is on.
+     * Called on update, not on install: a fresh installation has every preview
+     * chain off, and that is the point of a preview.
+     */
+    public function installEnabledPreviewChains(ConfigurationService $configuration, Context $context): void
+    {
+        foreach (self::PREVIEW_CHAINS as $chain) {
+            if (ChainRegistry::has($chain) && $configuration->isChainEnabled($chain)) {
+                $this->installChain($chain, $context);
+            }
+        }
+    }
+
     public function installChain(string $chain, Context $context): void
     {
         foreach (self::paymentMethodsFor($chain) as $paymentMethod) {

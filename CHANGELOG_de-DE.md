@@ -1,3 +1,30 @@
+# Unreleased
+- Interledger als vierte Chain, als **Vorschau und Prototyp**: der Shop nimmt eine
+  [Open-Payments](https://openpayments.dev)-Zahlung in die eigene Wallet des Händlers an — einen
+  Dassie-Knoten, das Interledger-Test-Wallet oder ein Rafiki-Wallet. Nur Spielgeld, und aus, solange der
+  Schalter der neuen Karte nicht an ist. Die Dienste der Chain kommen aus
+  `hardcastle/ledger-direct-interledger`, einem optionalen Paket, das der Shop per `composer require`
+  installiert; ohne das Paket gibt es weder Karte noch Zahlarten noch die Chain
+- Eine Karte „LedgerDirect - Interledger (Vorschau)“: die Wallet-Adresse (ein Payment Pointer wird
+  angenommen und als URL gespeichert), die vom Wallet registrierte Key-ID und der private Schlüssel als
+  Base64 seines PEM. Im Checkout erscheint nur die Zahlart in der Währung, die die Wallet-Adresse
+  tatsächlich hält; ist das Wallet nicht erreichbar, erscheint keine — dieselbe Regel wie bei einer
+  Stellar-Trustline, die nicht geprüft werden kann. Ein EUR- oder USD-Guthaben erscheint nur, wenn der
+  Kunde in dieser Währung bestellt, weil der Prototyp keine Fiat-Währungen umrechnet
+- Die Zahlungsseite hat über Interledger einen Schritt: die URL des Incoming Payments ist Zahlungslink
+  und QR-Code, Betrag, Empfänger und Ablauf stecken darin. Der Kunde kopiert keine Kennung — die
+  Referenz der Bestellung reist in der Zahlungsanfrage mit, die der Shop angelegt hat. Der Record ist
+  dasselbe Schema v1, das jedes LedgerDirect-Plugin liest, mit dem Incoming Payment als Empfängerkonto
+  und dem erhaltenen Betrag als Issued Currency der Händler-Wallet
+- `quote` der Store-API nennt die Chain `INTERLEDGER` und liefert `identifierRequired`: false über
+  Interledger, wo der Kunde keine Kennung an die Zahlung hängt, true auf jedem Ledger
+- Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
+  Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
+  nichts
+- Bekannte Lücken des Prototyps: keine Nachzahlung nach Ablauf der Quote (ein abgelaufenes Incoming
+  Payment nimmt nichts mehr an), keine Fiat-Umrechnung (eine EUR-Wallet nimmt EUR-Bestellungen), kein
+  Settlement-Nachweis je Zahlung, keine Browser-Wallet auf der Zahlungsseite
+
 # 1.10.2
 - Benötigt `hardcastle/ledger-direct-core` 0.11.3. Die Zahlungsanfrage im QR-Code und hinter dem
   Xaman-Knopf nennt ihr Netz jetzt auch im XRP Ledger, wie bisher schon in Xahau. Bisher zahlte

@@ -38,6 +38,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
     private string $configuredStellarAccount = '';
 
     private string $configuredXahauAccount = '';
+    /** Interledger is in the registry too, and the task asks every chain for its account. */
+    private string $configuredInterledgerWallet = '';
 
     protected function setUp(): void
     {
@@ -207,6 +209,8 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $configuration->shouldReceive('getNetwork')->with('STELLAR')->andReturn('testnet');
         $configuration->shouldReceive('getDestinationAccount')->with('XAHAU')->andReturn($this->configuredXahauAccount);
         $configuration->shouldReceive('getNetwork')->with('XAHAU')->andReturn('testnet');
+        $configuration->shouldReceive('getDestinationAccount')->with('INTERLEDGER')->andReturn($this->configuredInterledgerWallet);
+        $configuration->shouldReceive('getNetwork')->with('INTERLEDGER')->andReturn('testnet');
 
         return $configuration;
     }
