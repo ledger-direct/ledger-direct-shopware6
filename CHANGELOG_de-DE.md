@@ -3,6 +3,11 @@
   Xaman-Knopf nennt ihr Netz jetzt auch im XRP Ledger, wie bisher schon in Xahau. Bisher zahlte
   Xaman in dem Netz, das in der Wallet gerade offen war: Eine mit einem Xahau-Konto gescannte
   XRP-Zahlung öffnete eine XAH-Zahlung über denselben Betrag
+- Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.0 statt 0.3.0: Die Wallet-Bibliothek ist
+  xrpl-connect 1.0.0 mit xrpl 5 statt des Release-Kandidaten 1.0.0-rc.2. Unter anderem übermittelt die
+  Xaman-Wallet die Zahlung jetzt selbst an den Ledger, und die Prüfung, welche Wallets verfügbar sind,
+  bricht nach einer Wartezeit ab, statt hängen zu bleiben. Das Storefront-Bundle ist neu gebaut, sein
+  Stylesheet unverändert
 
 # 1.10.1
 - Benötigt `hardcastle/ledger-direct-core` 0.11.1. Sind sich die Kursquellen uneinig, bekommt das Plugin
