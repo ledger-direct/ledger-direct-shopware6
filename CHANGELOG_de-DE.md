@@ -1,4 +1,4 @@
-# Unreleased
+# 1.10.2
 - Benötigt `hardcastle/ledger-direct-core` 0.11.3. Die Zahlungsanfrage im QR-Code und hinter dem
   Xaman-Knopf nennt ihr Netz jetzt auch im XRP Ledger, wie bisher schon in Xahau. Bisher zahlte
   Xaman in dem Netz, das in der Wallet gerade offen war: Eine mit einem Xahau-Konto gescannte
