@@ -9,7 +9,8 @@
   stored as its URL), the key id the wallet registered and the private key as base64 of its PEM. Only the
   payment method in the currency the wallet address actually holds is offered at checkout, and a wallet
   that cannot be reached offers none — the same fail-closed rule as a Stellar trust line that cannot be
-  checked
+  checked. A EUR or USD balance is offered only when the customer checks out in that currency, because
+  the prototype converts no fiat
 - The payment page over Interledger is one step: the incoming payment's URL is the payment link and the
   QR code, with amount, payee and expiry inside it. The customer copies no identifier — the order's
   reference travels in the payment request the shop created. The record is the same schema v1 every

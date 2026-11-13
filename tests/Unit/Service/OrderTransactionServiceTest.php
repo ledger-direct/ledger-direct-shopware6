@@ -25,6 +25,7 @@ use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
+use Hardcastle\LedgerDirect\Interledger\ScaledAmount;
 use Hardcastle\LedgerDirect\Interledger\Testing\FakeOpenPayments;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -644,6 +645,68 @@ class OrderTransactionServiceTest extends TestCase
             ->matchOrderTransaction($orderTransaction, $this->context);
 
         $this->assertNull($matched);
+    }
+
+    /**
+     * Over Interledger the wallet is asked by the match, not by the sync: the
+     * throttle has to hold that read back, or two status calls inside the
+     * interval are two requests to the merchant's wallet. Inside the interval
+     * the answer is the stored intent; the scheduled task is never throttled.
+     */
+    public function testAThrottledInterledgerStatusReadsTheWalletOncePerWindow(): void
+    {
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2);
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'),
+            $this->interledgerIntent(),
+        );
+
+        $service = $this->createService(Fixtures::getStaticInterledgerConfiguration());
+        $service->syncOrderTransaction($orderTransaction, $this->context, throttled: true);
+        $this->assertNull($service->syncOrderTransaction($orderTransaction, $this->context, throttled: true));
+
+        $this->assertSame(1, $this->wallet->reads, 'the second status call answers from the stored intent');
+
+        // The window has passed: the next call reads again.
+        $this->throttleStore->advance(6);
+        $service->syncOrderTransaction($orderTransaction, $this->context, throttled: true);
+
+        $this->assertSame(2, $this->wallet->reads);
+
+        $service->syncOrderTransaction($orderTransaction, $this->context);
+        $service->syncOrderTransaction($orderTransaction, $this->context);
+
+        $this->assertSame(4, $this->wallet->reads, 'unthrottled, every call reads');
+    }
+
+    /**
+     * Switching the chain off stops new payments, not the ones already
+     * requested: a customer who paid just before the switch must still be
+     * matched, as an order on a ledger is.
+     */
+    public function testAnInterledgerOrderIsStillMatchedAfterTheChainIsSwitchedOff(): void
+    {
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2);
+        $incomingPayment = $this->wallet->createIncomingPayment(
+            ScaledAmount::fromDecimal('19.99', 'EUR', 2),
+            new \DateTimeImmutable('+5 minutes'),
+            [],
+        );
+        $this->wallet->receive($incomingPayment->url, '19.99', completed: true);
+
+        $intent = $this->interledgerIntent();
+        $intent['destination_account'] = $incomingPayment->url;
+        $orderTransaction = $this->givenOrderTransaction(
+            PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'),
+            $intent,
+        );
+        $this->expectUpsertCapturing($customFields);
+
+        $switchedOff = ['LedgerDirect.config.interledgerEnabled' => false] + Fixtures::getStaticInterledgerConfiguration();
+        $matched = $this->createService($switchedOff)->matchOrderTransaction($orderTransaction, $this->context);
+
+        $this->assertNotNull($matched, 'the wallet is still read for an open order');
+        $this->assertSame('19.99', $matched->amountPaidValue());
     }
 
     /** @return array<string, mixed> */

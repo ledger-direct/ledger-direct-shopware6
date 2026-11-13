@@ -254,7 +254,8 @@ or any Rafiki-based wallet, because Open Payments and not Dassie is the interfac
 | Private key | The Ed25519 key belonging to that id, as base64 of its PEM on one line (`base64 -w0 private.key`). The PEM itself is refused. It signs every request to the wallet and never leaves the shop. |
 
 A wallet address holds exactly one asset, and it says which: only the payment method in that
-currency is offered at checkout, and a wallet that cannot be reached offers none. The customer gets
+currency is offered at checkout, and a wallet that cannot be reached offers none. A EUR or USD
+balance is offered only to a customer who checks out in that currency. The customer gets
 one step instead of three — the incoming payment's URL is the payment link and the QR code, with
 amount, payee and expiry inside it, and the order's reference travels in the payment request rather
 than in the customer's hands.

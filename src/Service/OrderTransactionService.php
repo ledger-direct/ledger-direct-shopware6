@@ -222,7 +222,24 @@ class OrderTransactionService
             return null;
         }
 
-        $this->syncLedger($intent->chain, $intent->destinationAccount, $intent->network, $throttled);
+        $synced = $this->syncLedger($intent->chain, $intent->destinationAccount, $intent->network, $throttled);
+
+        /*
+         * On a ledger the sync is the node request and the match below is local.
+         * Over Interledger it is the other way round: there is nothing to sync, and
+         * the match reads the order's incoming payment from the merchant's wallet.
+         * The throttle therefore has to hold the match back there, or it holds back
+         * nothing. Inside the interval the caller gets null and answers from the
+         * stored intent (core INVARIANTS.md, "Payment status").
+         *
+         * The mark is per incoming payment, so per order, where a ledger's is per
+         * receiving account: a ledger sync serves every waiting order at once, a
+         * read here serves one, and a mark per wallet address would let one
+         * customer's page hold back everybody else's.
+         */
+        if (!$synced && $intent->chain === ChainRegistry::INTERLEDGER) {
+            return null;
+        }
 
         return $this->matchOrderTransaction($orderTransaction, $context);
     }
@@ -286,14 +303,17 @@ class OrderTransactionService
      *
      * A failed sync is logged, not thrown: the checkout must not go down
      * with the node, and matching still runs against what is stored.
+     *
+     * @return bool false when the throttle held the sync back, true when it
+     *     was attempted — whether or not the node answered
      */
-    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): void
+    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): bool
     {
         if ($throttled) {
             $throttle = $chain === ChainRegistry::XAHAU ? $this->xahauThrottle : $this->syncThrottle;
 
             if (!$throttle->shouldSync($network, $destinationAccount)) {
-                return;
+                return false;
             }
 
             $throttle->markSynced($network, $destinationAccount);
@@ -318,6 +338,8 @@ class OrderTransactionService
                 'exception' => $exception->getMessage(),
             ]);
         }
+
+        return true;
     }
 
     private function intentServiceFor(

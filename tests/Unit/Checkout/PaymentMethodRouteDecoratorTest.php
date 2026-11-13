@@ -31,6 +31,7 @@ use Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -47,6 +48,9 @@ class PaymentMethodRouteDecoratorTest extends TestCase
     private FakeHttpClient $horizon;
 
     private ?FakeOpenPayments $wallet = null;
+
+    /** The currency the customer checks out in. */
+    private string $currency = 'EUR';
 
     protected function setUp(): void
     {
@@ -129,6 +133,43 @@ class PaymentMethodRouteDecoratorTest extends TestCase
     }
 
     /**
+     * The prototype converts no fiat. A EUR wallet takes EUR orders, so in a
+     * USD checkout its method is not offered: quoting it would fail after the
+     * customer has chosen it.
+     */
+    public function testAnInterledgerWalletIsNotOfferedInACurrencyItCannotBeQuotedIn(): void
+    {
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2);
+        $this->currency = 'USD';
+
+        $ids = $this->load(Fixtures::getStaticInterledgerConfiguration())->getIds();
+
+        $this->assertNotContains(PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'), $ids);
+        $this->assertContains(PaymentMethodInstaller::XRP_PAYMENT_ID, $ids, 'the other chains are unaffected');
+    }
+
+    /**
+     * DSUSD is worth a dollar without being called one: its peg decides, not
+     * its name. XRP has no peg and is priced by the oracles in any currency.
+     */
+    public function testAnInterledgerAssetFollowsItsPegAndAnUnpeggedOneIsOfferedInAnyCurrency(): void
+    {
+        $dsusd = PaymentMethodInstaller::paymentMethodIdFor('interledger-dsusd-payment');
+        $xrp = PaymentMethodInstaller::paymentMethodIdFor('interledger-xrp-payment');
+        $methods = fn (): PaymentMethodCollection => new PaymentMethodCollection([$this->method($dsusd), $this->method($xrp)]);
+
+        $this->currency = 'USD';
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'DSUSD', 2);
+        $this->assertContains($dsusd, $this->loadCollection($methods(), Fixtures::getStaticInterledgerConfiguration())->getIds());
+
+        $this->currency = 'EUR';
+        $this->assertNotContains($dsusd, $this->loadCollection($methods(), Fixtures::getStaticInterledgerConfiguration())->getIds());
+
+        $this->wallet = new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'XRP', 6);
+        $this->assertContains($xrp, $this->loadCollection($methods(), Fixtures::getStaticInterledgerConfiguration())->getIds());
+    }
+
+    /**
      * A wallet that cannot be reached offers nothing — the same fail-closed
      * rule as a trust line that cannot be checked.
      */
@@ -160,7 +201,8 @@ class PaymentMethodRouteDecoratorTest extends TestCase
      */
     public function testAStoredMethodOfAChainThisInstallationNoLongerKnowsIsNotOffered(): void
     {
-        $gone = md5('xahau-xah-payment');
+        $gone = md5('removed-chain-token-payment');
+        $this->assertNull(PaymentMethodInstaller::chainAndAssetFor($gone), 'the chain list does not map it');
         $collection = new PaymentMethodCollection([
             $this->method(PaymentMethodInstaller::XRP_PAYMENT_ID, XrplPaymentHandler::class),
             $this->method($gone, XrplPaymentHandler::class),
@@ -203,6 +245,9 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $inner->shouldReceive('load')->once()->andReturn($response);
         /** @var SalesChannelContext&MockInterface $salesChannelContext */
         $salesChannelContext = Mockery::mock(SalesChannelContext::class);
+        $currency = new CurrencyEntity();
+        $currency->setIsoCode($this->currency);
+        $salesChannelContext->shouldReceive('getCurrency')->andReturn($currency);
 
         // The real inspector over the core's fake HTTP client: AccountInspector is final. Without a
         // Stellar method to check, nothing is queued and nothing is asked.

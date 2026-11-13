@@ -9,7 +9,8 @@
   angenommen und als URL gespeichert), die vom Wallet registrierte Key-ID und der private Schlüssel als
   Base64 seines PEM. Im Checkout erscheint nur die Zahlart in der Währung, die die Wallet-Adresse
   tatsächlich hält; ist das Wallet nicht erreichbar, erscheint keine — dieselbe Regel wie bei einer
-  Stellar-Trustline, die nicht geprüft werden kann
+  Stellar-Trustline, die nicht geprüft werden kann. Ein EUR- oder USD-Guthaben erscheint nur, wenn der
+  Kunde in dieser Währung bestellt, weil der Prototyp keine Fiat-Währungen umrechnet
 - Die Zahlungsseite hat über Interledger einen Schritt: die URL des Incoming Payments ist Zahlungslink
   und QR-Code, Betrag, Empfänger und Ablauf stecken darin. Der Kunde kopiert keine Kennung — die
   Referenz der Bestellung reist in der Zahlungsanfrage mit, die der Shop angelegt hat. Der Record ist

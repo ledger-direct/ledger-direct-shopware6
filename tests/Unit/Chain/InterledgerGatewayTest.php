@@ -8,6 +8,7 @@ use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Testing\FakeHttpClient;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Testing\RecordingLogger;
+use Hardcastle\LedgerDirect\Core\Payment\AssetNotAcceptedException;
 use Hardcastle\LedgerDirect\Interledger\Client\OpenPaymentsException;
 use Hardcastle\LedgerDirect\Interledger\IncomingPaymentService;
 use Hardcastle\LedgerDirect\Interledger\ReceiptSyncService;
@@ -54,6 +55,25 @@ class InterledgerGatewayTest extends TestCase
 
         $this->assertTrue($gateway->isAvailable());
         $this->assertSame(Fixtures::INTERLEDGER_WALLET, $gateway->walletAddress());
+    }
+
+    /**
+     * The switch decides whether new payments are taken. The payments already
+     * requested must stay readable, so the services are still built — and the
+     * package still refuses a new quote, because the asset is not enabled.
+     */
+    public function testASwitchedOffChainTakesNothingNewButStillReadsItsPayments(): void
+    {
+        $switchedOff = ['LedgerDirect.config.interledgerEnabled' => false] + Fixtures::getStaticInterledgerConfiguration();
+        $gateway = $this->gateway($switchedOff, new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'EUR', 2));
+
+        $this->assertFalse($gateway->isAvailable());
+        $this->assertSame('', $gateway->walletAddress());
+        $this->assertNull($gateway->walletAssetCode(), 'the checkout filter offers nothing');
+        $this->assertInstanceOf(ReceiptSyncService::class, $gateway->receiptSync());
+
+        $this->expectException(AssetNotAcceptedException::class);
+        $gateway->incomingPaymentService()->quoteForOrder(19.99, 'EUR', 'EUR');
     }
 
     public function testAWalletAddressWrittenAsAPaymentPointerIsUsedAsItsUrl(): void

@@ -31,8 +31,14 @@ use Throwable;
  *
  * The access token is deliberately **not** cached: it would mean a bearer
  * token for the merchant's wallet sitting in the shop's object cache. The
- * price is one grant request per sync, and the core's SyncThrottle already
- * caps those at one per five seconds per wallet address.
+ * price is one grant request per read of an incoming payment, and
+ * OrderTransactionService holds those to one per order within the core's
+ * sync interval.
+ *
+ * Taking new payments and reading the ones already requested are two
+ * questions. `isAvailable()` and `walletAddress()` answer the first and
+ * follow the chain's switch; `root()` serves the second too and needs only
+ * the configured wallet address and key (see InterledgerPackageConfig).
  */
 final class InterledgerGateway
 {
@@ -101,7 +107,10 @@ final class InterledgerGateway
         return $this->credentials() !== null;
     }
 
-    /** The wallet address as configured and normalised, or '' when there is none. */
+    /**
+     * The wallet address new payments go to, normalised; '' when there is
+     * none or the chain is switched off.
+     */
     public function walletAddress(): string
     {
         $account = $this->configProvider->getDestinationAccount(ChainRegistry::INTERLEDGER);
@@ -183,6 +192,10 @@ final class InterledgerGateway
     /**
      * The composition root, built once per request.
      *
+     * It is built from the configured wallet address whether or not the chain
+     * is switched on: an open order's incoming payment has to stay readable
+     * after the merchant stops taking new ones.
+     *
      * @throws RuntimeException when the package is missing or nothing is configured —
      *     a wiring or configuration mistake, not something a checkout recovers from
      */
@@ -199,8 +212,9 @@ final class InterledgerGateway
         }
 
         $credentials = $this->credentials();
+        $packageConfig = new InterledgerPackageConfig($this->configuration, $this->configProvider);
 
-        if ($this->walletAddress() === '' || $credentials === null) {
+        if ($packageConfig->getDestinationAccount(ChainRegistry::INTERLEDGER) === '' || $credentials === null) {
             throw new RuntimeException(
                 'Interledger is not configured: a wallet address, a key id and a private key are all required.'
             );
@@ -211,7 +225,7 @@ final class InterledgerGateway
             $this->requestFactory,
             $this->logger,
             new DbalInterledgerRepository($this->connection),
-            $this->configProvider,
+            $packageConfig,
             $credentials,
             $this->cache,
             // No token cache: see the class comment.

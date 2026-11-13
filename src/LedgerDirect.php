@@ -4,7 +4,7 @@ namespace Hardcastle\LedgerDirect;
 
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Service\ConfigurationService;
-use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
@@ -66,11 +66,11 @@ class LedgerDirect extends Plugin
         /** @var SystemConfigService $systemConfigService */
         $systemConfigService = $this->container->get(SystemConfigService::class);
 
-        /** @var LoggerInterface $logger */
-        $logger = $this->container->get('logger');
-
+        // No logger from the container: `logger` is a private alias there, and asking for it
+        // throws — which would fail every plugin update. Nothing read here logs anything
+        // that matters: a missing switch is simply a chain that is off.
         $installer->installEnabledPreviewChains(
-            new ConfigurationService($systemConfigService, $logger),
+            new ConfigurationService($systemConfigService, new NullLogger()),
             $updateContext->getContext(),
         );
     }
