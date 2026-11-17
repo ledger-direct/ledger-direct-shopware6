@@ -93,7 +93,12 @@ class TranslationCompletenessTest extends TestCase
         foreach (self::LOCALES as $locale) {
             $translation = self::snippets($pattern, $locale);
 
-            $this->assertSame(array_keys($reference), array_keys($translation), "{$locale}: the keys differ from " . self::REFERENCE);
+            // Missing or additional keys, whatever their order in the file.
+            $expected = array_keys($reference);
+            $actual = array_keys($translation);
+            sort($expected);
+            sort($actual);
+            $this->assertSame($expected, $actual, "{$locale}: the keys differ from " . self::REFERENCE);
 
             foreach ($reference as $key => $english) {
                 self::assertTranslation($english, $translation[$key], "{$locale}: {$key}");
