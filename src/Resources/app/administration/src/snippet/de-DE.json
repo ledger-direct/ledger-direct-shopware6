@@ -28,6 +28,26 @@
                 "STELLAR": "Memo-ID",
                 "XAHAU": "Destination Tag"
             }
+        },
+        "accountCheck": {
+            "hint": "Geprüft wird das gespeicherte Empfangskonto auf dem Ledger. Nach dem Speichern einer Änderung erneut prüfen.",
+            "recheck": "Erneut prüfen",
+            "clean": "Das Empfangskonto kann alle eingeschalteten Assets empfangen.",
+            "unavailable": "Das Empfangskonto konnte nicht geprüft werden.",
+            "finding": {
+                "account_missing": {
+                    "XRPL": "Das Konto {account} ist im {network} noch nicht aktiviert. Erst eine Zahlung ab {reserve} {native} aktiviert es; bis dahin schlagen kleinere Bestellungen fehl, und RLUSD und USDC werden nicht angeboten.",
+                    "XAHAU": "Das Konto {account} ist im {network} noch nicht aktiviert. Erst eine Zahlung ab {reserve} {native} aktiviert es; bis dahin schlagen kleinere Bestellungen fehl.",
+                    "STELLAR": "Das Konto {account} existiert im {network} nicht. Eine Stellar-Zahlung kann es nicht anlegen, deshalb bietet der Checkout auf Stellar nichts an, bis das Konto finanziert ist."
+                },
+                "deposit_auth": "Auf dem Konto ist Deposit Authorization gesetzt: Nur vorab freigegebene Absender können zahlen. Die Zahlarten bleiben im Checkout.",
+                "trustline_missing": "{asset} wird im Checkout nicht angeboten: Dem Konto fehlt die Trustline zum Issuer {issuer}.",
+                "trustline_not_authorized": "{asset} wird im Checkout nicht angeboten: Der Issuer {issuer} hat die Trustline nicht autorisiert.",
+                "trustline_frozen": "{asset} wird im Checkout nicht angeboten: Die Trustline ist eingefroren.",
+                "trustline_full": "{asset} wird im Checkout nicht angeboten: Das Limit der Trustline ist erreicht.",
+                "issuer_frozen": "{asset} wird im Checkout nicht angeboten: Der Issuer {issuer} hat alle Trustlines eingefroren.",
+                "not_checked": "Der Ledger war gerade nicht erreichbar ({error}). Bis dahin werden keine Tokens angeboten, {native} schon."
+            }
         }
     }
 }

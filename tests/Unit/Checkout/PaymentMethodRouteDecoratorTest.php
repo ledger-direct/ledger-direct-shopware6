@@ -3,10 +3,13 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Checkout;
 
 use Hardcastle\LedgerDirect\Checkout\PaymentMethodRouteDecorator;
+use Hardcastle\LedgerDirect\Core\Account\Assessment;
+use Hardcastle\LedgerDirect\Core\Account\ReceivingAccountCheck;
 use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Stellar\AccountInspector;
 use Hardcastle\LedgerDirect\Core\Stellar\HorizonClient;
 use Hardcastle\LedgerDirect\Core\Testing\FakeHttpClient;
+use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
@@ -30,7 +33,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The checkout offers a LedgerDirect method only while the core would quote
- * it: chain on, account set, asset enabled. Other plugins' methods pass.
+ * it (chain on, account set, asset enabled) and the receiving account can take
+ * it (ReceivingAccountCheck::offers()). Other plugins' methods pass.
  */
 class PaymentMethodRouteDecoratorTest extends TestCase
 {
@@ -40,9 +44,46 @@ class PaymentMethodRouteDecoratorTest extends TestCase
 
     private FakeHttpClient $horizon;
 
+    /** What the XRPL check says no to, by asset code; what it was asked. */
+    private array $xrplDenies = [];
+
+    /** @var list<array{account: string, asset: string, network: string}> */
+    private array $xrplAsked = [];
+
+    private ?\Throwable $xrplThrows = null;
+
     protected function setUp(): void
     {
         $this->horizon = new FakeHttpClient();
+    }
+
+    /**
+     * K3 (Documentation/Mainnet-Testing.md): an account without an RLUSD trust line was
+     * offered RLUSD and the customer's payment failed with tecPATH_DRY. Now the token the
+     * account cannot take is left out, the others stay.
+     */
+    public function testAnXrplTokenTheAccountCannotTakeIsNotOffered(): void
+    {
+        $this->xrplDenies = ['RLUSD'];
+
+        $this->assertSame([PaymentMethodInstaller::XRP_PAYMENT_ID, self::OTHER_METHOD], array_values($this->load(Fixtures::getStaticConfiguration())->getIds()));
+    }
+
+    public function testTheCheckAsksForTheChainsAccountAndNetwork(): void
+    {
+        $configuration = Fixtures::getStaticConfiguration();
+        $this->load($configuration);
+
+        $this->assertSame(['XRP', 'RLUSD'], array_column($this->xrplAsked, 'asset'), 'USDC is switched off: not even asked');
+        $this->assertSame([$configuration['LedgerDirect.config.xrplTestnetDestinationAccount']], array_values(array_unique(array_column($this->xrplAsked, 'account'))));
+        $this->assertSame(['testnet'], array_values(array_unique(array_column($this->xrplAsked, 'network'))));
+    }
+
+    public function testACheckThatBreaksLeavesTokensOutAndKeepsTheNativeAsset(): void
+    {
+        $this->xrplThrows = new \LogicException('a bug, not an unreachable node');
+
+        $this->assertSame([PaymentMethodInstaller::XRP_PAYMENT_ID, self::OTHER_METHOD], array_values($this->load(Fixtures::getStaticConfiguration())->getIds()));
     }
 
 
@@ -77,7 +118,7 @@ class PaymentMethodRouteDecoratorTest extends TestCase
      * Stellar: XLM needs nothing but the chain; an issued asset needs the
      * receiving account's trust line to its issuer, read from Horizon's
      * account record. When Horizon cannot be asked, the issued asset is not
-     * offered - fail closed; XLM stays.
+     * offered - fail closed; XLM stays. One Horizon read per checkout (cached).
      */
     public function testAStellarIssuedAssetIsOfferedOnlyWithATrustLine(): void
     {
@@ -125,10 +166,11 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         /** @var SalesChannelContext&MockInterface $salesChannelContext */
         $salesChannelContext = Mockery::mock(SalesChannelContext::class);
 
-        // The real inspector over the core's fake HTTP client: AccountInspector is final. Without a
-        // Stellar method to check, nothing is queued and nothing is asked.
-        $inspector = new AccountInspector(new HorizonClient($this->horizon, new HttpFactory()), new NullLogger());
-        $decorator = new PaymentMethodRouteDecorator($inner, new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration)), $inspector, new NullLogger());
+        // Stellar: the real inspector over the core's fake HTTP client, with a cache per checkout
+        // as in the shop, so XLM and USDC share one Horizon read. XRPL and Xahau: a stub.
+        $stellar = new AccountInspector(new HorizonClient($this->horizon, new HttpFactory()), new NullLogger(), new InMemoryCache());
+        $checks = ['XRPL' => $this->xrplCheck(), 'XAHAU' => $this->xrplCheck(), 'STELLAR' => $stellar];
+        $decorator = new PaymentMethodRouteDecorator($inner, new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration)), $checks, new NullLogger());
         $filtered = $decorator->load(new Request(), $salesChannelContext, new Criteria());
 
         // The Store API serialises the search result, the storefront reads the collection: same answer.
@@ -136,6 +178,46 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $this->assertSame($filtered->getPaymentMethods()->count(), $filtered->getObject()->getTotal());
 
         return $filtered->getPaymentMethods();
+    }
+
+    /** Stellar: a payment never creates its destination, so an account that does not exist gets nothing. */
+    public function testAStellarAccountThatDoesNotExistIsOfferedNothing(): void
+    {
+        $this->horizon->queueResponse('/accounts/' . Fixtures::STELLAR_ACCOUNT, new Response(404, [], '{"status":404}'));
+
+        $this->assertSame([PaymentMethodInstaller::XRP_PAYMENT_ID, PaymentMethodInstaller::RLUSD_PAYMENT_ID, self::OTHER_METHOD], array_values($this->load(Fixtures::getStaticMultiChainConfiguration())->getIds()));
+    }
+
+    private function xrplCheck(): ReceivingAccountCheck
+    {
+        $test = $this;
+
+        return new class($test) implements ReceivingAccountCheck {
+            public function __construct(private readonly PaymentMethodRouteDecoratorTest $test)
+            {
+            }
+
+            public function offers(string $account, string $asset, string $network, ?string $amount = null): bool
+            {
+                return $this->test->xrplOffers($account, $asset, $network);
+            }
+
+            public function assess(string $account, string $network, array $assets, bool $fresh = true): Assessment
+            {
+                return new Assessment($account, $network, []);
+            }
+        };
+    }
+
+    /** @internal for the stub above */
+    public function xrplOffers(string $account, string $asset, string $network): bool
+    {
+        if ($this->xrplThrows !== null) {
+            throw $this->xrplThrows;
+        }
+        $this->xrplAsked[] = ['account' => $account, 'asset' => $asset, 'network' => $network];
+
+        return !in_array($asset, $this->xrplDenies, true);
     }
 
     private function method(string $id): PaymentMethodEntity

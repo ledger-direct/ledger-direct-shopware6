@@ -110,14 +110,44 @@ services:
         arguments:
             - '@Hardcastle\LedgerDirect\Service\ConfigurationService'
 
-    # Keeps a payment method whose chain or asset is switched off out of the checkout.
+    # Keeps a payment method out of the checkout whose chain or asset is switched off,
+    # or that the receiving account cannot take (no trust line, account missing, …).
     Hardcastle\LedgerDirect\Checkout\PaymentMethodRouteDecorator:
         decorates: Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute
         arguments:
             - '@.inner'
             - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
-            - '@Hardcastle\LedgerDirect\Core\Stellar\AccountInspector'
+            - XRPL: '@Hardcastle\LedgerDirect\Core\Xrpl\AccountInspector'
+              XAHAU: '@ledger_direct.xahau.account_inspector'
+              STELLAR: '@Hardcastle\LedgerDirect\Core\Stellar\AccountInspector'
             - '@logger'
+
+    # The same checks for the configuration screen: what each chain's receiving account lacks.
+    Hardcastle\LedgerDirect\Api\ReceivingAccountController:
+        public: true
+        arguments:
+            - '@Hardcastle\LedgerDirect\Port\ShopwareConfigProvider'
+            - XRPL: '@Hardcastle\LedgerDirect\Core\Xrpl\AccountInspector'
+              XAHAU: '@ledger_direct.xahau.account_inspector'
+              STELLAR: '@Hardcastle\LedgerDirect\Core\Stellar\AccountInspector'
+        calls:
+            - [setContainer, ['@service_container']]
+
+    # Read-only checks of the receiving account; the cache is not optional, or every
+    # checkout would ask the node (account_info, account_lines) for every method.
+    Hardcastle\LedgerDirect\Core\Xrpl\AccountInspector:
+        arguments:
+            - '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
+            - '@logger'
+            - '@ledger_direct.rate_cache'
+
+    ledger_direct.xahau.account_inspector:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\AccountInspector
+        arguments:
+            $client: '@ledger_direct.xahau.client'
+            $logger: '@logger'
+            $cache: '@ledger_direct.rate_cache'
+            $chain: 'XAHAU'
 
     # Refuses a receiving account that is not one, the moment it is saved.
     Hardcastle\LedgerDirect\Service\ConfigurationValidator:
