@@ -52,6 +52,9 @@ class PaymentMethodRouteDecoratorTest extends TestCase
 
     private ?\Throwable $xrplThrows = null;
 
+    /** Leaves the XRPL check out of the wiring. */
+    private bool $withoutXrplCheck = false;
+
     protected function setUp(): void
     {
         $this->horizon = new FakeHttpClient();
@@ -77,6 +80,13 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $this->assertSame(['XRP', 'RLUSD'], array_column($this->xrplAsked, 'asset'), 'USDC is switched off: not even asked');
         $this->assertSame([$configuration['LedgerDirect.config.xrplTestnetDestinationAccount']], array_values(array_unique(array_column($this->xrplAsked, 'account'))));
         $this->assertSame(['testnet'], array_values(array_unique(array_column($this->xrplAsked, 'network'))));
+    }
+
+    public function testAChainWithoutItsCheckGetsNoTokensOffered(): void
+    {
+        $this->withoutXrplCheck = true;
+
+        $this->assertSame([PaymentMethodInstaller::XRP_PAYMENT_ID, self::OTHER_METHOD], array_values($this->load(Fixtures::getStaticConfiguration())->getIds()));
     }
 
     public function testACheckThatBreaksLeavesTokensOutAndKeepsTheNativeAsset(): void
@@ -170,6 +180,9 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         // as in the shop, so XLM and USDC share one Horizon read. XRPL and Xahau: a stub.
         $stellar = new AccountInspector(new HorizonClient($this->horizon, new HttpFactory()), new NullLogger(), new InMemoryCache());
         $checks = ['XRPL' => $this->xrplCheck(), 'XAHAU' => $this->xrplCheck(), 'STELLAR' => $stellar];
+        if ($this->withoutXrplCheck) {
+            unset($checks['XRPL']);
+        }
         $decorator = new PaymentMethodRouteDecorator($inner, new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration)), $checks, new NullLogger());
         $filtered = $decorator->load(new Request(), $salesChannelContext, new Criteria());
 

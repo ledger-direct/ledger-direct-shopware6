@@ -79,7 +79,11 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 
         $check = $this->checks[$chain->chain] ?? null;
         if ($check === null) {
-            return true;
+            // A chain without its check (a wiring mistake, caught by ReceivingAccountCheckWiringTest)
+            // gets the rule for an unreachable node: tokens out, the native asset stays.
+            $this->logger->error('LedgerDirect: no receiving-account check for this chain', ['chain' => $chain->chain]);
+
+            return $asset->native;
         }
 
         $account = $this->configProvider->getDestinationAccount($chain->chain);
