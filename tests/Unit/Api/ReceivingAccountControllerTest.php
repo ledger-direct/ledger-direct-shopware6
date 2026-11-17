@@ -45,6 +45,24 @@ class ReceivingAccountControllerTest extends TestCase
         ]], $body['findings']);
     }
 
+    /**
+     * On mainnet the card assesses the mainnet account on the mainnet.
+     */
+    public function testOnMainnetTheMainnetAccountIsAssessed(): void
+    {
+        $configuration = Fixtures::getStaticConfiguration();
+        $configuration['LedgerDirect.config.useXrplTestnet'] = false;
+
+        $body = json_decode((string) $this->controller($configuration)->check('xrpl')->getContent(), true);
+
+        $this->assertSame([[
+            'account' => $configuration['LedgerDirect.config.xrplMainnetDestinationAccount'],
+            'network' => 'mainnet',
+            'assets' => ['XRP', 'RLUSD'],
+        ]], $this->assessed);
+        $this->assertSame($configuration['LedgerDirect.config.xrplMainnetDestinationAccount'], $body['account']);
+    }
+
     public function testAChainThatIsOffIsNotChecked(): void
     {
         $configuration = Fixtures::getStaticConfiguration();

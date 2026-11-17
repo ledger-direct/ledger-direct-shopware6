@@ -74,6 +74,35 @@ class PaymentPageViewTest extends TestCase
     }
 
     /**
+     * A mainnet order's page names the mainnet everywhere the customer's wallet and the
+     * explorer look: the network, the issuer, the payment request and the explorer.
+     */
+    public function testAMainnetPageNamesTheMainnetEverywhere(): void
+    {
+        $intent = PaymentIntent::quote(
+            type: 'rlusd-payment',
+            chain: 'XRPL',
+            network: 'mainnet',
+            baseAsset: 'RLUSD',
+            quoteCurrency: 'USD',
+            pairing: 'RLUSD/USD',
+            exchangeRate: 1.0,
+            amountRequested: ['currency' => '524C555344000000000000000000000000000000', 'value' => '40.00', 'issuer' => 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De'],
+            destinationAccount: 'rMerchant',
+            destinationTag: 114729,
+            expiry: time() + 300,
+        );
+
+        $values = $this->view()->values($this->order(), $this->transaction(), $intent, $this->salesChannel('Shop'));
+
+        $this->assertSame('mainnet', $values['network']);
+        $this->assertSame('rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De', $values['issuer']);
+        $this->assertStringContainsString('issuer=rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De', $values['paymentUri']);
+        $this->assertStringEndsWith('&network=MAINNET', $values['paymentUri']);
+        $this->assertSame('https://livenet.xrpl.org/transactions/', $values['explorerBase']);
+    }
+
+    /**
      * Xahau speaks the XRPL protocol, so its page carries the XRPL payment
      * request — with the network named in it, which is what makes Xaman offer
      * the switch to Xahau. The values only the browser-wallet module reads
