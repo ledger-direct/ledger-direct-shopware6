@@ -82,6 +82,20 @@ class PaymentMethodRouteDecoratorTest extends TestCase
         $this->assertSame(['testnet'], array_values(array_unique(array_column($this->xrplAsked, 'network'))));
     }
 
+    /**
+     * A shop set to mainnet asks for the mainnet account on the mainnet — the branch the
+     * testnet tests never enter (Documentation/Mainnet-Testing.md, K1).
+     */
+    public function testOnMainnetTheCheckAsksForTheMainnetAccountOnTheMainnet(): void
+    {
+        $configuration = Fixtures::getStaticConfiguration();
+        $configuration['LedgerDirect.config.useXrplTestnet'] = false;
+        $this->load($configuration);
+
+        $this->assertSame([$configuration['LedgerDirect.config.xrplMainnetDestinationAccount']], array_values(array_unique(array_column($this->xrplAsked, 'account'))));
+        $this->assertSame(['mainnet'], array_values(array_unique(array_column($this->xrplAsked, 'network'))));
+    }
+
     public function testAChainWithoutItsCheckGetsNoTokensOffered(): void
     {
         $this->withoutXrplCheck = true;
