@@ -1,0 +1,118 @@
+{
+  "LedgerDirect": {
+    "paymentPage": {
+      "pageTitle": "Concluir o pagamento",
+      "testnetBadge": "Testnet – sem dinheiro real",
+      "orderLabel": "Encomenda",
+      "amountLabel": "Montante a enviar",
+      "amountLabelRemaining": "Ainda por enviar",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyAmount": "Copiar montante",
+      "copyAccount": "Copiar endereço",
+      "copyIssuer": "Copiar emissor",
+      "fiatEquivalent": "equivale a %fiat%",
+      "fiatOfTotal": "de um total de %total% %asset% (%fiat%)",
+      "quoteValidFor": "Montante garantido durante %countdown% minutos",
+      "stepAccount": "Endereço de receção",
+      "requiredBadge": "Obrigatório",
+      "stepIssuer": "Token e emissor",
+      "issuerHint": "Só é creditado %asset% exatamente deste emissor. A carteira precisa de uma trustline para o efeito.",
+      "exchangeSummary": "Pagamento a partir de uma corretora?",
+      "asideLabel": "Pagar com uma carteira",
+      "qrOpen": "Digitalizar com uma aplicação de carteira",
+      "qrClosed": "Mostrar código QR ▾",
+      "qrVoid": "Expirado – peça um novo montante",
+      "walletOr": "ou",
+      "walletButton": "Pagar com uma carteira de navegador",
+      "walletAppButton": "Abrir na aplicação de carteira",
+      "walletLoading": "A procurar carteiras …",
+      "walletNone": "Nenhuma carteira de navegador encontrada. Utilize o código QR ou copie os dados.",
+      "walletHint": "A carteira preenche o pagamento. A confirmação é feita na carteira.",
+      "walletFound": "encontrada",
+      "walletConfirm": "Confirme na carteira …",
+      "walletSubmitted": "Enviado – estamos a verificar a receção.",
+      "walletErrorUnavailable": "A carteira não responde. A extensão está instalada e desbloqueada?",
+      "walletErrorNetwork": "A ligação à carteira falhou – tente novamente.",
+      "walletErrorMismatch": "A carteira está configurada para outra rede. Mude para %network%.",
+      "walletErrorOther": "O pagamento através da carteira falhou. Utilize o código QR ou copie os dados.",
+      "detailTotal": "Total da encomenda",
+      "detailRate": "Taxa de câmbio",
+      "detailNetwork": "Rede",
+      "rateSentence": "1 %asset% = %rate% %currency%",
+      "statusWaiting": "A aguardar o pagamento. Esta página atualiza-se automaticamente.",
+      "statusPartial": "Pagamento parcial recebido. A aguardar o restante.",
+      "statusWrongAsset": "Pagamento recebido no token errado. A aguardar o montante correto.",
+      "statusExpired": "Um pagamento tardio do montante anterior continua a ser reconhecido.",
+      "checkPaymentButton": "Verificar pagamento agora",
+      "checking": "A verificar …",
+      "checkNothingFound": "Ainda não foi encontrado nenhum pagamento. Uma transação demora normalmente apenas alguns segundos – volte a verificar dentro de momentos.",
+      "partialArrived": "Chegaram %paid% – obrigado. Faltam ainda %shortfall%.",
+      "wrongAssetArrived": "Chegou um pagamento de %paid%, mas esta encomenda espera %asset% do emissor indicado abaixo. Por isso, não pode ser creditado.",
+      "wrongAssetSend": "Envie %shortfall% – ou contacte-nos sobre o pagamento já efetuado.",
+      "expiredTitle": "Este montante já não é válido.",
+      "expiredRate": "A taxa de câmbio pode ter mudado entretanto.",
+      "expiredAlreadySent": "Já foi enviado? Então não envie novamente – o pagamento será reconhecido na mesma.",
+      "refreshQuoteButton": "Pedir um novo montante",
+      "priceUnavailable": "A taxa de câmbio está temporariamente indisponível. Tente novamente dentro de momentos.",
+      "successTitle": "Pagamento recebido",
+      "successAmount": "Chegaram %amount%.",
+      "successHash": "Transação",
+      "successRedirect": "A continuar para a encomenda em %seconds% s",
+      "successButton": "Continuar para a encomenda",
+      "backToCart": "Voltar ao carrinho",
+      "identifier": {
+        "XRPL": {
+          "step": "Destination tag",
+          "copy": "Copiar destination tag",
+          "hint": "Sem este tag não é possível associar o pagamento à encomenda.",
+          "exchangeHint": "O destination tag é obrigatório, e o montante tem de chegar completo depois da comissão da corretora.",
+          "qrCaption": "Digitalize com o Xaman ou outra carteira XRPL. O endereço, o destination tag e o montante estão preenchidos – verifique-os antes de enviar.",
+          "qrLabel": "Código QR com endereço, destination tag e montante",
+          "partialSendRest": "Envie o restante para o mesmo endereço com o mesmo destination tag."
+        },
+        "STELLAR": {
+          "step": "ID do memo",
+          "copy": "Copiar ID do memo",
+          "hint": "Sem este memo não é possível associar o pagamento à encomenda. Tipo de memo: ID.",
+          "exchangeHint": "O ID do memo é obrigatório, e o montante tem de chegar completo depois da comissão da corretora.",
+          "qrCaption": "Digitalize com uma carteira Stellar que suporte ligações de pagamento (SEP-7). A conta, o memo e o montante estão preenchidos – verifique-os antes de enviar.",
+          "qrLabel": "Código QR com conta, ID do memo e montante",
+          "partialSendRest": "Envie o restante para a mesma conta com o mesmo ID do memo."
+        },
+        "XAHAU": {
+          "step": "Destination tag",
+          "copy": "Copiar destination tag",
+          "hint": "Sem este tag não é possível associar o pagamento à encomenda.",
+          "exchangeHint": "O destination tag é obrigatório, e o montante tem de chegar completo depois da comissão da corretora.",
+          "qrCaption": "Digitalize com o Xaman. O endereço, o destination tag e o montante estão preenchidos, e o Xaman propõe mudar para a rede Xahau se estiver configurada outra – verifique-os antes de enviar.",
+          "qrLabel": "Código QR com endereço, destination tag e montante",
+          "partialSendRest": "Envie o restante para o mesmo endereço com o mesmo destination tag."
+        }
+      },
+      "network": {
+        "XRPL": {
+          "mainnet": "XRPL Mainnet",
+          "testnet": "XRPL Testnet"
+        },
+        "STELLAR": {
+          "mainnet": "Stellar Mainnet",
+          "testnet": "Stellar Testnet"
+        },
+        "XAHAU": {
+          "mainnet": "Xahau Mainnet",
+          "testnet": "Xahau Testnet"
+        }
+      },
+      "poweredBy": {
+        "XRPL": "Pago diretamente no XRP Ledger, sem intermediários.",
+        "STELLAR": "Pago diretamente na rede Stellar, sem intermediários.",
+        "XAHAU": "Pago diretamente na rede Xahau, sem intermediários."
+      }
+    },
+    "checkout": {
+      "priceUnavailable": "Não havia taxa de câmbio disponível para este método de pagamento neste momento, por isso o pagamento não foi iniciado. Tente novamente dentro de momentos ou escolha outro método de pagamento.",
+      "notPayable": "Esta encomenda não pode ser paga com LedgerDirect. Contacte o apoio ao cliente."
+    }
+  }
+}

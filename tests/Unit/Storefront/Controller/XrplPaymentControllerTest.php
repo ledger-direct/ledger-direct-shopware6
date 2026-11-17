@@ -158,8 +158,8 @@ class XrplPaymentControllerTest extends TestCase
 
     /**
      * The notice belongs to the "quote expired" block, next to its button:
-     * the page keeps its state, no new data-ld-state value. Both storefront
-     * languages carry the text.
+     * the page keeps its state, no new data-ld-state value. Every storefront
+     * language carries the text.
      */
     public function testThePaymentPageShowsTheNoticeInTheExpiredBlock(): void
     {
@@ -172,7 +172,7 @@ class XrplPaymentControllerTest extends TestCase
         $this->assertStringContainsString("app.flashes('" . XrplPaymentController::FLASH_PRICE_UNAVAILABLE . "')", $expiredBlock);
         $this->assertStringContainsString('refreshQuoteButton', substr($template, $start, (int) strpos($template, '</form>', $start) + 7 - $start));
 
-        foreach (['en-GB', 'de-DE'] as $locale) {
+        foreach (['en-GB', 'de-DE', 'fr-FR', 'nl-NL', 'es-ES', 'pt-PT'] as $locale) {
             $snippets = json_decode((string) file_get_contents(__DIR__ . "/../../../../src/Resources/snippet/storefront/ledger-direct.{$locale}.json"), true, 512, \JSON_THROW_ON_ERROR);
             $this->assertNotEmpty($snippets['LedgerDirect']['paymentPage']['priceUnavailable'] ?? null, $locale);
         }

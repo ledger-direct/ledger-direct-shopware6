@@ -5,13 +5,25 @@
     <card>
         <title>LedgerDirect - XRP Ledger</title>
         <title lang="de-DE">LedgerDirect - XRP Ledger</title>
+        <title lang="fr-FR">LedgerDirect - XRP Ledger</title>
+        <title lang="nl-NL">LedgerDirect - XRP Ledger</title>
+        <title lang="es-ES">LedgerDirect - XRP Ledger</title>
+        <title lang="pt-PT">LedgerDirect - XRP Ledger</title>
 
         <input-field type="bool">
             <name>xrplEnabled</name>
             <label>Accept payments on the XRP Ledger</label>
             <label lang="de-DE">Zahlungen über das XRP Ledger annehmen</label>
+            <label lang="fr-FR">Accepter les paiements sur le XRP Ledger</label>
+            <label lang="nl-NL">Betalingen op de XRP Ledger accepteren</label>
+            <label lang="es-ES">Aceptar pagos en el XRP Ledger</label>
+            <label lang="pt-PT">Aceitar pagamentos no XRP Ledger</label>
             <helpText>Switches the XRP Ledger payment methods on or off as a whole. Off, none of them is offered at checkout, whatever the settings below say.</helpText>
-            <helpText lang="de-DE">Schaltet die Zahlarten des XRP Ledger als Ganzes an oder aus. Aus: keine davon erscheint im Checkout, unabhängig von den Einstellungen darunter.</helpText>
+            <helpText lang="de-DE">Schaltet die Zahlungsarten des XRP Ledger als Ganzes an oder aus. Aus: keine davon erscheint an der Kasse, unabhängig von den Einstellungen darunter.</helpText>
+            <helpText lang="fr-FR">Active ou désactive l'ensemble des moyens de paiement du XRP Ledger. Désactivé, aucun n'est proposé au paiement, quels que soient les paramètres ci-dessous.</helpText>
+            <helpText lang="nl-NL">Schakelt de betaalmethoden van de XRP Ledger als geheel in of uit. Uitgeschakeld wordt geen ervan bij het afrekenen aangeboden, ongeacht de instellingen hieronder.</helpText>
+            <helpText lang="es-ES">Activa o desactiva en conjunto los métodos de pago del XRP Ledger. Desactivado, no se ofrece ninguno en el pago, independientemente de los ajustes de abajo.</helpText>
+            <helpText lang="pt-PT">Ativa ou desativa em conjunto os métodos de pagamento do XRP Ledger. Desativado, nenhum é oferecido na finalização da compra, independentemente das definições abaixo.</helpText>
             <defaultValue>true</defaultValue>
         </input-field>
 
@@ -19,25 +31,41 @@
             <name>useXrplTestnet</name>
             <label>Use Testnet</label>
             <label lang="de-DE">Testnet verwenden</label>
+            <label lang="fr-FR">Utiliser le Testnet</label>
+            <label lang="nl-NL">Testnet gebruiken</label>
+            <label lang="es-ES">Usar Testnet</label>
+            <label lang="pt-PT">Usar Testnet</label>
             <defaultValue>true</defaultValue>
         </input-field>
 
         <input-field type="text">
             <name>xrplMainnetDestinationAccount</name>
             <label>Merchant Wallet Address (Mainnet)</label>
-            <label lang="de-DE">Addresse des Händler-Wallets (Mainnet)</label>
+            <label lang="de-DE">Adresse der Händler-Wallet (Mainnet)</label>
+            <label lang="fr-FR">Adresse du portefeuille du marchand (Mainnet)</label>
+            <label lang="nl-NL">Walletadres van de handelaar (Mainnet)</label>
+            <label lang="es-ES">Dirección de la cartera del comerciante (Mainnet)</label>
+            <label lang="pt-PT">Endereço da carteira do comerciante (Mainnet)</label>
         </input-field>
 
         <input-field type="text">
             <name>xrplTestnetDestinationAccount</name>
             <label>Merchant Wallet Address (Testnet)</label>
-            <label lang="de-DE">Addresse des Händler-Wallets (Testnet)</label>
+            <label lang="de-DE">Adresse der Händler-Wallet (Testnet)</label>
+            <label lang="fr-FR">Adresse du portefeuille du marchand (Testnet)</label>
+            <label lang="nl-NL">Walletadres van de handelaar (Testnet)</label>
+            <label lang="es-ES">Dirección de la cartera del comerciante (Testnet)</label>
+            <label lang="pt-PT">Endereço da carteira do comerciante (Testnet)</label>
         </input-field>
 
         <input-field type="bool">
             <name>xrplIsRlusdEnabled</name>
             <label>Enable RLUSD Payments</label>
             <label lang="de-DE">Zahlungen mit RLUSD aktivieren</label>
+            <label lang="fr-FR">Activer les paiements en RLUSD</label>
+            <label lang="nl-NL">Betalingen met RLUSD inschakelen</label>
+            <label lang="es-ES">Activar pagos con RLUSD</label>
+            <label lang="pt-PT">Ativar pagamentos com RLUSD</label>
             <defaultValue>true</defaultValue>
         </input-field>
 
@@ -45,15 +73,27 @@
             <name>xrplIsUsdcEnabled</name>
             <label>Enable USDC Payments</label>
             <label lang="de-DE">Zahlungen mit USDC aktivieren</label>
+            <label lang="fr-FR">Activer les paiements en USDC</label>
+            <label lang="nl-NL">Betalingen met USDC inschakelen</label>
+            <label lang="es-ES">Activar pagos con USDC</label>
+            <label lang="pt-PT">Ativar pagamentos com USDC</label>
             <defaultValue>true</defaultValue>
         </input-field>
 
         <input-field type="int">
             <name>xrplQuoteExpiry</name>
             <label>Quote validity in seconds</label>
-            <label lang="de-DE">Gültigkeit eines Kursangebots in Sekunden</label>
+            <label lang="de-DE">Kursgültigkeit in Sekunden</label>
+            <label lang="fr-FR">Validité de la cotation en secondes</label>
+            <label lang="nl-NL">Geldigheid van de koersofferte in seconden</label>
+            <label lang="es-ES">Validez de la cotización en segundos</label>
+            <label lang="pt-PT">Validade da cotação em segundos</label>
             <helpText>How long the exchange rate quoted at checkout stays valid, on every chain.</helpText>
-            <helpText lang="de-DE">Wie lange der beim Checkout ermittelte Wechselkurs gültig bleibt, auf jeder Chain.</helpText>
+            <helpText lang="de-DE">Wie lange der an der Kasse ermittelte Kurs gültig bleibt, auf jeder Chain.</helpText>
+            <helpText lang="fr-FR">Durée pendant laquelle le taux de change coté au paiement reste valable, sur chaque réseau.</helpText>
+            <helpText lang="nl-NL">Hoe lang de bij het afrekenen bepaalde wisselkoers geldig blijft, op elk netwerk.</helpText>
+            <helpText lang="es-ES">Cuánto tiempo sigue siendo válido el tipo de cambio cotizado en el pago, en cada red.</helpText>
+            <helpText lang="pt-PT">Durante quanto tempo a taxa de câmbio cotada na finalização da compra se mantém válida, em cada rede.</helpText>
             <defaultValue>300</defaultValue>
             <min>60</min>
             <max>3600</max>
@@ -68,13 +108,25 @@
     <card>
         <title>LedgerDirect - Xahau</title>
         <title lang="de-DE">LedgerDirect - Xahau</title>
+        <title lang="fr-FR">LedgerDirect - Xahau</title>
+        <title lang="nl-NL">LedgerDirect - Xahau</title>
+        <title lang="es-ES">LedgerDirect - Xahau</title>
+        <title lang="pt-PT">LedgerDirect - Xahau</title>
 
         <input-field type="bool">
             <name>xahauEnabled</name>
             <label>Accept payments on Xahau</label>
             <label lang="de-DE">Zahlungen über Xahau annehmen</label>
+            <label lang="fr-FR">Accepter les paiements sur Xahau</label>
+            <label lang="nl-NL">Betalingen op Xahau accepteren</label>
+            <label lang="es-ES">Aceptar pagos en Xahau</label>
+            <label lang="pt-PT">Aceitar pagamentos em Xahau</label>
             <helpText>Switches the Xahau payment method on or off. XAH on the Xahau network, a chain of its own that speaks the XRP Ledger's protocol, paid by destination tag. Off by default. The method appears at checkout once this is on, a receiving account is set and the method is assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
-            <helpText lang="de-DE">Schaltet die Xahau-Zahlart an oder aus. XAH im Xahau-Netzwerk, einer eigenen Chain mit dem Protokoll des XRP Ledger, bezahlt per Destination Tag. Standardmäßig aus. Die Zahlart erscheint im Checkout, sobald dies an ist, ein Empfangskonto hinterlegt ist und die Zahlart unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen ist.</helpText>
+            <helpText lang="de-DE">Schaltet die Xahau-Zahlungsart an oder aus. XAH im Xahau-Netzwerk, einer eigenen Chain mit dem Protokoll des XRP Ledger, bezahlt per Destination Tag. Standardmäßig aus. Die Zahlungsart erscheint an der Kasse, sobald dies an ist, ein Empfangskonto hinterlegt ist und die Zahlungsart unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen ist.</helpText>
+            <helpText lang="fr-FR">Active ou désactive le moyen de paiement Xahau. XAH sur le réseau Xahau, un réseau distinct qui utilise le protocole du XRP Ledger, payé par destination tag. Désactivé par défaut. Le moyen de paiement apparaît au paiement dès que cette option est activée, qu'un compte de réception est renseigné et que le moyen de paiement est attribué au canal de vente sous Paramètres &gt; Boutique &gt; Moyens de paiement.</helpText>
+            <helpText lang="nl-NL">Schakelt de Xahau-betaalmethode in of uit. XAH op het Xahau-netwerk, een eigen netwerk dat het protocol van de XRP Ledger gebruikt, betaald via destination tag. Standaard uitgeschakeld. De betaalmethode verschijnt bij het afrekenen zodra dit is ingeschakeld, een ontvangstaccount is ingesteld en de betaalmethode onder Instellingen &gt; Winkel &gt; Betaalmethoden aan het verkoopkanaal is toegewezen.</helpText>
+            <helpText lang="es-ES">Activa o desactiva el método de pago Xahau. XAH en la red Xahau, una red propia que usa el protocolo del XRP Ledger, pagado mediante destination tag. Desactivado por defecto. El método aparece en el pago en cuanto esta opción está activada, hay una cuenta receptora configurada y el método está asignado al canal de ventas en Ajustes &gt; Tienda &gt; Métodos de pago.</helpText>
+            <helpText lang="pt-PT">Ativa ou desativa o método de pagamento Xahau. XAH na rede Xahau, uma rede própria que usa o protocolo do XRP Ledger, pago por destination tag. Desativado por predefinição. O método aparece na finalização da compra assim que esta opção estiver ativada, houver uma conta de receção definida e o método estiver atribuído ao canal de vendas em Definições &gt; Loja &gt; Métodos de pagamento.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
@@ -82,6 +134,10 @@
             <name>useXahauTestnet</name>
             <label>Use Testnet</label>
             <label lang="de-DE">Testnet verwenden</label>
+            <label lang="fr-FR">Utiliser le Testnet</label>
+            <label lang="nl-NL">Testnet gebruiken</label>
+            <label lang="es-ES">Usar Testnet</label>
+            <label lang="pt-PT">Usar Testnet</label>
             <defaultValue>true</defaultValue>
         </input-field>
 
@@ -89,14 +145,26 @@
             <name>xahauMainnetDestinationAccount</name>
             <label>Receiving account (Mainnet)</label>
             <label lang="de-DE">Empfangskonto (Mainnet)</label>
+            <label lang="fr-FR">Compte de réception (Mainnet)</label>
+            <label lang="nl-NL">Ontvangstaccount (Mainnet)</label>
+            <label lang="es-ES">Cuenta receptora (Mainnet)</label>
+            <label lang="pt-PT">Conta de receção (Mainnet)</label>
             <helpText>The address of your Xahau account, starting with r. Checked when saved. Use an account of its own for Xahau: an address has the same form on the XRP Ledger, and a payment sent on the wrong network is not found.</helpText>
             <helpText lang="de-DE">Die Adresse Ihres Xahau-Kontos, beginnt mit r. Wird beim Speichern geprüft. Nutzen Sie für Xahau ein eigenes Konto: Eine Adresse hat auf dem XRP Ledger dieselbe Form, und eine Zahlung im falschen Netzwerk wird nicht gefunden.</helpText>
+            <helpText lang="fr-FR">L'adresse de votre compte Xahau, commençant par r. Vérifiée lors de l'enregistrement. Utilisez un compte dédié pour Xahau : une adresse a la même forme sur le XRP Ledger, et un paiement envoyé sur le mauvais réseau n'est pas trouvé.</helpText>
+            <helpText lang="nl-NL">Het adres van uw Xahau-account, beginnend met r. Wordt bij het opslaan gecontroleerd. Gebruik voor Xahau een apart account: een adres heeft op de XRP Ledger dezelfde vorm, en een betaling op het verkeerde netwerk wordt niet gevonden.</helpText>
+            <helpText lang="es-ES">La dirección de su cuenta de Xahau, que empieza por r. Se comprueba al guardar. Use una cuenta propia para Xahau: una dirección tiene la misma forma en el XRP Ledger, y un pago enviado en la red equivocada no se encuentra.</helpText>
+            <helpText lang="pt-PT">O endereço da conta Xahau, que começa por r. É verificado ao guardar. Utilize uma conta própria para Xahau: um endereço tem a mesma forma no XRP Ledger, e um pagamento enviado na rede errada não é encontrado.</helpText>
         </input-field>
 
         <input-field type="text">
             <name>xahauTestnetDestinationAccount</name>
             <label>Receiving account (Testnet)</label>
             <label lang="de-DE">Empfangskonto (Testnet)</label>
+            <label lang="fr-FR">Compte de réception (Testnet)</label>
+            <label lang="nl-NL">Ontvangstaccount (Testnet)</label>
+            <label lang="es-ES">Cuenta receptora (Testnet)</label>
+            <label lang="pt-PT">Conta de receção (Testnet)</label>
         </input-field>
         <!-- What the saved receiving account lacks (trust line, activation, deposit authorization); read-only, stores nothing. -->
         <component name="ledger-direct-account-check">
@@ -108,13 +176,25 @@
     <card>
         <title>LedgerDirect - Stellar (Preview)</title>
         <title lang="de-DE">LedgerDirect - Stellar (Vorschau)</title>
+        <title lang="fr-FR">LedgerDirect - Stellar (aperçu)</title>
+        <title lang="nl-NL">LedgerDirect - Stellar (proefversie)</title>
+        <title lang="es-ES">LedgerDirect - Stellar (vista previa)</title>
+        <title lang="pt-PT">LedgerDirect - Stellar (pré-visualização)</title>
 
         <input-field type="bool">
             <name>stellarEnabled</name>
             <label>Accept payments on Stellar (preview)</label>
             <label lang="de-DE">Zahlungen über Stellar annehmen (Vorschau)</label>
+            <label lang="fr-FR">Accepter les paiements sur Stellar (aperçu)</label>
+            <label lang="nl-NL">Betalingen op Stellar accepteren (proefversie)</label>
+            <label lang="es-ES">Aceptar pagos en Stellar (vista previa)</label>
+            <label lang="pt-PT">Aceitar pagamentos em Stellar (pré-visualização)</label>
             <helpText>Preview, not for production use: Stellar support is complete and tested on the testnet, but not yet released; it runs on the testnet only, the toggle below cannot be switched off. XLM, USDC and EURC on the Stellar network, paid by memo id. Off by default; switching it on creates the Stellar payment methods. They appear at checkout once a receiving account is set and the methods are assigned to the sales channel under Settings > Shop > Payment methods.</helpText>
-            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben; sie läuft nur im Testnet, der Schalter darunter lässt sich nicht ausschalten. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlarten an. Sie erscheinen im Checkout, sobald ein Empfangskonto hinterlegt ist und die Zahlarten unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen sind.</helpText>
+            <helpText lang="de-DE">Vorschau, nicht für den Produktivbetrieb: Die Stellar-Unterstützung ist vollständig und auf dem Testnet getestet, aber noch nicht freigegeben; sie läuft nur im Testnet, der Schalter darunter lässt sich nicht ausschalten. XLM, USDC und EURC im Stellar-Netzwerk, bezahlt per Memo-ID. Standardmäßig aus; das Einschalten legt die Stellar-Zahlungsarten an. Sie erscheinen an der Kasse, sobald ein Empfangskonto hinterlegt ist und die Zahlungsarten unter Einstellungen > Shop > Zahlungsarten dem Verkaufskanal zugewiesen sind.</helpText>
+            <helpText lang="fr-FR">Aperçu, pas pour une utilisation en production : la prise en charge de Stellar est complète et testée sur le Testnet, mais pas encore publiée ; elle fonctionne uniquement sur le Testnet, l'interrupteur ci-dessous ne peut pas être désactivé. XLM, USDC et EURC sur le réseau Stellar, payés par ID de mémo. Désactivé par défaut ; l'activation crée les moyens de paiement Stellar. Ils apparaissent au paiement dès qu'un compte de réception est renseigné et que les moyens de paiement sont attribués au canal de vente sous Paramètres &gt; Boutique &gt; Moyens de paiement.</helpText>
+            <helpText lang="nl-NL">Proefversie, niet voor productief gebruik: de Stellar-ondersteuning is volledig en op het Testnet getest, maar nog niet vrijgegeven; ze werkt alleen op het Testnet, de schakelaar hieronder kan niet worden uitgeschakeld. XLM, USDC en EURC op het Stellar-netwerk, betaald via memo-ID. Standaard uitgeschakeld; inschakelen maakt de Stellar-betaalmethoden aan. Ze verschijnen bij het afrekenen zodra een ontvangstaccount is ingesteld en de betaalmethoden onder Instellingen &gt; Winkel &gt; Betaalmethoden aan het verkoopkanaal zijn toegewezen.</helpText>
+            <helpText lang="es-ES">Vista previa, no apta para producción: la compatibilidad con Stellar está completa y probada en el Testnet, pero aún no se ha publicado; solo funciona en el Testnet, el interruptor de abajo no se puede desactivar. XLM, USDC y EURC en la red Stellar, pagados mediante ID de memo. Desactivado por defecto; al activarlo se crean los métodos de pago de Stellar. Aparecen en el pago en cuanto hay una cuenta receptora configurada y los métodos están asignados al canal de ventas en Ajustes &gt; Tienda &gt; Métodos de pago.</helpText>
+            <helpText lang="pt-PT">Pré-visualização, não destinada a produção: o suporte para Stellar está completo e testado no Testnet, mas ainda não foi lançado; funciona apenas no Testnet, o interruptor abaixo não pode ser desativado. XLM, USDC e EURC na rede Stellar, pagos por ID do memo. Desativado por predefinição; ao ativá-lo são criados os métodos de pagamento Stellar. Aparecem na finalização da compra assim que houver uma conta de receção definida e os métodos estiverem atribuídos ao canal de vendas em Definições &gt; Loja &gt; Métodos de pagamento.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 
@@ -122,6 +202,10 @@
             <name>useStellarTestnet</name>
             <label>Use Testnet</label>
             <label lang="de-DE">Testnet verwenden</label>
+            <label lang="fr-FR">Utiliser le Testnet</label>
+            <label lang="nl-NL">Testnet gebruiken</label>
+            <label lang="es-ES">Usar Testnet</label>
+            <label lang="pt-PT">Usar Testnet</label>
             <defaultValue>true</defaultValue>
         </input-field>
 
@@ -129,22 +213,42 @@
             <name>stellarMainnetDestinationAccount</name>
             <label>Receiving account (Mainnet)</label>
             <label lang="de-DE">Empfangskonto (Mainnet)</label>
+            <label lang="fr-FR">Compte de réception (Mainnet)</label>
+            <label lang="nl-NL">Ontvangstaccount (Mainnet)</label>
+            <label lang="es-ES">Cuenta receptora (Mainnet)</label>
+            <label lang="pt-PT">Conta de receção (Mainnet)</label>
             <helpText>The public key of your Stellar account, starting with G. Checked when saved.</helpText>
             <helpText lang="de-DE">Der öffentliche Schlüssel Ihres Stellar-Kontos, beginnt mit G. Wird beim Speichern geprüft.</helpText>
+            <helpText lang="fr-FR">La clé publique de votre compte Stellar, commençant par G. Vérifiée lors de l'enregistrement.</helpText>
+            <helpText lang="nl-NL">De publieke sleutel van uw Stellar-account, beginnend met G. Wordt bij het opslaan gecontroleerd.</helpText>
+            <helpText lang="es-ES">La clave pública de su cuenta de Stellar, que empieza por G. Se comprueba al guardar.</helpText>
+            <helpText lang="pt-PT">A chave pública da conta Stellar, que começa por G. É verificada ao guardar.</helpText>
         </input-field>
 
         <input-field type="text">
             <name>stellarTestnetDestinationAccount</name>
             <label>Receiving account (Testnet)</label>
             <label lang="de-DE">Empfangskonto (Testnet)</label>
+            <label lang="fr-FR">Compte de réception (Testnet)</label>
+            <label lang="nl-NL">Ontvangstaccount (Testnet)</label>
+            <label lang="es-ES">Cuenta receptora (Testnet)</label>
+            <label lang="pt-PT">Conta de receção (Testnet)</label>
         </input-field>
 
         <input-field type="bool">
             <name>stellarIsUsdcEnabled</name>
             <label>Enable USDC payments</label>
             <label lang="de-DE">Zahlungen mit USDC aktivieren</label>
+            <label lang="fr-FR">Activer les paiements en USDC</label>
+            <label lang="nl-NL">Betalingen met USDC inschakelen</label>
+            <label lang="es-ES">Activar pagos con USDC</label>
+            <label lang="pt-PT">Ativar pagamentos com USDC</label>
             <helpText>USDC by Circle. Offered at checkout only while the receiving account has a trust line to the issuer.</helpText>
-            <helpText lang="de-DE">USDC von Circle. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <helpText lang="de-DE">USDC von Circle. Erscheint an der Kasse nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <helpText lang="fr-FR">USDC de Circle. Proposé au paiement uniquement tant que le compte de réception a une trustline vers l'émetteur.</helpText>
+            <helpText lang="nl-NL">USDC van Circle. Wordt bij het afrekenen alleen aangeboden zolang het ontvangstaccount een trustline naar de uitgever heeft.</helpText>
+            <helpText lang="es-ES">USDC de Circle. Solo se ofrece en el pago mientras la cuenta receptora tenga una trustline con el emisor.</helpText>
+            <helpText lang="pt-PT">USDC da Circle. Só é oferecido na finalização da compra enquanto a conta de receção tiver uma trustline para o emissor.</helpText>
             <defaultValue>true</defaultValue>
         </input-field>
 
@@ -152,8 +256,16 @@
             <name>stellarIsEurcEnabled</name>
             <label>Enable EURC payments</label>
             <label lang="de-DE">Zahlungen mit EURC aktivieren</label>
+            <label lang="fr-FR">Activer les paiements en EURC</label>
+            <label lang="nl-NL">Betalingen met EURC inschakelen</label>
+            <label lang="es-ES">Activar pagos con EURC</label>
+            <label lang="pt-PT">Ativar pagamentos com EURC</label>
             <helpText>EURC by Circle, pegged to the euro. Offered at checkout only while the receiving account has a trust line to the issuer.</helpText>
-            <helpText lang="de-DE">EURC von Circle, an den Euro gebunden. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <helpText lang="de-DE">EURC von Circle, an den Euro gebunden. Erscheint an der Kasse nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
+            <helpText lang="fr-FR">EURC de Circle, indexé sur l'euro. Proposé au paiement uniquement tant que le compte de réception a une trustline vers l'émetteur.</helpText>
+            <helpText lang="nl-NL">EURC van Circle, gekoppeld aan de euro. Wordt bij het afrekenen alleen aangeboden zolang het ontvangstaccount een trustline naar de uitgever heeft.</helpText>
+            <helpText lang="es-ES">EURC de Circle, vinculado al euro. Solo se ofrece en el pago mientras la cuenta receptora tenga una trustline con el emisor.</helpText>
+            <helpText lang="pt-PT">EURC da Circle, indexado ao euro. Só é oferecido na finalização da compra enquanto a conta de receção tiver uma trustline para o emissor.</helpText>
             <defaultValue>true</defaultValue>
         </input-field>
         <!-- What the saved receiving account lacks (trust line, activation, deposit authorization); read-only, stores nothing. -->
@@ -166,29 +278,53 @@
     <card>
         <title>LedgerDirect - Payment page</title>
         <title lang="de-DE">LedgerDirect - Zahlungsseite</title>
+        <title lang="fr-FR">LedgerDirect - Page de paiement</title>
+        <title lang="nl-NL">LedgerDirect - Betaalpagina</title>
+        <title lang="es-ES">LedgerDirect - Página de pago</title>
+        <title lang="pt-PT">LedgerDirect - Página de pagamento</title>
 
         <input-field type="single-select">
             <name>paymentPageLogoMode</name>
             <label>Logo on the payment page</label>
             <label lang="de-DE">Logo auf der Zahlungsseite</label>
+            <label lang="fr-FR">Logo sur la page de paiement</label>
+            <label lang="nl-NL">Logo op de betaalpagina</label>
+            <label lang="es-ES">Logotipo en la página de pago</label>
+            <label lang="pt-PT">Logótipo na página de pagamento</label>
             <helpText>The shop logo from the theme, a picture from the media library, or a monogram of the shop name.</helpText>
             <helpText lang="de-DE">Das Shop-Logo aus dem Theme, ein Bild aus der Medienverwaltung oder ein Monogramm aus dem Shopnamen.</helpText>
+            <helpText lang="fr-FR">Le logo de la boutique issu du thème, une image de la médiathèque ou un monogramme du nom de la boutique.</helpText>
+            <helpText lang="nl-NL">Het winkellogo uit het thema, een afbeelding uit de mediabibliotheek of een monogram van de winkelnaam.</helpText>
+            <helpText lang="es-ES">El logotipo de la tienda del tema, una imagen de la biblioteca de medios o un monograma del nombre de la tienda.</helpText>
+            <helpText lang="pt-PT">O logótipo da loja do tema, uma imagem da biblioteca de multimédia ou um monograma do nome da loja.</helpText>
             <defaultValue>shop</defaultValue>
             <options>
                 <option>
                     <id>shop</id>
                     <name>Shop logo (from the theme)</name>
                     <name lang="de-DE">Shop-Logo (aus dem Theme)</name>
+                    <name lang="fr-FR">Logo de la boutique (du thème)</name>
+                    <name lang="nl-NL">Winkellogo (uit het thema)</name>
+                    <name lang="es-ES">Logotipo de la tienda (del tema)</name>
+                    <name lang="pt-PT">Logótipo da loja (do tema)</name>
                 </option>
                 <option>
                     <id>custom</id>
                     <name>Picture from the media library</name>
                     <name lang="de-DE">Bild aus der Medienverwaltung</name>
+                    <name lang="fr-FR">Image de la médiathèque</name>
+                    <name lang="nl-NL">Afbeelding uit de mediabibliotheek</name>
+                    <name lang="es-ES">Imagen de la biblioteca de medios</name>
+                    <name lang="pt-PT">Imagem da biblioteca de multimédia</name>
                 </option>
                 <option>
                     <id>none</id>
                     <name>No logo (monogram)</name>
                     <name lang="de-DE">Kein Logo (Monogramm)</name>
+                    <name lang="fr-FR">Pas de logo (monogramme)</name>
+                    <name lang="nl-NL">Geen logo (monogram)</name>
+                    <name lang="es-ES">Sin logotipo (monograma)</name>
+                    <name lang="pt-PT">Sem logótipo (monograma)</name>
                 </option>
             </options>
         </input-field>
@@ -197,16 +333,32 @@
             <name>paymentPageLogo</name>
             <label>Own logo</label>
             <label lang="de-DE">Eigenes Logo</label>
+            <label lang="fr-FR">Logo personnalisé</label>
+            <label lang="nl-NL">Eigen logo</label>
+            <label lang="es-ES">Logotipo propio</label>
+            <label lang="pt-PT">Logótipo próprio</label>
             <helpText>Only used with "Picture from the media library". Shown at most 32 px high and 160 px wide.</helpText>
             <helpText lang="de-DE">Nur bei „Bild aus der Medienverwaltung". Wird höchstens 32 px hoch und 160 px breit angezeigt.</helpText>
+            <helpText lang="fr-FR">Utilisé uniquement avec « Image de la médiathèque ». Affiché au maximum à 32 px de haut et 160 px de large.</helpText>
+            <helpText lang="nl-NL">Alleen gebruikt bij "Afbeelding uit de mediabibliotheek". Wordt maximaal 32 px hoog en 160 px breed weergegeven.</helpText>
+            <helpText lang="es-ES">Solo se usa con «Imagen de la biblioteca de medios». Se muestra como máximo a 32 px de alto y 160 px de ancho.</helpText>
+            <helpText lang="pt-PT">Só é usado com «Imagem da biblioteca de multimédia». É apresentado com, no máximo, 32 px de altura e 160 px de largura.</helpText>
         </component>
 
         <input-field type="colorpicker">
             <name>paymentPageAccentColor</name>
             <label>Accent colour</label>
             <label lang="de-DE">Akzentfarbe</label>
+            <label lang="fr-FR">Couleur d'accentuation</label>
+            <label lang="nl-NL">Accentkleur</label>
+            <label lang="es-ES">Color de acento</label>
+            <label lang="pt-PT">Cor de destaque</label>
             <helpText>Buttons, the countdown bar and the destination tag frame. A colour too light for white text falls back to the default.</helpText>
             <helpText lang="de-DE">Schaltflächen, Countdown-Balken und der Rahmen des Destination Tags. Eine Farbe mit zu wenig Kontrast zu weißer Schrift fällt auf den Standard zurück.</helpText>
+            <helpText lang="fr-FR">Boutons, barre du compte à rebours et cadre du destination tag. Une couleur trop claire pour un texte blanc est remplacée par la couleur par défaut.</helpText>
+            <helpText lang="nl-NL">Knoppen, de afteltimerbalk en het kader van de destination tag. Een kleur die te licht is voor witte tekst, valt terug op de standaardkleur.</helpText>
+            <helpText lang="es-ES">Botones, la barra de cuenta atrás y el marco del destination tag. Un color demasiado claro para texto blanco se sustituye por el predeterminado.</helpText>
+            <helpText lang="pt-PT">Botões, a barra de contagem decrescente e a moldura do destination tag. Uma cor demasiado clara para texto branco é substituída pela predefinida.</helpText>
             <defaultValue>#1f5eff</defaultValue>
         </input-field>
 
@@ -214,39 +366,75 @@
             <name>xamanApiKey</name>
             <label>Xaman API key (optional)</label>
             <label lang="de-DE">Xaman-API-Key (optional)</label>
+            <label lang="fr-FR">Clé API Xaman (facultatif)</label>
+            <label lang="nl-NL">Xaman-API-sleutel (optioneel)</label>
+            <label lang="es-ES">Clave de API de Xaman (opcional)</label>
+            <label lang="pt-PT">Chave de API do Xaman (opcional)</label>
             <helpText>A public browser identifier, not a secret. Offers "Open in wallet app" with Xaman; restrict it to your shop domain in the Xaman developer dashboard.</helpText>
             <helpText lang="de-DE">Eine öffentliche Browser-Kennung, kein Geheimnis. Bietet „In Wallet-App öffnen" mit Xaman an; im Xaman-Entwickler-Dashboard auf die Shop-Domain beschränken.</helpText>
+            <helpText lang="fr-FR">Un identifiant public pour le navigateur, pas un secret. Propose « Ouvrir dans l'application de portefeuille » avec Xaman ; limitez-le au domaine de votre boutique dans le tableau de bord développeur de Xaman.</helpText>
+            <helpText lang="nl-NL">Een openbare browser-ID, geen geheim. Biedt "Openen in wallet-app" met Xaman aan; beperk de sleutel tot uw winkeldomein in het Xaman-ontwikkelaarsdashboard.</helpText>
+            <helpText lang="es-ES">Un identificador público del navegador, no un secreto. Ofrece «Abrir en la aplicación de cartera» con Xaman; restrínjalo al dominio de su tienda en el panel de desarrolladores de Xaman.</helpText>
+            <helpText lang="pt-PT">Um identificador público do navegador, não um segredo. Disponibiliza «Abrir na aplicação de carteira» com o Xaman; restrinja-o ao domínio da loja no painel de programador do Xaman.</helpText>
         </input-field>
 
         <input-field type="text">
             <name>walletConnectProjectId</name>
             <label>WalletConnect project ID (optional)</label>
             <label lang="de-DE">WalletConnect-Projekt-ID (optional)</label>
+            <label lang="fr-FR">ID de projet WalletConnect (facultatif)</label>
+            <label lang="nl-NL">WalletConnect-project-ID (optioneel)</label>
+            <label lang="es-ES">ID de proyecto de WalletConnect (opcional)</label>
+            <label lang="pt-PT">ID de projeto WalletConnect (opcional)</label>
             <helpText>A public browser identifier, not a secret. Offers WalletConnect wallets; restrict it to your shop domain in the WalletConnect dashboard.</helpText>
             <helpText lang="de-DE">Eine öffentliche Browser-Kennung, kein Geheimnis. Bietet WalletConnect-Wallets an; im WalletConnect-Dashboard auf die Shop-Domain beschränken.</helpText>
+            <helpText lang="fr-FR">Un identifiant public pour le navigateur, pas un secret. Propose les portefeuilles WalletConnect ; limitez-le au domaine de votre boutique dans le tableau de bord WalletConnect.</helpText>
+            <helpText lang="nl-NL">Een openbare browser-ID, geen geheim. Biedt WalletConnect-wallets aan; beperk de ID tot uw winkeldomein in het WalletConnect-dashboard.</helpText>
+            <helpText lang="es-ES">Un identificador público del navegador, no un secreto. Ofrece carteras WalletConnect; restrínjalo al dominio de su tienda en el panel de WalletConnect.</helpText>
+            <helpText lang="pt-PT">Um identificador público do navegador, não um segredo. Disponibiliza carteiras WalletConnect; restrinja-o ao domínio da loja no painel do WalletConnect.</helpText>
         </input-field>
     </card>
 
     <card>
         <title>LedgerDirect - External front end</title>
         <title lang="de-DE">LedgerDirect - Externes Frontend</title>
+        <title lang="fr-FR">LedgerDirect - Front-end externe</title>
+        <title lang="nl-NL">LedgerDirect - Externe frontend</title>
+        <title lang="es-ES">LedgerDirect - Frontend externo</title>
+        <title lang="pt-PT">LedgerDirect - Frontend externo</title>
 
         <input-field type="text">
             <name>headlessPaymentPageUrl</name>
             <label>Payment page of the external front end</label>
             <label lang="de-DE">Zahlungsseite des externen Frontends</label>
+            <label lang="fr-FR">Page de paiement du front-end externe</label>
+            <label lang="nl-NL">Betaalpagina van de externe frontend</label>
+            <label lang="es-ES">Página de pago del frontend externo</label>
+            <label lang="pt-PT">Página de pagamento do frontend externo</label>
             <placeholder>https://shop.example/pay/{orderId}?code={deepLinkCode}&amp;return={returnUrl}</placeholder>
             <helpText>Only for a sales channel whose front end is not this storefront (Shopware Frontends, an app). After the order the customer is sent here instead of to the storefront's payment page. An absolute https:// URL with {orderId} and {deepLinkCode}, optionally {returnUrl}; the values are inserted URL-encoded. Set it per sales channel. Leave empty for the storefront.</helpText>
             <helpText lang="de-DE">Nur für einen Verkaufskanal, dessen Frontend nicht diese Storefront ist (Shopware Frontends, eine App). Nach der Bestellung wird der Kunde hierher geschickt statt auf die Zahlungsseite der Storefront. Eine absolute https://-URL mit {orderId} und {deepLinkCode}, optional {returnUrl}; die Werte werden URL-kodiert eingesetzt. Je Verkaufskanal setzen. Für die Storefront leer lassen.</helpText>
+            <helpText lang="fr-FR">Uniquement pour un canal de vente dont le front-end n'est pas cette Storefront (Shopware Frontends, une application). Après la commande, le client est redirigé ici au lieu de la page de paiement de la Storefront. Une URL absolue en https:// avec {orderId} et {deepLinkCode}, éventuellement {returnUrl} ; les valeurs sont insérées encodées pour l'URL. À définir par canal de vente. Laisser vide pour la Storefront.</helpText>
+            <helpText lang="nl-NL">Alleen voor een verkoopkanaal waarvan de frontend niet deze Storefront is (Shopware Frontends, een app). Na de bestelling wordt de klant hierheen gestuurd in plaats van naar de betaalpagina van de Storefront. Een absolute https://-URL met {orderId} en {deepLinkCode}, optioneel {returnUrl}; de waarden worden URL-gecodeerd ingevoegd. Per verkoopkanaal instellen. Leeg laten voor de Storefront.</helpText>
+            <helpText lang="es-ES">Solo para un canal de ventas cuyo frontend no sea esta Storefront (Shopware Frontends, una aplicación). Tras el pedido, el cliente se envía aquí en lugar de a la página de pago de la Storefront. Una URL absoluta https:// con {orderId} y {deepLinkCode}, opcionalmente {returnUrl}; los valores se insertan codificados para URL. Se configura por canal de ventas. Dejar vacío para la Storefront.</helpText>
+            <helpText lang="pt-PT">Apenas para um canal de vendas cujo frontend não seja esta Storefront (Shopware Frontends, uma aplicação). Após a encomenda, o cliente é enviado para aqui em vez de para a página de pagamento da Storefront. Um URL absoluto https:// com {orderId} e {deepLinkCode}, opcionalmente {returnUrl}; os valores são inseridos codificados para URL. Definir por canal de vendas. Deixar vazio para a Storefront.</helpText>
         </input-field>
 
         <input-field type="text">
             <name>headlessOrderPageUrl</name>
             <label>Order page of the external front end</label>
             <label lang="de-DE">Bestellseite des externen Frontends</label>
+            <label lang="fr-FR">Page de commande du front-end externe</label>
+            <label lang="nl-NL">Bestelpagina van de externe frontend</label>
+            <label lang="es-ES">Página del pedido del frontend externo</label>
+            <label lang="pt-PT">Página da encomenda do frontend externo</label>
             <placeholder>https://shop.example/orders/{orderId}?code={deepLinkCode}</placeholder>
             <helpText>Where a customer lands whose payment arrives after Shopware's payment token has expired (about 30 minutes after checkout, or from the confirmation mail). An absolute https:// URL with {deepLinkCode}, optionally {orderId}. Leave empty for the storefront's order page.</helpText>
-            <helpText lang="de-DE">Wohin ein Kunde kommt, dessen Zahlung nach Ablauf von Shopwares Zahlungs-Token eintrifft (etwa 30 Minuten nach dem Checkout, oder aus der Bestätigungsmail). Eine absolute https://-URL mit {deepLinkCode}, optional {orderId}. Für die Bestellseite der Storefront leer lassen.</helpText>
+            <helpText lang="de-DE">Wohin ein Kunde kommt, dessen Zahlung nach Ablauf von Shopwares Zahlungs-Token eintrifft (etwa 30 Minuten nach der Bestellung, oder aus der Bestätigungsmail). Eine absolute https://-URL mit {deepLinkCode}, optional {orderId}. Für die Bestellseite der Storefront leer lassen.</helpText>
+            <helpText lang="fr-FR">La page où arrive un client dont le paiement parvient après l'expiration du jeton de paiement de Shopware (environ 30 minutes après le paiement, ou depuis l'e-mail de confirmation). Une URL absolue en https:// avec {deepLinkCode}, éventuellement {orderId}. Laisser vide pour la page de commande de la Storefront.</helpText>
+            <helpText lang="nl-NL">Waar een klant terechtkomt van wie de betaling binnenkomt nadat het betaaltoken van Shopware is verlopen (ongeveer 30 minuten na het afrekenen, of via de bevestigingsmail). Een absolute https://-URL met {deepLinkCode}, optioneel {orderId}. Leeg laten voor de bestelpagina van de Storefront.</helpText>
+            <helpText lang="es-ES">Adónde llega un cliente cuyo pago entra después de que haya caducado el token de pago de Shopware (unos 30 minutos después del pago, o desde el correo de confirmación). Una URL absoluta https:// con {deepLinkCode}, opcionalmente {orderId}. Dejar vacío para la página del pedido de la Storefront.</helpText>
+            <helpText lang="pt-PT">Para onde vai um cliente cujo pagamento chega depois de o token de pagamento do Shopware ter expirado (cerca de 30 minutos após a finalização da compra, ou a partir do e-mail de confirmação). Um URL absoluto https:// com {deepLinkCode}, opcionalmente {orderId}. Deixar vazio para a página da encomenda da Storefront.</helpText>
         </input-field>
     </card>
 

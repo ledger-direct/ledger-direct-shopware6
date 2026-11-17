@@ -211,7 +211,7 @@ class XrplPaymentController extends StorefrontController
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
         if ($intent === null || ChainCatalog::forType($intent->type) === null) {
-            $this->addFlash('danger', 'This order cannot be paid with LedgerDirect. Please contact support.');
+            $this->addFlash('danger', $this->trans('LedgerDirect.checkout.notPayable'));
             return $this->redirectToRoute('frontend.checkout.cart.page');
         }
 

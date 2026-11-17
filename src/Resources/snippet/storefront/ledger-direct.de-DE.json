@@ -111,7 +111,8 @@
       }
     },
     "checkout": {
-      "priceUnavailable": "Für diese Zahlungsart war gerade kein Kurs verfügbar, die Zahlung wurde deshalb nicht gestartet. Bitte versuchen Sie es gleich noch einmal oder wählen Sie eine andere Zahlungsart."
+      "priceUnavailable": "Für diese Zahlungsart war gerade kein Kurs verfügbar, die Zahlung wurde deshalb nicht gestartet. Bitte versuchen Sie es gleich noch einmal oder wählen Sie eine andere Zahlungsart.",
+      "notPayable": "Diese Bestellung kann nicht mit LedgerDirect bezahlt werden. Bitte wenden Sie sich an den Support."
     }
   }
 }

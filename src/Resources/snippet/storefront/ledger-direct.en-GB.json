@@ -111,7 +111,8 @@
       }
     },
     "checkout": {
-      "priceUnavailable": "We could not get a price for this payment method just now, so the payment was not started. Please try again in a moment, or choose another payment method."
+      "priceUnavailable": "We could not get a price for this payment method just now, so the payment was not started. Please try again in a moment, or choose another payment method.",
+      "notPayable": "This order cannot be paid with LedgerDirect. Please contact support."
     }
   }
 }
