@@ -14,7 +14,7 @@
             "exchangeRate": "Taux de change",
             "destinationAccount": "Compte de réception",
             "issuer": "Émetteur",
-            "quoteValidUntil": "Cotation valable jusqu'à",
+            "quoteValidUntil": "Cotation valable jusqu'au",
             "amountReceived": "Montant reçu",
             "receivedWrongToken": "{amount} {currency} de l'émetteur {issuer} – pas l'actif demandé, non crédité",
             "receivedWrongNative": "{amount} {currency} – pas l'actif demandé, non crédité",
@@ -40,7 +40,7 @@
                     "XAHAU": "Le compte {account} n'est pas encore activé sur le {network}. Le premier paiement d'au moins {reserve} {native} l'active ; d'ici là, les commandes inférieures à ce montant échouent.",
                     "STELLAR": "Le compte {account} n'existe pas sur le {network}. Un paiement Stellar ne peut pas le créer ; rien n'est donc proposé sur Stellar au paiement tant que le compte n'est pas approvisionné."
                 },
-                "deposit_auth": "Deposit Authorization est activé sur le compte : seuls les expéditeurs que vous avez autorisés peuvent payer. Les moyens de paiement restent proposés au paiement.",
+                "deposit_auth": "Deposit Authorization est activé sur le compte : seuls les expéditeurs que vous avez autorisés peuvent payer. Les moyens de paiement restent proposés au paiement.",
                 "trustline_missing": "{asset} n'est pas proposé au paiement : le compte n'a pas de trustline vers l'émetteur {issuer}.",
                 "trustline_not_authorized": "{asset} n'est pas proposé au paiement : l'émetteur {issuer} n'a pas autorisé la trustline.",
                 "trustline_frozen": "{asset} n'est pas proposé au paiement : la trustline est gelée.",

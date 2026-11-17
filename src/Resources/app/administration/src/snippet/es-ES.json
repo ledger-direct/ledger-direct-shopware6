@@ -4,7 +4,7 @@
             "title": "LedgerDirect",
             "state": {
                 "waiting": "Esperando el pago",
-                "expired": "Cotización caducada, no se ha recibido nada",
+                "expired": "Cotización caducada, nada recibido",
                 "partial": "Pagado parcialmente",
                 "wrong_asset": "Pago en el activo equivocado",
                 "settled": "Pagado"
@@ -40,7 +40,7 @@
                     "XAHAU": "La cuenta {account} aún no está activada en la {network}. El primer pago de al menos {reserve} {native} la activa; hasta entonces, los pedidos inferiores fallan.",
                     "STELLAR": "La cuenta {account} no existe en la {network}. Un pago de Stellar no puede crearla, por lo que en el pago no se ofrece nada en Stellar hasta que la cuenta tenga fondos."
                 },
-                "deposit_auth": "La cuenta tiene activada Deposit Authorization: solo pueden pagar los remitentes que usted haya autorizado. Los métodos de pago siguen apareciendo en el pago.",
+                "deposit_auth": "La cuenta tiene activada Deposit Authorization: solo pueden pagar los remitentes que usted autorizó. Los métodos de pago siguen disponibles en el pago.",
                 "trustline_missing": "{asset} no se ofrece en el pago: la cuenta no tiene trustline con el emisor {issuer}.",
                 "trustline_not_authorized": "{asset} no se ofrece en el pago: el emisor {issuer} no ha autorizado la trustline.",
                 "trustline_frozen": "{asset} no se ofrece en el pago: la trustline está congelada.",

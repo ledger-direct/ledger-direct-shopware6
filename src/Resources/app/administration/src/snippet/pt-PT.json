@@ -10,7 +10,7 @@
                 "settled": "Pago"
             },
             "asset": "Ativo",
-            "amountRequested": "Montante pedido",
+            "amountRequested": "Montante solicitado",
             "exchangeRate": "Taxa de câmbio",
             "destinationAccount": "Conta de receção",
             "issuer": "Emissor",
@@ -40,7 +40,7 @@
                     "XAHAU": "A conta {account} ainda não está ativada na {network}. O primeiro pagamento de pelo menos {reserve} {native} ativa-a; até lá, as encomendas de valor inferior falham.",
                     "STELLAR": "A conta {account} não existe na {network}. Um pagamento Stellar não a pode criar, por isso a finalização da compra não oferece nada em Stellar até a conta ter fundos."
                 },
-                "deposit_auth": "A conta tem Deposit Authorization ativada: só podem pagar os remetentes autorizados. Os métodos de pagamento continuam disponíveis na finalização da compra.",
+                "deposit_auth": "A conta tem Deposit Authorization ativada: só os remetentes autorizados podem pagar. Os métodos de pagamento continuam disponíveis na finalização da compra.",
                 "trustline_missing": "{asset} não é oferecido na finalização da compra: a conta não tem trustline para o emissor {issuer}.",
                 "trustline_not_authorized": "{asset} não é oferecido na finalização da compra: o emissor {issuer} não autorizou a trustline.",
                 "trustline_frozen": "{asset} não é oferecido na finalização da compra: a trustline está congelada.",

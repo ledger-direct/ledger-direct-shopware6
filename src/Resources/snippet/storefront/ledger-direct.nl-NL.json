@@ -5,7 +5,7 @@
       "testnetBadge": "Testnet – geen echt geld",
       "orderLabel": "Bestelling",
       "amountLabel": "Te verzenden bedrag",
-      "amountLabelRemaining": "Nog te verzenden",
+      "amountLabelRemaining": "Openstaand bedrag",
       "copy": "Kopiëren",
       "copied": "Gekopieerd",
       "copyAmount": "Bedrag kopiëren",
@@ -17,7 +17,7 @@
       "stepAccount": "Ontvangstadres",
       "requiredBadge": "Verplicht",
       "stepIssuer": "Token en uitgever",
-      "issuerHint": "Alleen %asset% van precies deze uitgever wordt gecrediteerd. Uw wallet heeft daarvoor een trustline nodig.",
+      "issuerHint": "Alleen %asset% van precies deze uitgever wordt verrekend. Uw wallet heeft daarvoor een trustline nodig.",
       "exchangeSummary": "Betaalt u vanaf een cryptobeurs?",
       "asideLabel": "Betalen met een wallet",
       "qrOpen": "Scannen met een wallet-app",
@@ -28,27 +28,27 @@
       "walletAppButton": "Openen in wallet-app",
       "walletLoading": "Wallets zoeken …",
       "walletNone": "Geen browserwallet gevonden. Gebruik de QR-code of kopieer de gegevens.",
-      "walletHint": "De wallet vult de betaling vooraf in. U bevestigt deze daar.",
+      "walletHint": "De wallet vult de betaling in. U bevestigt die daar.",
       "walletFound": "gevonden",
       "walletConfirm": "Bevestig in uw wallet …",
       "walletSubmitted": "Verzonden – we controleren de ontvangst.",
       "walletErrorUnavailable": "De wallet reageert niet. Is de extensie geïnstalleerd en ontgrendeld?",
       "walletErrorNetwork": "De verbinding met de wallet is mislukt – probeer het opnieuw.",
-      "walletErrorMismatch": "Uw wallet staat op een ander netwerk ingesteld. Schakel over naar %network%.",
+      "walletErrorMismatch": "Uw wallet staat op een ander netwerk. Schakel over naar %network%.",
       "walletErrorOther": "De betaling via de wallet is mislukt. Gebruik de QR-code of kopieer de gegevens.",
-      "detailTotal": "Totaalbedrag bestelling",
+      "detailTotal": "Totaal van de bestelling",
       "detailRate": "Wisselkoers",
       "detailNetwork": "Netwerk",
       "rateSentence": "1 %asset% = %rate% %currency%",
-      "statusWaiting": "We wachten op uw betaling. Deze pagina wordt automatisch bijgewerkt.",
+      "statusWaiting": "We wachten op uw betaling. Deze pagina wordt vanzelf bijgewerkt.",
       "statusPartial": "Deelbetaling ontvangen. We wachten op de rest.",
-      "statusWrongAsset": "Betaling in de verkeerde token ontvangen. We wachten op het juiste bedrag.",
+      "statusWrongAsset": "Betaling in het verkeerde token ontvangen. We wachten op het juiste bedrag.",
       "statusExpired": "Een late betaling van het oude bedrag wordt nog steeds herkend.",
       "checkPaymentButton": "Betaling nu controleren",
-      "checking": "Bezig met controleren …",
-      "checkNothingFound": "Nog geen betaling gevonden. Een transactie duurt meestal maar enkele seconden – controleer het zo opnieuw.",
+      "checking": "Controleren …",
+      "checkNothingFound": "Nog geen betaling gevonden. Een transactie duurt meestal maar enkele seconden – controleer het zo meteen opnieuw.",
       "partialArrived": "%paid% is binnengekomen – dank u. Er ontbreekt nog %shortfall%.",
-      "wrongAssetArrived": "Er is een betaling van %paid% binnengekomen, maar deze bestelling verwacht %asset% van de hieronder genoemde uitgever. Deze kan daarom niet worden gecrediteerd.",
+      "wrongAssetArrived": "Er is een betaling van %paid% binnengekomen, maar deze bestelling verwacht %asset% van de hieronder genoemde uitgever. Deze kan niet worden verrekend.",
       "wrongAssetSend": "Stuur %shortfall% – of neem contact met ons op over de betaling die u al hebt gedaan.",
       "expiredTitle": "Dit bedrag is niet meer geldig.",
       "expiredRate": "De wisselkoers kan sindsdien zijn veranderd.",
@@ -59,17 +59,17 @@
       "successAmount": "%amount% is binnengekomen.",
       "successHash": "Transactie",
       "successRedirect": "Door naar uw bestelling over %seconds% s",
-      "successButton": "Door naar uw bestelling",
+      "successButton": "Verder naar uw bestelling",
       "backToCart": "Terug naar winkelwagen",
       "identifier": {
         "XRPL": {
           "step": "Destination tag",
           "copy": "Destination tag kopiëren",
-          "hint": "Zonder deze tag kunnen we de betaling niet aan uw bestelling koppelen.",
-          "exchangeHint": "De destination tag is verplicht, en het bedrag moet na aftrek van de kosten van de cryptobeurs nog volledig aankomen.",
-          "qrCaption": "Scan met Xaman of een andere XRPL-wallet. Adres, destination tag en bedrag zijn vooraf ingevuld – controleer ze voor het verzenden.",
+          "hint": "Zonder deze destination tag kunnen we de betaling niet aan uw bestelling koppelen.",
+          "exchangeHint": "De destination tag is verplicht en het bedrag moet na aftrek van de kosten van de beurs nog volledig aankomen.",
+          "qrCaption": "Scan met Xaman of een andere XRPL-wallet. Adres, destination tag en bedrag worden ingevuld – controleer ze vóór het verzenden.",
           "qrLabel": "QR-code met adres, destination tag en bedrag",
-          "partialSendRest": "Stuur de rest naar hetzelfde adres met dezelfde destination tag."
+          "partialSendRest": "Stuur het resterende bedrag naar hetzelfde adres met dezelfde destination tag."
         },
         "STELLAR": {
           "step": "Memo-ID",
@@ -83,11 +83,11 @@
         "XAHAU": {
           "step": "Destination tag",
           "copy": "Destination tag kopiëren",
-          "hint": "Zonder deze tag kunnen we de betaling niet aan uw bestelling koppelen.",
-          "exchangeHint": "De destination tag is verplicht, en het bedrag moet na aftrek van de kosten van de cryptobeurs nog volledig aankomen.",
-          "qrCaption": "Scan met Xaman. Adres, destination tag en bedrag zijn vooraf ingevuld, en Xaman biedt aan over te schakelen naar het Xahau-netwerk als een ander netwerk is ingesteld – controleer ze voor het verzenden.",
+          "hint": "Zonder deze destination tag kunnen we de betaling niet aan uw bestelling koppelen.",
+          "exchangeHint": "De destination tag is verplicht en het bedrag moet na aftrek van de kosten van de beurs nog volledig aankomen.",
+          "qrCaption": "Scan met Xaman. Adres, destination tag en bedrag worden ingevuld, en Xaman biedt aan over te schakelen naar het Xahau-netwerk als een ander netwerk is ingesteld – controleer ze vóór het verzenden.",
           "qrLabel": "QR-code met adres, destination tag en bedrag",
-          "partialSendRest": "Stuur de rest naar hetzelfde adres met dezelfde destination tag."
+          "partialSendRest": "Stuur het resterende bedrag naar hetzelfde adres met dezelfde destination tag."
         }
       },
       "network": {
@@ -105,9 +105,9 @@
         }
       },
       "poweredBy": {
-        "XRPL": "Rechtstreeks betaald op de XRP Ledger, zonder tussenpersoon.",
+        "XRPL": "Rechtstreeks betaald op de XRP Ledger, zonder tussenpartij.",
         "STELLAR": "Rechtstreeks betaald op het Stellar-netwerk, zonder tussenpersoon.",
-        "XAHAU": "Rechtstreeks betaald op het Xahau-netwerk, zonder tussenpersoon."
+        "XAHAU": "Rechtstreeks betaald op het Xahau-netwerk, zonder tussenpartij."
       }
     },
     "checkout": {

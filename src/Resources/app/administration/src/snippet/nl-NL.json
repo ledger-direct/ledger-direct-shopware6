@@ -40,7 +40,7 @@
                     "XAHAU": "Het account {account} is nog niet geactiveerd op het {network}. De eerste betaling van minstens {reserve} {native} activeert het; tot dan mislukken kleinere bestellingen.",
                     "STELLAR": "Het account {account} bestaat niet op het {network}. Een Stellar-betaling kan het niet aanmaken, daarom wordt bij het afrekenen niets op Stellar aangeboden tot het account gefinancierd is."
                 },
-                "deposit_auth": "Op het account is Deposit Authorization ingesteld: alleen afzenders die u hebt gemachtigd, kunnen betalen. De betaalmethoden blijven bij het afrekenen beschikbaar.",
+                "deposit_auth": "Op het account is Deposit Authorization ingesteld: alleen afzenders die u hebt gemachtigd, kunnen betalen. De betaalmethoden blijven beschikbaar bij het afrekenen.",
                 "trustline_missing": "{asset} wordt bij het afrekenen niet aangeboden: het account heeft geen trustline naar de uitgever {issuer}.",
                 "trustline_not_authorized": "{asset} wordt bij het afrekenen niet aangeboden: de uitgever {issuer} heeft de trustline niet geautoriseerd.",
                 "trustline_frozen": "{asset} wordt bij het afrekenen niet aangeboden: de trustline is bevroren.",
