@@ -395,7 +395,8 @@ What runs depends on what changed: a `changes` job (`.github/actions/changes`, t
 LedgerDirect plugin repository) classifies the diff of a push or pull request. Every push and pull
 request runs `.github/workflows/ci.yml`: `shopware-cli extension validate` (basic and
 store-compliance checks as a gate, the full validation non-blocking) always, and both PHPUnit suites
-in a dockware container with Shopware 6.7 unless only documentation changed. `try.yml` builds the try
+in a dockware container with Shopware 6.7 unless only documentation changed, twice: with the newest
+core the plugin allows and with the oldest, its own dependencies at their lowest versions. `try.yml` builds the try
 stack in `dev/try` from the checkout when something the shop runs changed (code, Composer, `dev/try`),
 smoke-tests it (`dev/try/smoke.sh`: catalogue, guest order, payment page, PS-01 and PS-07) and walks
 the storefront in a real browser with XRP, RLUSD and USDC (`dev/try/browser/visitor.mjs`); it
