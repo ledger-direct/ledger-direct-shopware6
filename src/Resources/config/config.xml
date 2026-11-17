@@ -58,6 +58,11 @@
             <min>60</min>
             <max>3600</max>
         </input-field>
+        <!-- What the saved receiving account lacks (trust line, activation, deposit authorization); read-only, stores nothing. -->
+        <component name="ledger-direct-account-check">
+            <name>xrplAccountCheck</name>
+            <chain>XRPL</chain>
+        </component>
     </card>
 
     <card>
@@ -93,6 +98,11 @@
             <label>Receiving account (Testnet)</label>
             <label lang="de-DE">Empfangskonto (Testnet)</label>
         </input-field>
+        <!-- What the saved receiving account lacks (trust line, activation, deposit authorization); read-only, stores nothing. -->
+        <component name="ledger-direct-account-check">
+            <name>xahauAccountCheck</name>
+            <chain>XAHAU</chain>
+        </component>
     </card>
 
     <card>
@@ -146,6 +156,11 @@
             <helpText lang="de-DE">EURC von Circle, an den Euro gebunden. Erscheint im Checkout nur, solange das Empfangskonto eine Trustline zum Herausgeber hat.</helpText>
             <defaultValue>true</defaultValue>
         </input-field>
+        <!-- What the saved receiving account lacks (trust line, activation, deposit authorization); read-only, stores nothing. -->
+        <component name="ledger-direct-account-check">
+            <name>stellarAccountCheck</name>
+            <chain>STELLAR</chain>
+        </component>
     </card>
 
     <card>

@@ -28,6 +28,26 @@
                 "STELLAR": "Memo ID",
                 "XAHAU": "Destination tag"
             }
+        },
+        "accountCheck": {
+            "hint": "Checked: the saved receiving account on the ledger. After saving a change, check again.",
+            "recheck": "Check again",
+            "clean": "The receiving account can take every asset that is switched on.",
+            "unavailable": "The receiving account could not be checked.",
+            "finding": {
+                "account_missing": {
+                    "XRPL": "The account {account} is not activated on the {network} yet. The first payment of at least {reserve} {native} activates it; until then orders below that fail, and RLUSD and USDC are not offered.",
+                    "XAHAU": "The account {account} is not activated on the {network} yet. The first payment of at least {reserve} {native} activates it; until then orders below that fail.",
+                    "STELLAR": "The account {account} does not exist on the {network}. A Stellar payment cannot create it, so the checkout offers nothing on Stellar until the account is funded."
+                },
+                "deposit_auth": "Deposit authorization is set on the account: only senders you authorized can pay. The payment methods stay in the checkout.",
+                "trustline_missing": "{asset} is not offered in the checkout: the account has no trust line to the issuer {issuer}.",
+                "trustline_not_authorized": "{asset} is not offered in the checkout: the issuer {issuer} has not authorized the trust line.",
+                "trustline_frozen": "{asset} is not offered in the checkout: the trust line is frozen.",
+                "trustline_full": "{asset} is not offered in the checkout: the trust line has reached its limit.",
+                "issuer_frozen": "{asset} is not offered in the checkout: the issuer {issuer} has frozen all its trust lines.",
+                "not_checked": "The ledger could not be asked just now ({error}). Until it can, tokens are not offered; {native} is."
+            }
         }
     }
 }

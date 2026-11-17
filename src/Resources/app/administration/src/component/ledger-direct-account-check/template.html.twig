@@ -1,0 +1,34 @@
+{% block ledger_direct_account_check %}
+{# Nothing at all for a chain that is off or has no account: nothing is offered there, nothing to check. #}
+<div class="ledger-direct-account-check">
+    {% block ledger_direct_account_check_findings %}
+    <template v-if="result && result.account">
+        <mt-banner
+            v-for="(finding, index) in findings"
+            :key="index"
+            :variant="variant(finding)"
+            :closable="false"
+        >
+            {{ message(finding) }}
+        </mt-banner>
+
+        <mt-banner v-if="!isLoading && findings.length === 0" variant="positive" :closable="false">
+            {{ $tc('ledger-direct.accountCheck.clean') }}
+        </mt-banner>
+    </template>
+
+    <mt-banner v-if="failed" variant="critical" :closable="false">
+        {{ $tc('ledger-direct.accountCheck.unavailable') }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block ledger_direct_account_check_actions %}
+    <p v-if="(result && result.account) || failed" class="ledger-direct-account-check__hint">
+        {{ $tc('ledger-direct.accountCheck.hint') }}
+        <mt-button size="small" variant="secondary" :is-loading="isLoading" @click="check">
+            {{ $tc('ledger-direct.accountCheck.recheck') }}
+        </mt-button>
+    </p>
+    {% endblock %}
+</div>
+{% endblock %}
