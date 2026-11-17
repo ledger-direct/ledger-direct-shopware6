@@ -1,0 +1,53 @@
+{
+    "ledger-direct": {
+        "paymentCard": {
+            "title": "LedgerDirect",
+            "state": {
+                "waiting": "Esperando el pago",
+                "expired": "Cotización caducada, nada recibido",
+                "partial": "Pagado parcialmente",
+                "wrong_asset": "Pago en el activo equivocado",
+                "settled": "Pagado"
+            },
+            "asset": "Activo",
+            "amountRequested": "Importe solicitado",
+            "exchangeRate": "Tipo de cambio",
+            "destinationAccount": "Cuenta receptora",
+            "issuer": "Emisor",
+            "quoteValidUntil": "Cotización válida hasta",
+            "amountReceived": "Importe recibido",
+            "receivedWrongToken": "{amount} {currency} del emisor {issuer} – no es el activo solicitado, no abonado",
+            "receivedWrongNative": "{amount} {currency} – no es el activo solicitado, no abonado",
+            "amountOutstanding": "Importe pendiente",
+            "transaction": "Transacción",
+            "ctid": "CTID",
+            "unreadable": "El registro de pago de esta transacción no se puede leer.",
+            "unavailable": "No se ha podido cargar la información del pago.",
+            "identifier": {
+                "XRPL": "Destination tag",
+                "STELLAR": "ID de memo",
+                "XAHAU": "Destination tag"
+            }
+        },
+        "accountCheck": {
+            "hint": "Se comprueba la cuenta receptora guardada en el ledger. Tras guardar un cambio, vuelva a comprobarla.",
+            "recheck": "Volver a comprobar",
+            "clean": "La cuenta receptora puede recibir todos los activos activados.",
+            "unavailable": "No se ha podido comprobar la cuenta receptora.",
+            "finding": {
+                "account_missing": {
+                    "XRPL": "La cuenta {account} aún no está activada en la {network}. El primer pago de al menos {reserve} {native} la activa; hasta entonces, los pedidos inferiores fallan, y RLUSD y USDC no se ofrecen.",
+                    "XAHAU": "La cuenta {account} aún no está activada en la {network}. El primer pago de al menos {reserve} {native} la activa; hasta entonces, los pedidos inferiores fallan.",
+                    "STELLAR": "La cuenta {account} no existe en la {network}. Un pago de Stellar no puede crearla, por lo que en el pago no se ofrece nada en Stellar hasta que la cuenta tenga fondos."
+                },
+                "deposit_auth": "La cuenta tiene activada Deposit Authorization: solo pueden pagar los remitentes que usted autorizó. Los métodos de pago siguen disponibles en el pago.",
+                "trustline_missing": "{asset} no se ofrece en el pago: la cuenta no tiene trustline con el emisor {issuer}.",
+                "trustline_not_authorized": "{asset} no se ofrece en el pago: el emisor {issuer} no ha autorizado la trustline.",
+                "trustline_frozen": "{asset} no se ofrece en el pago: la trustline está congelada.",
+                "trustline_full": "{asset} no se ofrece en el pago: la trustline ha alcanzado su límite.",
+                "issuer_frozen": "{asset} no se ofrece en el pago: el emisor {issuer} ha congelado todas sus trustlines.",
+                "not_checked": "No se ha podido consultar el ledger en este momento ({error}). Mientras tanto, no se ofrecen tokens; {native} sí."
+            }
+        }
+    }
+}

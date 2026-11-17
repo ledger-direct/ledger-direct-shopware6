@@ -4,18 +4,18 @@
             "title": "LedgerDirect",
             "state": {
                 "waiting": "Warten auf Zahlung",
-                "expired": "Kurs abgelaufen, nichts eingegangen",
+                "expired": "Kursgültigkeit abgelaufen, nichts eingegangen",
                 "partial": "Teilweise bezahlt",
                 "wrong_asset": "Zahlung im falschen Asset",
                 "settled": "Bezahlt"
             },
             "asset": "Asset",
             "amountRequested": "Geforderter Betrag",
-            "exchangeRate": "Wechselkurs",
+            "exchangeRate": "Kurs",
             "destinationAccount": "Empfangskonto",
             "issuer": "Herausgeber",
             "quoteValidUntil": "Kurs gültig bis",
-            "amountReceived": "Eingegangen",
+            "amountReceived": "Eingegangener Betrag",
             "receivedWrongToken": "{amount} {currency} von Herausgeber {issuer} – nicht das geforderte Asset, nicht angerechnet",
             "receivedWrongNative": "{amount} {currency} – nicht das geforderte Asset, nicht angerechnet",
             "amountOutstanding": "Offener Betrag",
@@ -38,14 +38,14 @@
                 "account_missing": {
                     "XRPL": "Das Konto {account} ist im {network} noch nicht aktiviert. Erst eine Zahlung ab {reserve} {native} aktiviert es; bis dahin schlagen kleinere Bestellungen fehl, und RLUSD und USDC werden nicht angeboten.",
                     "XAHAU": "Das Konto {account} ist im {network} noch nicht aktiviert. Erst eine Zahlung ab {reserve} {native} aktiviert es; bis dahin schlagen kleinere Bestellungen fehl.",
-                    "STELLAR": "Das Konto {account} existiert im {network} nicht. Eine Stellar-Zahlung kann es nicht anlegen, deshalb bietet der Checkout auf Stellar nichts an, bis das Konto finanziert ist."
+                    "STELLAR": "Das Konto {account} existiert im {network} nicht. Eine Stellar-Zahlung kann es nicht anlegen, deshalb bietet die Kasse auf Stellar nichts an, bis das Konto finanziert ist."
                 },
-                "deposit_auth": "Auf dem Konto ist Deposit Authorization gesetzt: Nur vorab freigegebene Absender können zahlen. Die Zahlarten bleiben im Checkout.",
-                "trustline_missing": "{asset} wird im Checkout nicht angeboten: Dem Konto fehlt die Trustline zum Issuer {issuer}.",
-                "trustline_not_authorized": "{asset} wird im Checkout nicht angeboten: Der Issuer {issuer} hat die Trustline nicht autorisiert.",
-                "trustline_frozen": "{asset} wird im Checkout nicht angeboten: Die Trustline ist eingefroren.",
-                "trustline_full": "{asset} wird im Checkout nicht angeboten: Das Limit der Trustline ist erreicht.",
-                "issuer_frozen": "{asset} wird im Checkout nicht angeboten: Der Issuer {issuer} hat alle Trustlines eingefroren.",
+                "deposit_auth": "Auf dem Konto ist Deposit Authorization gesetzt: Nur von Ihnen freigegebene Absender können zahlen. Die Zahlungsarten bleiben an der Kasse.",
+                "trustline_missing": "{asset} wird an der Kasse nicht angeboten: Dem Konto fehlt die Trustline zum Herausgeber {issuer}.",
+                "trustline_not_authorized": "{asset} wird an der Kasse nicht angeboten: Der Herausgeber {issuer} hat die Trustline nicht autorisiert.",
+                "trustline_frozen": "{asset} wird an der Kasse nicht angeboten: Die Trustline ist eingefroren.",
+                "trustline_full": "{asset} wird an der Kasse nicht angeboten: Das Limit der Trustline ist erreicht.",
+                "issuer_frozen": "{asset} wird an der Kasse nicht angeboten: Der Herausgeber {issuer} hat alle Trustlines eingefroren.",
                 "not_checked": "Der Ledger war gerade nicht erreichbar ({error}). Bis dahin werden keine Tokens angeboten, {native} schon."
             }
         }

@@ -1,0 +1,53 @@
+{
+    "ledger-direct": {
+        "paymentCard": {
+            "title": "LedgerDirect",
+            "state": {
+                "waiting": "En attente de paiement",
+                "expired": "Cotation expirée, rien reçu",
+                "partial": "Partiellement payé",
+                "wrong_asset": "Paiement dans le mauvais actif",
+                "settled": "Payé"
+            },
+            "asset": "Actif",
+            "amountRequested": "Montant demandé",
+            "exchangeRate": "Taux de change",
+            "destinationAccount": "Compte de réception",
+            "issuer": "Émetteur",
+            "quoteValidUntil": "Cotation valable jusqu'au",
+            "amountReceived": "Montant reçu",
+            "receivedWrongToken": "{amount} {currency} de l'émetteur {issuer} – pas l'actif demandé, non crédité",
+            "receivedWrongNative": "{amount} {currency} – pas l'actif demandé, non crédité",
+            "amountOutstanding": "Montant restant dû",
+            "transaction": "Transaction",
+            "ctid": "CTID",
+            "unreadable": "L'enregistrement de paiement de cette transaction est illisible.",
+            "unavailable": "Les informations de paiement n'ont pas pu être chargées.",
+            "identifier": {
+                "XRPL": "Destination tag",
+                "STELLAR": "ID de mémo",
+                "XAHAU": "Destination tag"
+            }
+        },
+        "accountCheck": {
+            "hint": "Vérification du compte de réception enregistré, sur le registre. Après l'enregistrement d'une modification, vérifiez à nouveau.",
+            "recheck": "Vérifier à nouveau",
+            "clean": "Le compte de réception peut recevoir tous les actifs activés.",
+            "unavailable": "Le compte de réception n'a pas pu être vérifié.",
+            "finding": {
+                "account_missing": {
+                    "XRPL": "Le compte {account} n'est pas encore activé sur le {network}. Le premier paiement d'au moins {reserve} {native} l'active ; d'ici là, les commandes inférieures à ce montant échouent, et RLUSD et USDC ne sont pas proposés.",
+                    "XAHAU": "Le compte {account} n'est pas encore activé sur le {network}. Le premier paiement d'au moins {reserve} {native} l'active ; d'ici là, les commandes inférieures à ce montant échouent.",
+                    "STELLAR": "Le compte {account} n'existe pas sur le {network}. Un paiement Stellar ne peut pas le créer ; rien n'est donc proposé sur Stellar au paiement tant que le compte n'est pas approvisionné."
+                },
+                "deposit_auth": "Deposit Authorization est activé sur le compte : seuls les expéditeurs que vous avez autorisés peuvent payer. Les moyens de paiement restent proposés au paiement.",
+                "trustline_missing": "{asset} n'est pas proposé au paiement : le compte n'a pas de trustline vers l'émetteur {issuer}.",
+                "trustline_not_authorized": "{asset} n'est pas proposé au paiement : l'émetteur {issuer} n'a pas autorisé la trustline.",
+                "trustline_frozen": "{asset} n'est pas proposé au paiement : la trustline est gelée.",
+                "trustline_full": "{asset} n'est pas proposé au paiement : la trustline a atteint sa limite.",
+                "issuer_frozen": "{asset} n'est pas proposé au paiement : l'émetteur {issuer} a gelé toutes ses trustlines.",
+                "not_checked": "Le registre n'a pas pu être interrogé pour l'instant ({error}). D'ici là, aucun jeton n'est proposé ; {native} l'est."
+            }
+        }
+    }
+}

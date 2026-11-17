@@ -81,21 +81,37 @@ class PaymentMethodInstaller
         'usdc-payment' => UsdcPaymentHandler::class,
     ];
 
-    /** Names and descriptions as the three XRPL methods have always shown them. */
-    private const TRANSLATIONS_BY_TYPE = [
-        'xrp-payment' => [
-            'de-DE' => ['name' => 'XRP (XRPL)', 'description' => 'Mit XRP bezahlen'],
-            'en-GB' => ['name' => 'XRP on XRPL', 'description' => 'Pay with XRP'],
-        ],
-        'rlusd-payment' => [
-            'de-DE' => ['name' => 'RLUSD (XRPL)', 'description' => 'Mit RLUSD (XRPL) bezahlen'],
-            'en-GB' => ['name' => 'RLUSD on XRPL', 'description' => 'Pay with RLUSD (XRPL)'],
-        ],
-        'usdc-payment' => [
-            'de-DE' => ['name' => 'USDC (XRPL)', 'description' => 'Mit USDC (XRPL) bezahlen'],
-            'en-GB' => ['name' => 'USDC on XRPL', 'description' => 'Pay with USDC (XRPL)'],
-        ],
+    /**
+     * Name and description per storefront language, `%1$s` the asset, `%2$s`
+     * the chain. Written as locale codes: Shopware drops a locale the shop has
+     * no language for, so a shop without French gets no French row.
+     */
+    private const NAME_BY_LOCALE = [
+        'en-GB' => '%1$s on %2$s',
+        'de-DE' => '%1$s (%2$s)',
+        'fr-FR' => '%1$s (%2$s)',
+        'nl-NL' => '%1$s (%2$s)',
+        'es-ES' => '%1$s (%2$s)',
+        'pt-PT' => '%1$s (%2$s)',
     ];
+
+    private const DESCRIPTION_BY_LOCALE = [
+        'en-GB' => 'Pay with %s',
+        'de-DE' => 'Mit %s bezahlen',
+        'fr-FR' => 'Payer avec %s',
+        'nl-NL' => 'Betalen met %s',
+        'es-ES' => 'Pagar con %s',
+        'pt-PT' => 'Pagar com %s',
+    ];
+
+    /**
+     * The three XRPL methods read as they always have: the chain as "XRPL",
+     * not the catalogue's label, and XRP without it in the description
+     * ("Pay with XRP").
+     */
+    private const LEGACY_CHAIN_LABEL = 'XRPL';
+
+    private const DESCRIPTION_WITHOUT_CHAIN = ['xrp-payment'];
 
     private EntityRepository $paymentMethodRepository;
 
@@ -198,15 +214,35 @@ class PaymentMethodInstaller
                     'handlerIdentifier' => self::LEGACY_HANDLER_BY_TYPE[$asset->type] ?? self::HANDLER_BY_CHAIN[$chain->chain],
                     'name' => $asset->code,
                     'technicalName' => 'ledgerdirect_' . strtolower($chain->chain) . '_' . strtolower($asset->code),
-                    'translations' => self::TRANSLATIONS_BY_TYPE[$asset->type] ?? [
-                        'de-DE' => ['name' => $asset->code . ' (' . $chain->label . ')', 'description' => 'Mit ' . $asset->code . ' (' . $chain->label . ') bezahlen'],
-                        'en-GB' => ['name' => $asset->code . ' on ' . $chain->label, 'description' => 'Pay with ' . $asset->code . ' (' . $chain->label . ')'],
-                    ],
+                    'translations' => self::translationsFor($asset, $chain),
                 ];
             }
         }
 
         return $methods;
+    }
+
+    /**
+     * The method's name and description in every storefront language.
+     *
+     * @return array<string, array{name: string, description: string}>
+     */
+    private static function translationsFor(AssetDescriptor $asset, ChainDescriptor $chain): array
+    {
+        $chainLabel = isset(self::LEGACY_ID_BY_TYPE[$asset->type]) ? self::LEGACY_CHAIN_LABEL : $chain->label;
+        $subject = in_array($asset->type, self::DESCRIPTION_WITHOUT_CHAIN, true)
+            ? $asset->code
+            : $asset->code . ' (' . $chainLabel . ')';
+        $translations = [];
+
+        foreach (self::NAME_BY_LOCALE as $locale => $name) {
+            $translations[$locale] = [
+                'name' => sprintf($name, $asset->code, $chainLabel),
+                'description' => sprintf(self::DESCRIPTION_BY_LOCALE[$locale], $subject),
+            ];
+        }
+
+        return $translations;
     }
 
     /**

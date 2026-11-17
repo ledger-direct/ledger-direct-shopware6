@@ -1,0 +1,53 @@
+{
+    "ledger-direct": {
+        "paymentCard": {
+            "title": "LedgerDirect",
+            "state": {
+                "waiting": "Wacht op betaling",
+                "expired": "Koersofferte verlopen, niets ontvangen",
+                "partial": "Gedeeltelijk betaald",
+                "wrong_asset": "Betaling in het verkeerde asset",
+                "settled": "Betaald"
+            },
+            "asset": "Asset",
+            "amountRequested": "Gevraagd bedrag",
+            "exchangeRate": "Wisselkoers",
+            "destinationAccount": "Ontvangstaccount",
+            "issuer": "Uitgever",
+            "quoteValidUntil": "Koersofferte geldig tot",
+            "amountReceived": "Ontvangen bedrag",
+            "receivedWrongToken": "{amount} {currency} van uitgever {issuer} – niet het gevraagde asset, niet gecrediteerd",
+            "receivedWrongNative": "{amount} {currency} – niet het gevraagde asset, niet gecrediteerd",
+            "amountOutstanding": "Openstaand bedrag",
+            "transaction": "Transactie",
+            "ctid": "CTID",
+            "unreadable": "De betalingsgegevens van deze transactie zijn niet leesbaar.",
+            "unavailable": "De betalingsinformatie kon niet worden geladen.",
+            "identifier": {
+                "XRPL": "Destination tag",
+                "STELLAR": "Memo-ID",
+                "XAHAU": "Destination tag"
+            }
+        },
+        "accountCheck": {
+            "hint": "Gecontroleerd wordt het opgeslagen ontvangstaccount op de ledger. Controleer opnieuw nadat u een wijziging hebt opgeslagen.",
+            "recheck": "Opnieuw controleren",
+            "clean": "Het ontvangstaccount kan alle ingeschakelde assets ontvangen.",
+            "unavailable": "Het ontvangstaccount kon niet worden gecontroleerd.",
+            "finding": {
+                "account_missing": {
+                    "XRPL": "Het account {account} is nog niet geactiveerd op het {network}. De eerste betaling van minstens {reserve} {native} activeert het; tot dan mislukken kleinere bestellingen, en RLUSD en USDC worden niet aangeboden.",
+                    "XAHAU": "Het account {account} is nog niet geactiveerd op het {network}. De eerste betaling van minstens {reserve} {native} activeert het; tot dan mislukken kleinere bestellingen.",
+                    "STELLAR": "Het account {account} bestaat niet op het {network}. Een Stellar-betaling kan het niet aanmaken, daarom wordt bij het afrekenen niets op Stellar aangeboden tot het account gefinancierd is."
+                },
+                "deposit_auth": "Op het account is Deposit Authorization ingesteld: alleen afzenders die u hebt gemachtigd, kunnen betalen. De betaalmethoden blijven beschikbaar bij het afrekenen.",
+                "trustline_missing": "{asset} wordt bij het afrekenen niet aangeboden: het account heeft geen trustline naar de uitgever {issuer}.",
+                "trustline_not_authorized": "{asset} wordt bij het afrekenen niet aangeboden: de uitgever {issuer} heeft de trustline niet geautoriseerd.",
+                "trustline_frozen": "{asset} wordt bij het afrekenen niet aangeboden: de trustline is bevroren.",
+                "trustline_full": "{asset} wordt bij het afrekenen niet aangeboden: de limiet van de trustline is bereikt.",
+                "issuer_frozen": "{asset} wordt bij het afrekenen niet aangeboden: de uitgever {issuer} heeft al zijn trustlines bevroren.",
+                "not_checked": "De ledger kon zojuist niet worden bevraagd ({error}). Tot dat weer lukt, worden geen tokens aangeboden; {native} wel."
+            }
+        }
+    }
+}

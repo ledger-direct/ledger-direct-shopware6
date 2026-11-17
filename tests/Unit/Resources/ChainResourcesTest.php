@@ -18,7 +18,7 @@ class ChainResourcesTest extends TestCase
 {
     private const RESOURCES = __DIR__ . '/../../../src/Resources';
 
-    private const LOCALES = ['en-GB', 'de-DE'];
+    private const LOCALES = ['en-GB', 'de-DE', 'fr-FR', 'nl-NL', 'es-ES', 'pt-PT'];
 
     public function testEveryHandledChainHasItsSentencesOnThePaymentPage(): void
     {

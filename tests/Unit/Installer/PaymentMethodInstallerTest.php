@@ -99,6 +99,26 @@ class PaymentMethodInstallerTest extends TestCase
     }
 
     /**
+     * Every method carries a name and a description in all six storefront
+     * languages; the XRPL ones read in English and German as they always
+     * have, so an update does not rename a method a merchant knows.
+     */
+    public function testEveryMethodIsNamedInEveryStorefrontLanguage(): void
+    {
+        foreach (PaymentMethodInstaller::paymentMethods() as $method) {
+            $this->assertSame(['en-GB', 'de-DE', 'fr-FR', 'nl-NL', 'es-ES', 'pt-PT'], array_keys($method['translations']), $method['technicalName']);
+        }
+
+        $byId = array_column(PaymentMethodInstaller::paymentMethods(), null, 'id');
+        $this->assertSame(['name' => 'XRP on XRPL', 'description' => 'Pay with XRP'], $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['en-GB']);
+        $this->assertSame(['name' => 'XRP (XRPL)', 'description' => 'Mit XRP bezahlen'], $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['de-DE']);
+        $this->assertSame(['name' => 'RLUSD on XRPL', 'description' => 'Pay with RLUSD (XRPL)'], $byId[PaymentMethodInstaller::RLUSD_PAYMENT_ID]['translations']['en-GB']);
+        $this->assertSame(['name' => 'USDC (XRPL)', 'description' => 'Mit USDC (XRPL) bezahlen'], $byId[PaymentMethodInstaller::USDC_PAYMENT_ID]['translations']['de-DE']);
+        $this->assertSame(['name' => 'XAH (Xahau)', 'description' => 'Pagar com XAH (Xahau)'], $byId[md5('xahau-xah-payment')]['translations']['pt-PT']);
+        $this->assertSame(['name' => 'XRP (XRPL)', 'description' => 'Betalen met XRP'], $byId[PaymentMethodInstaller::XRP_PAYMENT_ID]['translations']['nl-NL']);
+    }
+
+    /**
      * The Stellar methods: id from the type, the chain handler, a technical
      * name and a name built from the catalogue - no constant per asset.
      */
