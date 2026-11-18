@@ -11,7 +11,7 @@ import { METHODS, walkToPaymentPage } from './walk.mjs';
 const BASE = (process.argv[2] ?? 'http://localhost:8091').replace(/\/$/, '');
 const OUT = process.argv[3] ?? '.';
 const ASSET = (process.argv[4] ?? 'xrp').toLowerCase();
-if (!METHODS[ASSET]) throw new Error(`unknown asset ${ASSET}: xrp, rlusd, usdc or xah`);
+if (!Object.hasOwn(METHODS, ASSET)) throw new Error(`unknown asset ${ASSET}: xrp, rlusd, usdc or xah`);
 
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

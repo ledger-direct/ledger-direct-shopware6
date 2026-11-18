@@ -27,8 +27,11 @@ export const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca603
  */
 export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (name, fn) => fn(), log = () => {} } = {}) {
   const ASSET = asset.toLowerCase();
-  if (!METHODS[ASSET]) throw new Error(`unknown asset ${asset}: xrp, rlusd, usdc or xah`);
-  const BASE = (base ?? new URL(page.url()).origin).replace(/\/$/, '');
+  if (!Object.hasOwn(METHODS, ASSET)) throw new Error(`unknown asset ${asset}: xrp, rlusd, usdc or xah`);
+  const origin = new URL(page.url()).origin;
+  if (!base && origin === 'null') throw new Error('walkToPaymentPage: pass base, the page is not on the shop yet');
+  const BASE = (base ?? origin).replace(/\/$/, '');
+  const home = new URL(`${BASE}/`);
 
   // Shopware's storefront shows a loader while it reloads a part of the page (off-canvas cart, the
   // checkout after a change of payment method); a click while it is up goes nowhere.
@@ -51,7 +54,8 @@ export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (nam
   };
 
   await step('1-home', async () => {
-    if (page.url() !== `${BASE}/`) await page.goto(`${BASE}/`, { waitUntil: 'networkidle0', timeout: 60000 });
+    const here = new URL(page.url());
+    if (here.origin !== home.origin || here.pathname !== home.pathname) await page.goto(home.href, { waitUntil: 'networkidle0', timeout: 60000 });
     // The cookie notice covers the lower edge of the page; a visitor would dismiss it first.
     if (await visible('.js-cookie-permission-button')) {
       await page.click('.js-cookie-permission-button');
