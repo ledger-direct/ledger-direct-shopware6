@@ -1,3 +1,22 @@
+# 1.11.0
+- Benötigt `hardcastle/ledger-direct-core` 0.12.0. Die Kasse bietet nur an, was das Empfangskonto
+  annehmen kann. Ein Token, den das Konto nicht empfangen kann (keine Trustline, eingefroren, voll,
+  nicht autorisiert), fehlt in der Auswahl, damit keine Bestellung entsteht, die niemand bezahlen kann.
+  Ein noch nicht aktiviertes Konto im XRP Ledger oder in Xahau behält das native Asset, dessen erste
+  Zahlung es aktiviert. Ist der Knoten nicht erreichbar, fehlen die Token und das native Asset bleibt
+- Stellar: Einem Konto, das es nicht gibt, wird nichts angeboten, auch kein XLM. Eine Stellar-Zahlung
+  legt ihr Ziel nie an
+- Die Konfigurationskarte jeder Chain zeigt, was dem gespeicherten Empfangskonto fehlt, neben den
+  Optionen, die schaltbar bleiben
+- Jeder Text für Kunden und Händler in sechs Sprachen: Englisch, Deutsch, Französisch, Niederländisch,
+  Spanisch und europäisches Portugiesisch. Französisch, Niederländisch, Spanisch und Portugiesisch sind
+  neu, für Storefront, Administration, Konfiguration und die Namen der Zahlungsarten. Die Begriffe folgen
+  dem LedgerDirect-Glossar („Herausgeber“ für Issuer, „Kasse“ für Checkout, „Kurs“, „Kursgültigkeit“)
+- Die Meldung für eine Bestellung, die sich nicht mit LedgerDirect bezahlen lässt, ist übersetzt; sie
+  war englisch
+- Die Kasse zeigt die Icons der LedgerDirect-Zahlungsarten. Das Template lag unter einem Pfad, den die
+  Storefront nie einbindet, deshalb zeigten 6.6 und 6.7 keine
+
 # 1.10.2
 - Benötigt `hardcastle/ledger-direct-core` 0.11.3. Die Zahlungsanfrage im QR-Code und hinter dem
   Xaman-Knopf nennt ihr Netz jetzt auch im XRP Ledger, wie bisher schon in Xahau. Bisher zahlte
