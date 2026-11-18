@@ -29,6 +29,14 @@ code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")
 [ "$code" = 200 ] || fail "storefront answered $code"
 pass "storefront answers"
 
+# The page's stylesheet: a storefront without its compiled theme answers 200 but shows bare HTML.
+home=$(curl -fsS "$BASE/")
+css=$(grep -o '/theme/[^"?]*/css/all\.css' <<<"$home" | head -n 1 || true)
+[ -n "$css" ] || fail "the home page links no theme stylesheet"
+code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE$css")
+[ "$code" = 200 ] || fail "the theme stylesheet $css answered $code"
+pass "theme stylesheet loads"
+
 # Read the page first: `curl | grep -q` under pipefail fails whenever grep exits before curl has
 # written everything (SIGPIPE), even though the text is there.
 category=$(curl -fsS "$BASE/ledger-direct-demo/")

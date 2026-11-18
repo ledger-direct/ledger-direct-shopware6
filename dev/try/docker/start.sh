@@ -70,8 +70,27 @@ console messenger:consume async low_priority --time-limit=15 >/dev/null 2>&1 || 
 console cache:clear >/dev/null
 
 # The first storefront request warms the prod cache; done here, so the visitor's is fast.
-code=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: ${LD_BASE_URL#*://}" http://127.0.0.1/ || true)
+host="Host: ${LD_BASE_URL#*://}"
+code=$(curl -s -o /dev/null -w '%{http_code}' -H "$host" http://127.0.0.1/ || true)
 [ "$code" = 200 ] || { log "the storefront answered ${code}"; exit 1; }
+
+# The compiled theme lives in the container's file system, its name in the database. A theme
+# compiled at runtime (after an image update, above) is gone when the container is recreated, while
+# the database still names it: the storefront then loads without CSS and JavaScript. Ask the page
+# for its stylesheet and compile again when it is not there, whatever the cause.
+theme_css() {
+  local page css
+  page=$(curl -s -H "$host" http://127.0.0.1/ || true)
+  css=$(grep -o '/theme/[^"?]*/css/all\.css' <<<"$page" | head -n 1 || true)
+  [ -n "$css" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -H "$host" "http://127.0.0.1$css" || true)" = 200 ]
+}
+if ! theme_css; then
+  log "the storefront's compiled theme is missing (a recreated container): compiling it"
+  console theme:compile >/dev/null
+  console cache:clear >/dev/null
+  curl -s -o /dev/null -H "$host" http://127.0.0.1/ || true
+  theme_css || { log "the storefront's theme is still missing after theme:compile"; exit 1; }
+fi
 
 log "ready in $(( $(date +%s) - started )) s"
 log "shop:  ${LD_BASE_URL%/}/  (German: ${LD_BASE_URL%/}/de/)"
