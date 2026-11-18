@@ -1,3 +1,21 @@
+# 1.11.0
+- Needs `hardcastle/ledger-direct-core` 0.12.0. The checkout offers only what the receiving account
+  can take. A token the account cannot receive (no trust line, frozen, full, not authorized) is left
+  out, so no order exists that nobody can pay. An XRP Ledger or Xahau account that is not activated
+  yet keeps the native asset, whose first payment activates it. When the node cannot be reached,
+  tokens are left out and the native asset stays
+- Stellar: an account that does not exist is offered nothing, XLM included. A Stellar payment never
+  creates its destination
+- Each chain's configuration card shows what the saved receiving account lacks, next to the options,
+  which stay switchable
+- Every customer and merchant text in six languages: English, German, French, Dutch, Spanish and
+  European Portuguese. French, Dutch, Spanish and Portuguese are new, for the storefront, the
+  administration, the configuration and the payment method names. The terms follow the LedgerDirect
+  glossary (German: "Herausgeber" for issuer, "Kasse" for checkout, "Kurs", "Kursgültigkeit")
+- The message for an order that cannot be paid with LedgerDirect is translated; it was English
+- The checkout shows the icons of the LedgerDirect payment methods. The template sat at a path the
+  storefront never includes, so 6.6 and 6.7 showed none
+
 # 1.10.2
 - Needs `hardcastle/ledger-direct-core` 0.11.3. The payment request in the QR code and behind the
   Xaman button now names its network on the XRP Ledger too, as it already did on Xahau. Before,
