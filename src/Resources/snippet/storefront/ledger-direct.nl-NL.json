@@ -14,7 +14,6 @@
       "fiatEquivalent": "komt overeen met %fiat%",
       "fiatOfTotal": "van in totaal %total% %asset% (%fiat%)",
       "quoteValidFor": "Bedrag gegarandeerd voor %countdown% minuten",
-      "stepAccount": "Ontvangstadres",
       "requiredBadge": "Verplicht",
       "stepIssuer": "Token en uitgever",
       "issuerHint": "Alleen %asset% van precies deze uitgever wordt verrekend. Uw wallet heeft daarvoor een trustline nodig.",
@@ -63,6 +62,7 @@
       "backToCart": "Terug naar winkelwagen",
       "identifier": {
         "XRPL": {
+          "account": "Ontvangstadres",
           "step": "Destination tag",
           "copy": "Destination tag kopiëren",
           "hint": "Zonder deze destination tag kunnen we de betaling niet aan uw bestelling koppelen.",
@@ -72,6 +72,7 @@
           "partialSendRest": "Stuur het resterende bedrag naar hetzelfde adres met dezelfde destination tag."
         },
         "STELLAR": {
+          "account": "Ontvangstaccount",
           "step": "Memo-ID",
           "copy": "Memo-ID kopiëren",
           "hint": "Zonder deze memo kunnen we de betaling niet aan uw bestelling koppelen. Memotype: ID.",
@@ -81,6 +82,7 @@
           "partialSendRest": "Stuur de rest naar hetzelfde account met dezelfde memo-ID."
         },
         "XAHAU": {
+          "account": "Ontvangstadres",
           "step": "Destination tag",
           "copy": "Destination tag kopiëren",
           "hint": "Zonder deze destination tag kunnen we de betaling niet aan uw bestelling koppelen.",
@@ -88,6 +90,16 @@
           "qrCaption": "Scan met Xaman. Adres, destination tag en bedrag worden ingevuld, en Xaman biedt aan over te schakelen naar het Xahau-netwerk als een ander netwerk is ingesteld – controleer ze vóór het verzenden.",
           "qrLabel": "QR-code met adres, destination tag en bedrag",
           "partialSendRest": "Stuur het resterende bedrag naar hetzelfde adres met dezelfde destination tag."
+        },
+        "INTERLEDGER": {
+          "account": "Betaallink",
+          "step": "Referentie",
+          "copy": "Referentie kopiëren",
+          "hint": "Uw winkel heeft deze referentie aan het betaalverzoek toegevoegd; u hoeft ze nergens in te vullen.",
+          "exchangeHint": "Deze link wordt betaald vanuit een Open Payments-wallet, niet vanaf een beurs: het bedrag, de ontvanger en de vervaltijd zitten erin.",
+          "qrCaption": "Scan de code of open de link met uw Open Payments-wallet. Ontvanger, bedrag en vervaltijd horen bij het verzoek – controleer ze voordat u het goedkeurt.",
+          "qrLabel": "QR-code met de betaallink",
+          "partialSendRest": "Betaal het resterende bedrag vanuit dezelfde wallet voordat het verzoek verloopt."
         }
       },
       "network": {
@@ -102,12 +114,17 @@
         "XAHAU": {
           "mainnet": "Xahau Mainnet",
           "testnet": "Xahau Testnet"
+        },
+        "INTERLEDGER": {
+          "mainnet": "Interledger",
+          "testnet": "Interledger (testgeld)"
         }
       },
       "poweredBy": {
         "XRPL": "Rechtstreeks betaald op de XRP Ledger, zonder tussenpartij.",
         "STELLAR": "Rechtstreeks betaald op het Stellar-netwerk, zonder tussenpersoon.",
-        "XAHAU": "Rechtstreeks betaald op het Xahau-netwerk, zonder tussenpartij."
+        "XAHAU": "Rechtstreeks betaald op het Xahau-netwerk, zonder tussenpartij.",
+        "INTERLEDGER": "Betaald via Interledger met Open Payments, rechtstreeks in de wallet van de handelaar."
       }
     },
     "checkout": {

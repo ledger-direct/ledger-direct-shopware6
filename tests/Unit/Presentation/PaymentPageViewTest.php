@@ -198,6 +198,21 @@ class PaymentPageViewTest extends TestCase
         $this->assertSame('40.00', $values['amountRequestedDisplay']);
     }
 
+    /**
+     * A mainnet Interledger order - none can be created while the chain is a preview,
+     * but the page must not fall back to the testnet for one: the network is the
+     * record's, the link is still the request, and there is still no explorer.
+     */
+    public function testAMainnetInterledgerPageNamesTheMainnetAndStaysALink(): void
+    {
+        $values = $this->view()->values($this->order(), $this->transaction(), $this->interledger('mainnet'), $this->salesChannel('Beispielshop'));
+
+        $this->assertSame('mainnet', $values['network']);
+        $this->assertSame(self::INCOMING_PAYMENT, $values['paymentUri']);
+        $this->assertSame('', $values['explorerBase']);
+        $this->assertNull($values['issuer']);
+    }
+
     public function testAnIntentOfAnUnknownTypeIsRefused(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -267,12 +282,12 @@ class PaymentPageViewTest extends TestCase
         );
     }
 
-    private function interledger(): PaymentIntent
+    private function interledger(string $network = 'testnet'): PaymentIntent
     {
         return PaymentIntent::quote(
             type: 'interledger-eur-payment',
             chain: 'INTERLEDGER',
-            network: 'testnet',
+            network: $network,
             baseAsset: 'EUR',
             quoteCurrency: 'EUR',
             pairing: 'EUR/EUR',

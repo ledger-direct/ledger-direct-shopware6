@@ -18,6 +18,10 @@
   amount as an issued currency of the merchant's wallet
 - The Store API's `quote` names the chain `INTERLEDGER` and carries `identifierRequired`: false over
   Interledger, where the customer puts no identifier on the payment, true on every ledger
+- Interledger's texts exist in all six languages. The receiving-account check of 1.11.0 leaves the chain
+  out: a wallet address has no trust line, no reserve and no activation, and its own question (which
+  asset does the wallet hold) is asked instead. Needs `hardcastle/ledger-direct-interledger` 0.1.2, the
+  first that installs beside core 0.12
 - The plugin's chain list is its own (`Chain\ChainRegistry`) instead of the core's `ChainCatalog`: a chain
   can now come from a package next to the core. Nothing changes for the XRPL, Stellar and Xahau
 - Known gaps of the prototype: no top-up after a quote expires (an expired incoming payment accepts

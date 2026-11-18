@@ -18,6 +18,11 @@
   und dem erhaltenen Betrag als Issued Currency der Händler-Wallet
 - `quote` der Store-API nennt die Chain `INTERLEDGER` und liefert `identifierRequired`: false über
   Interledger, wo der Kunde keine Kennung an die Zahlung hängt, true auf jedem Ledger
+- Die Texte zu Interledger gibt es in allen sechs Sprachen. Die Prüfung des Empfangskontos aus 1.11.0
+  lässt die Chain aus: eine Wallet-Adresse hat keine Trustline, keine Reserve und keine Aktivierung,
+  gefragt wird stattdessen, welches Asset die Wallet hält. Benötigt
+  `hardcastle/ledger-direct-interledger` 0.1.2, die erste Version, die sich neben Core 0.12 installieren
+  lässt
 - Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
   Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
   nichts

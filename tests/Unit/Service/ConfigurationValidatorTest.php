@@ -175,6 +175,19 @@ class ConfigurationValidatorTest extends TestCase
         $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.useStellarTestnet', $off, null));
     }
 
+    /**
+     * Interledger is a preview as well, and its mainnet does not exist yet: Dassie
+     * and the Interledger test wallet move test money only. The same rule, asked
+     * through the plugin's own chain list, which is where Interledger comes from.
+     */
+    public function testSwitchingInterledgerToTheMainnetIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/Interledger.* is a preview and runs on the testnet only/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.useInterledgerTestnet', false, null));
+    }
+
     /** @return array<string, array{0: mixed}> */
     public static function offValues(): array
     {

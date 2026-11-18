@@ -248,8 +248,8 @@ or any Rafiki-based wallet, because Open Payments and not Dassie is the interfac
 | Setting | |
 |---|---|
 | Accept payments over Interledger (preview) | Off by default. On, with a wallet address and a key, the payment method in the wallet's own currency is offered. |
-| Use test network | On by default. The test wallet and a Dassie node both move test money only. |
-| Wallet address, live and test | The wallet address as an `https://` URL (`https://ilp.example.com/acme`). A payment pointer (`$ilp.example.com/acme`) is accepted and stored as its URL. Checked when saved. |
+| Use Testnet | On, and as a preview it cannot be switched off: the test wallet and a Dassie node both move test money only. |
+| Wallet address (Mainnet), (Testnet) | The wallet address as an `https://` URL (`https://ilp.example.com/acme`). A payment pointer (`$ilp.example.com/acme`) is accepted and stored as its URL. Checked when saved. |
 | Key ID | The id the wallet registered for this client — it shows it as "Key ID", and it is a UUID, not the wallet's name. A wrong id is refused by the authorization server with `invalid_client`. |
 | Private key | The Ed25519 key belonging to that id, as base64 of its PEM on one line (`base64 -w0 private.key`). The PEM itself is refused. It signs every request to the wallet and never leaves the shop. |
 

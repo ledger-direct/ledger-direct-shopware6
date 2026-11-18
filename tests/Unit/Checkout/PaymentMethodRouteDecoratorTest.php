@@ -197,6 +197,23 @@ class PaymentMethodRouteDecoratorTest extends TestCase
     }
 
     /**
+     * Interledger is a preview and runs with test money only. A mainnet toggle
+     * stored before that rule offers no Interledger method, whatever the wallet holds.
+     */
+    public function testOnTheMainnetNoInterledgerMethodIsOffered(): void
+    {
+        $mainnetWallet = 'https://ilp.example.com/acme';
+        $this->wallet = new FakeOpenPayments($mainnetWallet, 'EUR', 2);
+        $configuration = ['LedgerDirect.config.useInterledgerTestnet' => false] + Fixtures::getStaticInterledgerConfiguration()
+            + ['LedgerDirect.config.interledgerMainnetDestinationAccount' => $mainnetWallet];
+
+        $ids = $this->load($configuration)->getIds();
+
+        $this->assertNotContains(PaymentMethodInstaller::paymentMethodIdFor('interledger-eur-payment'), $ids);
+        $this->assertContains(PaymentMethodInstaller::XRP_PAYMENT_ID, $ids, 'the other chains are unaffected');
+    }
+
+    /**
      * The prototype converts no fiat. A EUR wallet takes EUR orders, so in a
      * USD checkout its method is not offered: quoting it would fail after the
      * customer has chosen it.

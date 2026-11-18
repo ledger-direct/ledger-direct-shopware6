@@ -4,7 +4,9 @@ namespace Hardcastle\LedgerDirect\Tests\Unit\Chain;
 
 use Doctrine\DBAL\Connection;
 use GuzzleHttp\Psr7\HttpFactory;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
+use Hardcastle\LedgerDirect\Chain\InterledgerPackageConfig;
 use Hardcastle\LedgerDirect\Core\Testing\FakeHttpClient;
 use Hardcastle\LedgerDirect\Core\Testing\InMemoryCache;
 use Hardcastle\LedgerDirect\Core\Testing\RecordingLogger;
@@ -72,6 +74,33 @@ class InterledgerGatewayTest extends TestCase
         $this->assertNull($gateway->walletAssetCode(), 'the checkout filter offers nothing');
         $this->assertInstanceOf(ReceiptSyncService::class, $gateway->receiptSync());
 
+        $this->expectException(AssetNotAcceptedException::class);
+        $gateway->incomingPaymentService()->quoteForOrder(19.99, 'EUR', 'EUR');
+    }
+
+    /**
+     * A mainnet toggle stored before the preview rule: nothing new is taken, and
+     * what the package is told is the mainnet and its wallet address, never the
+     * testnet one - an order paid there is read where it was paid.
+     */
+    public function testOnTheMainnetAPreviewTakesNothingNewAndThePackageIsToldTheMainnetWallet(): void
+    {
+        $mainnetWallet = 'https://ilp.example.com/acme';
+        $configuration = ['LedgerDirect.config.useInterledgerTestnet' => false] + Fixtures::getStaticInterledgerConfiguration()
+            + ['LedgerDirect.config.interledgerMainnetDestinationAccount' => $mainnetWallet];
+        $gateway = $this->gateway($configuration, new FakeOpenPayments($mainnetWallet, 'EUR', 2));
+
+        $this->assertFalse($gateway->isAvailable());
+        $this->assertSame('', $gateway->walletAddress());
+        $this->assertNull($gateway->walletAssetCode(), 'the checkout filter offers nothing');
+
+        $configurationService = ConfigurationServiceMock::createInstance($configuration);
+        $forPackage = new InterledgerPackageConfig($configurationService, new ShopwareConfigProvider($configurationService));
+        $this->assertSame('mainnet', $forPackage->getNetwork(ChainRegistry::INTERLEDGER));
+        $this->assertSame($mainnetWallet, $forPackage->getDestinationAccount(ChainRegistry::INTERLEDGER));
+        $this->assertFalse($forPackage->isAssetEnabled(ChainRegistry::INTERLEDGER, 'EUR'), 'so the package refuses to quote');
+
+        $this->assertInstanceOf(ReceiptSyncService::class, $gateway->receiptSync());
         $this->expectException(AssetNotAcceptedException::class);
         $gateway->incomingPaymentService()->quoteForOrder(19.99, 'EUR', 'EUR');
     }

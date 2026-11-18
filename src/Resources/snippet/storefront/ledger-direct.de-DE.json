@@ -62,7 +62,7 @@
       "backToCart": "Zurück zum Warenkorb",
       "identifier": {
         "XRPL": {
-          "account": "Empfängeradresse",
+          "account": "Empfangsadresse",
           "step": "Destination Tag",
           "copy": "Destination Tag kopieren",
           "hint": "Ohne diesen Destination Tag können wir die Zahlung Ihrer Bestellung nicht zuordnen.",
@@ -72,7 +72,7 @@
           "partialSendRest": "Bitte senden Sie den Rest an dieselbe Adresse mit demselben Destination Tag."
         },
         "STELLAR": {
-          "account": "Empfängerkonto",
+          "account": "Empfangskonto",
           "step": "Memo-ID",
           "copy": "Memo-ID kopieren",
           "hint": "Ohne dieses Memo können wir die Zahlung nicht Ihrer Bestellung zuordnen. Memo-Typ: ID.",
@@ -82,7 +82,7 @@
           "partialSendRest": "Bitte senden Sie den Rest an dasselbe Konto mit derselben Memo-ID."
         },
         "XAHAU": {
-          "account": "Empfängeradresse",
+          "account": "Empfangsadresse",
           "step": "Destination Tag",
           "copy": "Destination Tag kopieren",
           "hint": "Ohne diesen Destination Tag können wir die Zahlung Ihrer Bestellung nicht zuordnen.",
@@ -95,11 +95,11 @@
           "account": "Zahlungslink",
           "step": "Referenz",
           "copy": "Referenz kopieren",
-          "hint": "Ihr Shop hat diese Referenz an die Zahlungsanfrage gehängt; Sie müssen nichts eintragen.",
+          "hint": "Ihr Shop hat diese Referenz an die Zahlungsanforderung gehängt; Sie müssen nichts eintragen.",
           "exchangeHint": "Dieser Link wird aus einer Open-Payments-Wallet bezahlt, nicht von einer Börse: Betrag, Empfänger und Ablauf stecken darin.",
-          "qrCaption": "Code scannen oder den Link in Ihrer Open-Payments-Wallet öffnen. Empfänger, Betrag und Ablauf gehören zur Anfrage – bitte vor dem Freigeben prüfen.",
+          "qrCaption": "Code scannen oder den Link in Ihrer Open-Payments-Wallet öffnen. Empfänger, Betrag und Ablauf gehören zur Zahlungsanforderung – bitte vor dem Freigeben prüfen.",
           "qrLabel": "QR-Code mit dem Zahlungslink",
-          "partialSendRest": "Bitte zahlen Sie den Rest aus derselben Wallet, bevor die Anfrage abläuft."
+          "partialSendRest": "Bitte zahlen Sie den Rest aus derselben Wallet, bevor die Zahlungsanforderung abläuft."
         }
       },
       "network": {
