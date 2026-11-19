@@ -14,7 +14,6 @@
       "fiatEquivalent": "equivale a %fiat%",
       "fiatOfTotal": "de %total% %asset% en total (%fiat%)",
       "quoteValidFor": "Importe garantizado durante %countdown% minutos",
-      "stepAccount": "Dirección de recepción",
       "requiredBadge": "Obligatorio",
       "stepIssuer": "Token y emisor",
       "issuerHint": "Solo se abonan %asset% de exactamente este emisor. Su cartera necesita una trustline para ello.",
@@ -63,6 +62,7 @@
       "backToCart": "Volver al carrito",
       "identifier": {
         "XRPL": {
+          "account": "Dirección de recepción",
           "step": "Destination tag",
           "copy": "Copiar el destination tag",
           "hint": "Sin este destination tag no podemos asignar el pago a su pedido.",
@@ -72,6 +72,7 @@
           "partialSendRest": "Envíe el resto a la misma dirección con el mismo destination tag."
         },
         "STELLAR": {
+          "account": "Cuenta receptora",
           "step": "ID de memo",
           "copy": "Copiar ID de memo",
           "hint": "Sin este memo no podemos asignar el pago a su pedido. Tipo de memo: ID.",
@@ -81,6 +82,7 @@
           "partialSendRest": "Envíe el resto a la misma cuenta con el mismo ID de memo."
         },
         "XAHAU": {
+          "account": "Dirección de recepción",
           "step": "Destination tag",
           "copy": "Copiar el destination tag",
           "hint": "Sin este destination tag no podemos asignar el pago a su pedido.",
@@ -88,6 +90,16 @@
           "qrCaption": "Escanee con Xaman. La dirección, el destination tag y el importe se rellenan solos, y Xaman ofrece cambiar a la red Xahau si está configurado en otra – compruébelos antes de enviar.",
           "qrLabel": "Código QR con dirección, destination tag e importe",
           "partialSendRest": "Envíe el resto a la misma dirección con el mismo destination tag."
+        },
+        "INTERLEDGER": {
+          "account": "Enlace de pago",
+          "step": "Referencia",
+          "copy": "Copiar la referencia",
+          "hint": "Su tienda ha añadido esta referencia a la solicitud de pago; no tiene que introducirla en ningún sitio.",
+          "exchangeHint": "Este enlace se paga desde una cartera Open Payments, no desde una plataforma de intercambio: incluye el importe, el beneficiario y una fecha de caducidad.",
+          "qrCaption": "Escanee el código o abra el enlace con su cartera Open Payments. El beneficiario, el importe y la caducidad forman parte de la solicitud – compruébelos antes de aprobarla.",
+          "qrLabel": "Código QR con el enlace de pago",
+          "partialSendRest": "Pague el resto desde la misma cartera antes de que caduque la solicitud."
         }
       },
       "network": {
@@ -102,12 +114,17 @@
         "XAHAU": {
           "mainnet": "Xahau Mainnet",
           "testnet": "Xahau Testnet"
+        },
+        "INTERLEDGER": {
+          "mainnet": "Interledger",
+          "testnet": "Interledger (dinero de prueba)"
         }
       },
       "poweredBy": {
         "XRPL": "Pagado directamente en el XRP Ledger, sin intermediarios.",
         "STELLAR": "Pagado directamente en la red Stellar, sin intermediarios.",
-        "XAHAU": "Pagado directamente en la red Xahau, sin intermediarios."
+        "XAHAU": "Pagado directamente en la red Xahau, sin intermediarios.",
+        "INTERLEDGER": "Pagado a través de Interledger con Open Payments, directamente en la cartera del comerciante."
       }
     },
     "checkout": {

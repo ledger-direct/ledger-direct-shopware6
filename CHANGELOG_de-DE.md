@@ -1,3 +1,43 @@
+# Unreleased
+- Interledger als vierte Chain, als **Vorschau und Prototyp**: der Shop nimmt eine
+  [Open-Payments](https://openpayments.dev)-Zahlung in die eigene Wallet des Händlers an — einen
+  Dassie-Knoten, das Interledger-Test-Wallet oder ein Rafiki-Wallet. Nur Spielgeld, und aus, solange der
+  Schalter der neuen Karte nicht an ist. Die Dienste der Chain kommen aus
+  `hardcastle/ledger-direct-interledger`, einem optionalen Paket, das der Shop per `composer require`
+  installiert; ohne das Paket gibt es weder Karte noch Zahlarten noch die Chain
+- Eine Karte „LedgerDirect - Interledger (Vorschau)“: die Wallet-Adresse (ein Payment Pointer wird
+  angenommen und als URL gespeichert), die vom Wallet registrierte Key-ID und der private Schlüssel als
+  Base64 seines PEM. Im Checkout erscheint nur die Zahlart in der Währung, die die Wallet-Adresse
+  tatsächlich hält; ist das Wallet nicht erreichbar, erscheint keine — dieselbe Regel wie bei einer
+  Stellar-Trustline, die nicht geprüft werden kann. Ein EUR- oder USD-Guthaben erscheint nur, wenn der
+  Kunde in dieser Währung bestellt, weil der Prototyp keine Fiat-Währungen umrechnet
+- Die Zahlungsseite hat über Interledger einen Schritt: die URL des Incoming Payments ist Zahlungslink
+  und QR-Code, Betrag, Empfänger und Ablauf stecken darin. Der Kunde kopiert keine Kennung — die
+  Referenz der Bestellung reist in der Zahlungsanfrage mit, die der Shop angelegt hat. Der Record ist
+  dasselbe Schema v1, das jedes LedgerDirect-Plugin liest, mit dem Incoming Payment als Empfängerkonto
+  und dem erhaltenen Betrag als Issued Currency der Händler-Wallet
+- `quote` der Store-API nennt die Chain `INTERLEDGER` und liefert `identifierRequired`: false über
+  Interledger, wo der Kunde keine Kennung an die Zahlung hängt, true auf jedem Ledger
+- Die Texte zu Interledger gibt es in allen sechs Sprachen. Die Prüfung des Empfangskontos aus 1.11.0
+  lässt die Chain aus: eine Wallet-Adresse hat keine Trustline, keine Reserve und keine Aktivierung,
+  gefragt wird stattdessen, welches Asset die Wallet hält
+- Ein Dassie-Knoten als Wallet des Händlers: Die Key-ID bleibt dort leer. Ein Dassie-Knoten registriert
+  keinen fremden Schlüssel, der Shop ist also ein Client, der allein durch seinen Schlüssel bekannt ist,
+  und der Knoten erlaubt ihm das Anlegen und Lesen von Incoming Payments sofort. Benötigt
+  `hardcastle/ledger-direct-interledger` 0.2.0, das außerdem zwei Anfragen so sendet, wie ein
+  Dassie-Knoten sie liest (Signatur-Header, Grant-Endpunkt)
+- Eine Zahlung auf eine Interledger-Bestellung, die der Händler storniert hat, wird an der Bestellung
+  vermerkt. Auf einem Ledger landet so eine Zahlung beim nächsten Abgleich des Kontos in der
+  Transaktionstabelle; bei Interledger liegt sie im Incoming Payment der Bestellung, das nach dem Storno
+  niemand mehr gelesen hat. Der geplante Task liest es jetzt bis eine Stunde nach dessen Ablauf. Die
+  Bestellung bleibt storniert
+- Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
+  Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
+  nichts
+- Bekannte Lücken des Prototyps: keine Nachzahlung nach Ablauf der Quote (ein abgelaufenes Incoming
+  Payment nimmt nichts mehr an), keine Fiat-Umrechnung (eine EUR-Wallet nimmt EUR-Bestellungen), kein
+  Settlement-Nachweis je Zahlung, keine Browser-Wallet auf der Zahlungsseite
+
 # 1.11.0
 - Benötigt `hardcastle/ledger-direct-core` 0.12.0. Die Kasse bietet nur an, was das Empfangskonto
   annehmen kann. Ein Token, den das Konto nicht empfangen kann (keine Trustline, eingefroren, voll,

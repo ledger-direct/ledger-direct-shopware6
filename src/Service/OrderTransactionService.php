@@ -2,25 +2,34 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
+use DateTimeImmutable;
 use Exception;
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
+use Hardcastle\LedgerDirect\Interledger\IncomingPaymentService as InterledgerIncomingPaymentService;
+use Hardcastle\LedgerDirect\Interledger\ReceiptSyncService as InterledgerReceiptSyncService;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 /**
@@ -54,6 +63,8 @@ class OrderTransactionService
 
     private StellarSyncService $stellarSync;
 
+    private InterledgerGateway $interledger;
+
     private SyncThrottle $syncThrottle;
 
     private LoggerInterface $logger;
@@ -70,10 +81,15 @@ class OrderTransactionService
      * stored intent names (everything after). Xahau's pair is the XRPL
      * classes again, built for that chain.
      *
-     * The XRP Ledger and Stellar share a throttle: an `r…` and a `G…` never
-     * collide. Xahau has one of its own, because the same `r…` address is
-     * valid on the XRP Ledger too, and a sync there must not hold back
-     * the one here.
+     * The XRP Ledger, Stellar and Interledger share a throttle: its keys
+     * are (network, account), and an `r…`, a `G…` and a wallet address
+     * never collide. Xahau has one of its own, because the same `r…`
+     * address is valid on the XRP Ledger too, and a sync there must not
+     * hold back the one here.
+     *
+     * Interledger comes in as a gateway rather than as two services,
+     * because its package is optional: nothing of it is constructed until
+     * an order on that chain asks for it (see Chain\InterledgerGateway).
      */
     public function __construct(
         EntityRepository $orderRepository,
@@ -83,6 +99,7 @@ class OrderTransactionService
         SyncService $xrplSync,
         StellarPaymentIntentService $stellarIntents,
         StellarSyncService $stellarSync,
+        InterledgerGateway $interledger,
         SyncThrottle $syncThrottle,
         LoggerInterface $logger,
         PaymentIntentService $xahauIntents,
@@ -96,6 +113,7 @@ class OrderTransactionService
         $this->xrplSync = $xrplSync;
         $this->stellarIntents = $stellarIntents;
         $this->stellarSync = $stellarSync;
+        $this->interledger = $interledger;
         $this->syncThrottle = $syncThrottle;
         $this->logger = $logger;
         $this->xahauIntents = $xahauIntents;
@@ -209,7 +227,24 @@ class OrderTransactionService
             return null;
         }
 
-        $this->syncLedger($intent->chain, $intent->destinationAccount, $intent->network, $throttled);
+        $synced = $this->syncLedger($intent->chain, $intent->destinationAccount, $intent->network, $throttled);
+
+        /*
+         * On a ledger the sync is the node request and the match below is local.
+         * Over Interledger it is the other way round: there is nothing to sync, and
+         * the match reads the order's incoming payment from the merchant's wallet.
+         * The throttle therefore has to hold the match back there, or it holds back
+         * nothing. Inside the interval the caller gets null and answers from the
+         * stored intent (core INVARIANTS.md, "Payment status").
+         *
+         * The mark is per incoming payment, so per order, where a ledger's is per
+         * receiving account: a ledger sync serves every waiting order at once, a
+         * read here serves one, and a mark per wallet address would let one
+         * customer's page hold back everybody else's.
+         */
+        if (!$synced && $intent->chain === ChainRegistry::INTERLEDGER) {
+            return null;
+        }
 
         return $this->matchOrderTransaction($orderTransaction, $context);
     }
@@ -231,7 +266,27 @@ class OrderTransactionService
             return null;
         }
 
-        $fulfilledIntent = $this->syncFor($intent->chain)->findFulfillmentFor($intent)?->applyTo($intent);
+        /*
+         * Building the chain's receiving service can fail where a ledger's cannot:
+         * Interledger's lives in an optional package and needs configuration, and
+         * asks for both the moment it is used. A shop that lost its wallet address
+         * after an order was placed must not answer the payment page or the status
+         * endpoint with an error — the order stays open, the customer keeps waiting,
+         * and the reason is in the log.
+         */
+        try {
+            $receiving = $this->syncFor($intent->chain);
+        } catch (RuntimeException $exception) {
+            $this->logger->warning('LedgerDirect: no receiving service for this order, leaving it open', [
+                'chain' => $intent->chain,
+                'order_transaction' => $orderTransaction->getId(),
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $fulfilledIntent = $receiving->findFulfillmentFor($intent)?->applyTo($intent);
 
         if ($fulfilledIntent === null) {
             return null;
@@ -253,14 +308,17 @@ class OrderTransactionService
      *
      * A failed sync is logged, not thrown: the checkout must not go down
      * with the node, and matching still runs against what is stored.
+     *
+     * @return bool false when the throttle held the sync back, true when it
+     *     was attempted — whether or not the node answered
      */
-    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): void
+    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): bool
     {
         if ($throttled) {
-            $throttle = $chain === ChainCatalog::XAHAU ? $this->xahauThrottle : $this->syncThrottle;
+            $throttle = $chain === ChainRegistry::XAHAU ? $this->xahauThrottle : $this->syncThrottle;
 
             if (!$throttle->shouldSync($network, $destinationAccount)) {
-                return;
+                return false;
             }
 
             $throttle->markSynced($network, $destinationAccount);
@@ -285,26 +343,31 @@ class OrderTransactionService
                 'exception' => $exception->getMessage(),
             ]);
         }
+
+        return true;
     }
 
-    private function intentServiceFor(string $chain): PaymentIntentService|StellarPaymentIntentService
-    {
+    private function intentServiceFor(
+        string $chain
+    ): PaymentIntentService|StellarPaymentIntentService|InterledgerIncomingPaymentService {
         return match ($chain) {
-            ChainCatalog::XRPL => $this->xrplIntents,
-            ChainCatalog::STELLAR => $this->stellarIntents,
-            ChainCatalog::XAHAU => $this->xahauIntents,
+            ChainRegistry::XRPL => $this->xrplIntents,
+            ChainRegistry::STELLAR => $this->stellarIntents,
+            ChainRegistry::XAHAU => $this->xahauIntents,
+            ChainRegistry::INTERLEDGER => $this->interledger->incomingPaymentService(),
             // The installer only creates methods for chains in HANDLER_BY_CHAIN,
             // so this is a wiring mistake, not a merchant's configuration.
             default => throw new Exception('No payment services for chain ' . $chain),
         };
     }
 
-    private function syncFor(string $chain): SyncService|StellarSyncService
+    private function syncFor(string $chain): SyncService|StellarSyncService|InterledgerReceiptSyncService
     {
         return match ($chain) {
-            ChainCatalog::XRPL => $this->xrplSync,
-            ChainCatalog::STELLAR => $this->stellarSync,
-            ChainCatalog::XAHAU => $this->xahauSync,
+            ChainRegistry::XRPL => $this->xrplSync,
+            ChainRegistry::STELLAR => $this->stellarSync,
+            ChainRegistry::XAHAU => $this->xahauSync,
+            ChainRegistry::INTERLEDGER => $this->interledger->receiptSync(),
             default => throw new Exception('No payment services for chain ' . $chain),
         };
     }
@@ -321,6 +384,44 @@ class OrderTransactionService
         $criteria->addFilter(new EqualsAnyFilter('stateMachineState.technicalName', PaymentStateService::OPEN_STATES));
         $criteria->addAssociation('stateMachineState');
         $criteria->addSorting(new FieldSorting('createdAt'));
+        $criteria->setLimit($limit);
+
+        /** @var OrderTransactionCollection $transactions */
+        $transactions = $this->orderTransactionRepository->search($criteria, $context)->getEntities();
+
+        return $transactions;
+    }
+
+    /**
+     * Interledger order transactions the merchant cancelled within the last
+     * day, newest first — the candidates for a payment that arrived anyway.
+     *
+     * On a ledger such a payment reaches the transaction table with the next
+     * sync of the receiving account, whatever became of the order. Over
+     * Interledger there is no account to sync: the money went into the
+     * order's own incoming payment, and only a read of that one finds it.
+     * The scheduled task narrows these down to the ones whose incoming
+     * payment can still have taken money (see its handler).
+     */
+    public function findCancelledInterledgerTransactions(Context $context, int $limit = 200): OrderTransactionCollection
+    {
+        $methodIds = array_map(
+            static fn (array $method): string => $method['id'],
+            PaymentMethodInstaller::paymentMethodsFor(ChainRegistry::INTERLEDGER)
+        );
+
+        if ($methodIds === []) {
+            return new OrderTransactionCollection();
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', $methodIds));
+        $criteria->addFilter(new EqualsFilter('stateMachineState.technicalName', OrderTransactionStates::STATE_CANCELLED));
+        $criteria->addFilter(new RangeFilter('createdAt', [
+            RangeFilter::GTE => (new DateTimeImmutable('-1 day'))->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]));
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
         $criteria->setLimit($limit);
 
         /** @var OrderTransactionCollection $transactions */

@@ -387,7 +387,8 @@
                         "enum": [
                             "XRPL",
                             "STELLAR",
-                            "XAHAU"
+                            "XAHAU",
+                            "INTERLEDGER"
                         ]
                     },
                     "mode": {
@@ -490,7 +491,11 @@
                     },
                     "destinationTag": {
                         "type": "integer",
-                        "description": "Destination tag (XRPL) or memo id (Stellar)"
+                        "description": "Destination tag (XRPL, Xahau), memo id (Stellar) or the order's reference (Interledger)"
+                    },
+                    "identifierRequired": {
+                        "type": "boolean",
+                        "description": "Whether the customer has to put destinationTag on the payment. False over Interledger: the reference travels inside the payment request the shop created"
                     },
                     "issuer": {
                         "type": "string",
@@ -509,7 +514,7 @@
                     },
                     "paymentUri": {
                         "type": "string",
-                        "description": "The payment request the QR code encodes: an XRPL request or a SEP-0007 web+stellar:pay request"
+                        "description": "The payment request the QR code encodes: an XRPL request, a SEP-0007 web+stellar:pay request or, over Interledger, the URL of the Open Payments incoming payment"
                     },
                     "amountRequested": {
                         "description": "The raw requested amount of the intent",

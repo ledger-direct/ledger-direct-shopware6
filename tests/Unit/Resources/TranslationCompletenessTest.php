@@ -43,6 +43,7 @@ class TranslationCompletenessTest extends TestCase
         'Stellar Testnet',
         'Xahau Mainnet',
         'Xahau Testnet',
+        'Interledger',
         'LedgerDirect - XRP Ledger',
         'LedgerDirect - Xahau',
     ];

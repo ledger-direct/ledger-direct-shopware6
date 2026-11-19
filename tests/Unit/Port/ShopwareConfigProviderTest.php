@@ -107,6 +107,21 @@ class ShopwareConfigProviderTest extends TestCase
     }
 
     /**
+     * The same for Interledger, the preview that comes from a package: a stored
+     * mainnet toggle offers no wallet address and no asset, and keeps its network.
+     */
+    public function testInterledgerOnTheMainnetOffersNothingButKeepsItsNetwork(): void
+    {
+        $configuration = ['LedgerDirect.config.useInterledgerTestnet' => false] + Fixtures::getStaticInterledgerConfiguration()
+            + ['LedgerDirect.config.interledgerMainnetDestinationAccount' => 'https://ilp.example.com/acme'];
+        $provider = new ShopwareConfigProvider(ConfigurationServiceMock::createInstance($configuration));
+
+        $this->assertSame('', $provider->getDestinationAccount('INTERLEDGER'), 'no new payment request against the mainnet');
+        $this->assertFalse($provider->isAssetEnabled('INTERLEDGER', 'EUR'));
+        $this->assertSame('mainnet', $provider->getNetwork('INTERLEDGER'));
+    }
+
+    /**
      * A preview chain configured for the mainnet before the testnet rule existed:
      * nothing is offered there, while the network is still answered, so open orders
      * keep syncing and settling where they were paid.

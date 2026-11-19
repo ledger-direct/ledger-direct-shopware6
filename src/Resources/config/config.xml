@@ -276,6 +276,113 @@
     </card>
 
     <card>
+        <title>LedgerDirect - Interledger (Preview)</title>
+        <title lang="de-DE">LedgerDirect - Interledger (Vorschau)</title>
+        <title lang="fr-FR">LedgerDirect - Interledger (aperçu)</title>
+        <title lang="nl-NL">LedgerDirect - Interledger (proefversie)</title>
+        <title lang="es-ES">LedgerDirect - Interledger (vista previa)</title>
+        <title lang="pt-PT">LedgerDirect - Interledger (pré-visualização)</title>
+
+        <input-field type="bool">
+            <name>interledgerEnabled</name>
+            <label>Accept payments over Interledger (preview)</label>
+            <label lang="de-DE">Zahlungen über Interledger annehmen (Vorschau)</label>
+            <label lang="fr-FR">Accepter les paiements via Interledger (aperçu)</label>
+            <label lang="nl-NL">Betalingen via Interledger accepteren (proefversie)</label>
+            <label lang="es-ES">Aceptar pagos a través de Interledger (vista previa)</label>
+            <label lang="pt-PT">Aceitar pagamentos através do Interledger (pré-visualização)</label>
+            <helpText>Preview, prototype, test money only. Takes an Open Payments payment into your own wallet - a Dassie node, the Interledger test wallet, or any Rafiki-based wallet. Needs the package hardcastle/ledger-direct-interledger (composer require) and PHP 8.3; without it this card does nothing. Off by default; switching it on creates the Interledger payment methods, and only the one in the currency your wallet address holds is offered at checkout.</helpText>
+            <helpText lang="de-DE">Vorschau, Prototyp, nur Spielgeld. Nimmt eine Open-Payments-Zahlung in Ihre eigene Wallet an - einen Dassie-Knoten, die Interledger-Test-Wallet oder eine Rafiki-Wallet. Benötigt das Paket hardcastle/ledger-direct-interledger (composer require) und PHP 8.3; ohne das Paket tut diese Karte nichts. Standardmäßig aus; das Einschalten legt die Interledger-Zahlungsarten an, an der Kasse erscheint nur die in der Währung Ihrer Wallet-Adresse.</helpText>
+            <helpText lang="fr-FR">Aperçu, prototype, argent de test uniquement. Reçoit un paiement Open Payments dans votre propre portefeuille - un nœud Dassie, le portefeuille de test Interledger ou tout portefeuille basé sur Rafiki. Nécessite le paquet hardcastle/ledger-direct-interledger (composer require) et PHP 8.3 ; sans lui, cette carte ne fait rien. Désactivé par défaut ; l'activation crée les moyens de paiement Interledger, et seul celui dans la devise de votre adresse de portefeuille est proposé au paiement.</helpText>
+            <helpText lang="nl-NL">Proefversie, prototype, alleen testgeld. Ontvangt een Open Payments-betaling in uw eigen wallet - een Dassie-node, de Interledger-testwallet of een wallet op basis van Rafiki. Vereist het pakket hardcastle/ledger-direct-interledger (composer require) en PHP 8.3; zonder dat pakket doet deze kaart niets. Standaard uitgeschakeld; inschakelen maakt de Interledger-betaalmethoden aan, en bij het afrekenen wordt alleen de methode in de valuta van uw walletadres aangeboden.</helpText>
+            <helpText lang="es-ES">Vista previa, prototipo, solo dinero de prueba. Recibe un pago de Open Payments en su propia cartera: un nodo Dassie, la cartera de pruebas de Interledger o cualquier cartera basada en Rafiki. Requiere el paquete hardcastle/ledger-direct-interledger (composer require) y PHP 8.3; sin él, esta tarjeta no hace nada. Desactivado por defecto; al activarlo se crean los métodos de pago de Interledger, y en el pago solo se ofrece el de la moneda de su dirección de cartera.</helpText>
+            <helpText lang="pt-PT">Pré-visualização, protótipo, apenas dinheiro de teste. Recebe um pagamento Open Payments na sua própria carteira - um nó Dassie, a carteira de teste do Interledger ou qualquer carteira baseada em Rafiki. Requer o pacote hardcastle/ledger-direct-interledger (composer require) e PHP 8.3; sem ele, este cartão não faz nada. Desativado por predefinição; ao ativá-lo são criados os métodos de pagamento Interledger, e na finalização da compra só é oferecido o da moeda do endereço da carteira.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>useInterledgerTestnet</name>
+            <label>Use Testnet</label>
+            <label lang="de-DE">Testnet verwenden</label>
+            <label lang="fr-FR">Utiliser le Testnet</label>
+            <label lang="nl-NL">Testnet gebruiken</label>
+            <label lang="es-ES">Usar Testnet</label>
+            <label lang="pt-PT">Usar Testnet</label>
+            <helpText>The Interledger test wallet and a Dassie node both move test money only. As a preview, Interledger runs with test money only: the toggle cannot be switched off.</helpText>
+            <helpText lang="de-DE">Die Interledger-Test-Wallet und ein Dassie-Knoten bewegen ausschließlich Spielgeld. Als Vorschau läuft Interledger nur mit Spielgeld: Der Schalter lässt sich nicht ausschalten.</helpText>
+            <helpText lang="fr-FR">Le portefeuille de test Interledger et un nœud Dassie ne déplacent que de l'argent de test. En tant qu'aperçu, Interledger fonctionne uniquement avec de l'argent de test : l'interrupteur ne peut pas être désactivé.</helpText>
+            <helpText lang="nl-NL">De Interledger-testwallet en een Dassie-node verplaatsen alleen testgeld. Als proefversie werkt Interledger alleen met testgeld: de schakelaar kan niet worden uitgeschakeld.</helpText>
+            <helpText lang="es-ES">La cartera de pruebas de Interledger y un nodo Dassie solo mueven dinero de prueba. Como vista previa, Interledger solo funciona con dinero de prueba: el interruptor no se puede desactivar.</helpText>
+            <helpText lang="pt-PT">A carteira de teste do Interledger e um nó Dassie movimentam apenas dinheiro de teste. Como pré-visualização, o Interledger funciona apenas com dinheiro de teste: o interruptor não pode ser desativado.</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerMainnetDestinationAccount</name>
+            <label>Wallet address (Mainnet)</label>
+            <label lang="de-DE">Wallet-Adresse (Mainnet)</label>
+            <label lang="fr-FR">Adresse de portefeuille (Mainnet)</label>
+            <label lang="nl-NL">Walletadres (Mainnet)</label>
+            <label lang="es-ES">Dirección de cartera (Mainnet)</label>
+            <label lang="pt-PT">Endereço da carteira (Mainnet)</label>
+            <helpText>Your Open Payments wallet address as an https URL, for example https://ilp.example.com/acme. A payment pointer ($ilp.example.com/acme) is accepted and stored as its URL. Checked when saved.</helpText>
+            <helpText lang="de-DE">Ihre Open-Payments-Wallet-Adresse als https-URL, zum Beispiel https://ilp.example.com/acme. Die Kurzform mit $ ($ilp.example.com/acme) wird angenommen und als URL gespeichert. Wird beim Speichern geprüft.</helpText>
+            <helpText lang="fr-FR">Votre adresse de portefeuille Open Payments sous forme d'URL https, par exemple https://ilp.example.com/acme. La forme courte avec $ ($ilp.example.com/acme) est acceptée et enregistrée sous forme d'URL. Vérifiée lors de l'enregistrement.</helpText>
+            <helpText lang="nl-NL">Uw Open Payments-walletadres als https-URL, bijvoorbeeld https://ilp.example.com/acme. De korte vorm met $ ($ilp.example.com/acme) wordt geaccepteerd en als URL opgeslagen. Wordt bij het opslaan gecontroleerd.</helpText>
+            <helpText lang="es-ES">Su dirección de cartera de Open Payments como URL https, por ejemplo https://ilp.example.com/acme. La forma abreviada con $ ($ilp.example.com/acme) se acepta y se guarda como URL. Se comprueba al guardar.</helpText>
+            <helpText lang="pt-PT">O endereço da carteira Open Payments como URL https, por exemplo https://ilp.example.com/acme. A forma abreviada com $ ($ilp.example.com/acme) é aceite e guardada como URL. É verificado ao guardar.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerTestnetDestinationAccount</name>
+            <label>Wallet address (Testnet)</label>
+            <label lang="de-DE">Wallet-Adresse (Testnet)</label>
+            <label lang="fr-FR">Adresse de portefeuille (Testnet)</label>
+            <label lang="nl-NL">Walletadres (Testnet)</label>
+            <label lang="es-ES">Dirección de cartera (Testnet)</label>
+            <label lang="pt-PT">Endereço da carteira (Testnet)</label>
+            <helpText>For example https://ilp.interledger-test.dev/your-wallet.</helpText>
+            <helpText lang="de-DE">Zum Beispiel https://ilp.interledger-test.dev/ihre-wallet.</helpText>
+            <helpText lang="fr-FR">Par exemple https://ilp.interledger-test.dev/votre-portefeuille.</helpText>
+            <helpText lang="nl-NL">Bijvoorbeeld https://ilp.interledger-test.dev/uw-wallet.</helpText>
+            <helpText lang="es-ES">Por ejemplo https://ilp.interledger-test.dev/su-cartera.</helpText>
+            <helpText lang="pt-PT">Por exemplo https://ilp.interledger-test.dev/a-sua-carteira.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>interledgerKeyId</name>
+            <label>Key ID</label>
+            <label lang="de-DE">Key-ID</label>
+            <label lang="fr-FR">ID de clé</label>
+            <label lang="nl-NL">Sleutel-ID</label>
+            <label lang="es-ES">ID de clave</label>
+            <label lang="pt-PT">ID da chave</label>
+            <helpText>The key id your wallet registered for this client - the wallet shows it as "Key ID" and it is a UUID, not the wallet's name. A wrong id is refused by the authorization server with "invalid_client". Leave it empty at a Dassie node: nothing is registered there, the shop is known by its key alone, and any Ed25519 key will do.</helpText>
+            <helpText lang="de-DE">Die Key-ID, die Ihre Wallet für diesen Client registriert hat - die Wallet zeigt sie als „Key ID“ an, sie ist eine UUID und nicht der Name der Wallet. Eine falsche ID weist der Autorisierungsserver mit „invalid_client“ ab. An einem Dassie-Knoten leer lassen: Dort wird nichts registriert, der Shop ist allein durch seinen Schlüssel bekannt, und jeder Ed25519-Schlüssel genügt.</helpText>
+            <helpText lang="fr-FR">L'ID de clé que votre portefeuille a enregistré pour ce client - le portefeuille l'affiche sous « Key ID » ; c'est un UUID, pas le nom du portefeuille. Un ID erroné est refusé par le serveur d'autorisation avec « invalid_client ». À laisser vide pour un nœud Dassie : rien n'y est enregistré, la boutique est connue par sa seule clé, et n'importe quelle clé Ed25519 convient.</helpText>
+            <helpText lang="nl-NL">De sleutel-ID die uw wallet voor deze client heeft geregistreerd - de wallet toont die als "Key ID"; het is een UUID, niet de naam van de wallet. Een verkeerde ID wordt door de autorisatieserver geweigerd met "invalid_client". Laat dit leeg bij een Dassie-node: daar wordt niets geregistreerd, de winkel is alleen bekend door zijn sleutel, en elke Ed25519-sleutel volstaat.</helpText>
+            <helpText lang="es-ES">El ID de clave que su cartera registró para este cliente: la cartera lo muestra como «Key ID» y es un UUID, no el nombre de la cartera. El servidor de autorización rechaza un ID incorrecto con «invalid_client». Déjelo vacío con un nodo Dassie: allí no se registra nada, la tienda se identifica solo por su clave y sirve cualquier clave Ed25519.</helpText>
+            <helpText lang="pt-PT">O ID da chave que a carteira registou para este cliente - a carteira mostra-o como «Key ID» e é um UUID, não o nome da carteira. Um ID errado é recusado pelo servidor de autorização com «invalid_client». Deixar vazio num nó Dassie: aí nada é registado, a loja é conhecida apenas pela chave, e qualquer chave Ed25519 serve.</helpText>
+        </input-field>
+
+        <input-field type="password">
+            <name>interledgerPrivateKey</name>
+            <label>Private key (base64 of the PEM)</label>
+            <label lang="de-DE">Privater Schlüssel (Base64 des PEM)</label>
+            <label lang="fr-FR">Clé privée (base64 du PEM)</label>
+            <label lang="nl-NL">Privésleutel (base64 van de PEM)</label>
+            <label lang="es-ES">Clave privada (base64 del PEM)</label>
+            <label lang="pt-PT">Chave privada (base64 do PEM)</label>
+            <helpText>The Ed25519 private key belonging to that key id, as base64 of its PEM on one line: base64 -w0 private.key. The PEM itself is not accepted. It signs every request to your wallet and never leaves this shop.</helpText>
+            <helpText lang="de-DE">Der zu dieser Key-ID gehörende Ed25519-Schlüssel als Base64 seines PEM in einer Zeile: base64 -w0 private.key. Das PEM selbst wird nicht angenommen. Er signiert jede Anfrage an Ihre Wallet und verlässt diesen Shop nicht.</helpText>
+            <helpText lang="fr-FR">La clé privée Ed25519 correspondant à cet ID de clé, en base64 de son PEM sur une seule ligne : base64 -w0 private.key. Le PEM lui-même n'est pas accepté. Elle signe chaque requête adressée à votre portefeuille et ne quitte jamais cette boutique.</helpText>
+            <helpText lang="nl-NL">De Ed25519-privésleutel die bij deze sleutel-ID hoort, als base64 van de PEM op één regel: base64 -w0 private.key. De PEM zelf wordt niet geaccepteerd. De sleutel ondertekent elk verzoek aan uw wallet en verlaat deze winkel nooit.</helpText>
+            <helpText lang="es-ES">La clave privada Ed25519 que corresponde a ese ID de clave, como base64 de su PEM en una sola línea: base64 -w0 private.key. El PEM en sí no se acepta. Firma cada petición a su cartera y nunca sale de esta tienda.</helpText>
+            <helpText lang="pt-PT">A chave privada Ed25519 que corresponde a esse ID da chave, como base64 do PEM numa só linha: base64 -w0 private.key. O PEM em si não é aceite. Assina cada pedido enviado à carteira e nunca sai desta loja.</helpText>
+        </input-field>
+    </card>
+
+    <card>
         <title>LedgerDirect - Payment page</title>
         <title lang="de-DE">LedgerDirect - Zahlungsseite</title>
         <title lang="fr-FR">LedgerDirect - Page de paiement</title>

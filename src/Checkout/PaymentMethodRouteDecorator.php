@@ -2,6 +2,8 @@
 
 namespace Hardcastle\LedgerDirect\Checkout;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Account\ReceivingAccountCheck;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
@@ -26,9 +28,18 @@ use Throwable;
  * testnet a shop offered RLUSD to an account without a trust line and the
  * customer's payment failed with tecPATH_DRY. Methods that are not ours pass
  * through untouched.
+ *
+ * Interledger has no receiving-account check, because it has no ledger
+ * account: no trust line, no reserve, no activation. Its pre-flight question
+ * is another one: a wallet address holds exactly one asset, so only the
+ * method in that asset can be paid at all. The wallet is asked (and cached
+ * for minutes), and a wallet that cannot be reached offers nothing.
  */
 class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
 {
+    /** Our handlers, as the database holds them; it survives the loss of a chain's package. */
+    private const HANDLER_NAMESPACE = 'Hardcastle\\LedgerDirect\\Components\\PaymentHandler\\';
+
     /**
      * @param array<string, ReceivingAccountCheck> $checks one per chain, keyed 'XRPL', 'XAHAU', 'STELLAR'
      */
@@ -36,6 +47,7 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         private readonly AbstractPaymentMethodRoute $decorated,
         private readonly ShopwareConfigProvider $configProvider,
         private readonly array $checks,
+        private readonly InterledgerGateway $interledger,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -48,7 +60,7 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): PaymentMethodRouteResponse
     {
         $response = $this->decorated->load($request, $context, $criteria);
-        $methods = $response->getPaymentMethods()->filter(fn (PaymentMethodEntity $method): bool => $this->isOffered($method));
+        $methods = $response->getPaymentMethods()->filter(fn (PaymentMethodEntity $method): bool => $this->isOffered($method, $context));
 
         // The response wraps an EntitySearchResult that carries the elements and the
         // total of its own, next to the entity collection: the Store API serialises
@@ -63,18 +75,44 @@ class PaymentMethodRouteDecorator extends AbstractPaymentMethodRoute
         return $response;
     }
 
-    private function isOffered(PaymentMethodEntity $method): bool
+    private function isOffered(PaymentMethodEntity $method, SalesChannelContext $context): bool
     {
         $chainAndAsset = PaymentMethodInstaller::chainAndAssetFor($method->getId());
 
         if ($chainAndAsset === null) {
-            return true;
+            /*
+             * Either not ours, or ours from a chain this installation no longer
+             * knows: a merchant who removes the Interledger package keeps its
+             * stored, active payment methods, and the chain list no longer maps
+             * their ids. Offering one would let a customer choose a method that
+             * cannot be quoted, so a method with one of our handlers stays out.
+             * Everything else is another plugin's and passes untouched.
+             */
+            // Read through getVars(): the entity's handler identifier is a typed property,
+            // and a route that loaded the collection with `includes` leaves it uninitialized,
+            // which the getter answers with an Error.
+            $handler = $method->getVars()['handlerIdentifier'] ?? null;
+
+            return !is_string($handler) || !str_starts_with($handler, self::HANDLER_NAMESPACE);
         }
 
         [$chain, $asset] = $chainAndAsset;
 
         if (!$this->configProvider->isAssetEnabled($chain->chain, $asset->code)) {
             return false;
+        }
+
+        if ($chain->chain === ChainRegistry::INTERLEDGER) {
+            if ($asset->code !== $this->interledger->walletAssetCode()) {
+                return false;
+            }
+
+            // The prototype converts no fiat: a balance pegged to a currency takes orders in
+            // that currency only (EUR for EUR, USD for USD and DSUSD), and quoting any other
+            // would fail after the customer chose the method. An asset without a peg (XRP) is
+            // priced by the oracles like on a ledger.
+            return $asset->pegCurrency === null
+                || strtoupper($asset->pegCurrency) === strtoupper($context->getCurrency()->getIsoCode());
         }
 
         $check = $this->checks[$chain->chain] ?? null;

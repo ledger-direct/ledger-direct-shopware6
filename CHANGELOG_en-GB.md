@@ -1,3 +1,40 @@
+# Unreleased
+- Interledger as a fourth chain, as a **preview and a prototype**: the shop takes an
+  [Open Payments](https://openpayments.dev) payment into the merchant's own wallet — a Dassie node, the
+  Interledger test wallet, or any Rafiki-based wallet. Test money only, and off until the new card's
+  switch is on. The chain's services come from `hardcastle/ledger-direct-interledger`, an optional
+  package the shop installs with `composer require`; without it nothing of the card, the payment
+  methods or the chain exists
+- A card "LedgerDirect - Interledger (Preview)": the wallet address (a payment pointer is accepted and
+  stored as its URL), the key id the wallet registered and the private key as base64 of its PEM. Only the
+  payment method in the currency the wallet address actually holds is offered at checkout, and a wallet
+  that cannot be reached offers none — the same fail-closed rule as a Stellar trust line that cannot be
+  checked. A EUR or USD balance is offered only when the customer checks out in that currency, because
+  the prototype converts no fiat
+- The payment page over Interledger is one step: the incoming payment's URL is the payment link and the
+  QR code, with amount, payee and expiry inside it. The customer copies no identifier — the order's
+  reference travels in the payment request the shop created. The record is the same schema v1 every
+  LedgerDirect plugin reads, with the incoming payment as the destination account and the received
+  amount as an issued currency of the merchant's wallet
+- The Store API's `quote` names the chain `INTERLEDGER` and carries `identifierRequired`: false over
+  Interledger, where the customer puts no identifier on the payment, true on every ledger
+- Interledger's texts exist in all six languages. The receiving-account check of 1.11.0 leaves the chain
+  out: a wallet address has no trust line, no reserve and no activation, and its own question (which
+  asset does the wallet hold) is asked instead
+- A Dassie node as the merchant's wallet: the key id stays empty there. A Dassie node registers nobody's
+  key but its own, so the shop is a client known by its key alone, and the node grants creating and
+  reading incoming payments to it at once. Needs `hardcastle/ledger-direct-interledger` 0.2.0, which
+  also sends two requests the way a Dassie node reads them (the signature header, the grant endpoint)
+- A payment into an Interledger order the merchant cancelled is put on the order's payment record. On a
+  ledger such a payment reaches the transaction table with the account's next sync; over Interledger it
+  sits in the order's own incoming payment, which nothing read once the order was closed. The scheduled
+  task now reads it until an hour after the incoming payment lapsed. The order stays cancelled
+- The plugin's chain list is its own (`Chain\ChainRegistry`) instead of the core's `ChainCatalog`: a chain
+  can now come from a package next to the core. Nothing changes for the XRPL, Stellar and Xahau
+- Known gaps of the prototype: no top-up after a quote expires (an expired incoming payment accepts
+  nothing), no fiat conversion (a EUR wallet takes EUR orders), no settlement proof per payment, no
+  browser wallet on the payment page
+
 # 1.11.0
 - Needs `hardcastle/ledger-direct-core` 0.12.0. The checkout offers only what the receiving account
   can take. A token the account cannot receive (no trust line, frozen, full, not authorized) is left
