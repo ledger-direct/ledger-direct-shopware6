@@ -45,6 +45,9 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
     {
         $this->orderTransactionService = Mockery::mock(OrderTransactionService::class);
         $this->stateHandler = Mockery::mock(OrderTransactionStateHandler::class);
+        // No cancelled Interledger order unless a test says so.
+        $this->orderTransactionService->shouldReceive('findCancelledInterledgerTransactions')
+            ->andReturn(new OrderTransactionCollection([]))->byDefault();
     }
 
     public function testTheTaskRunsEveryFiveMinutes(): void
@@ -170,6 +173,94 @@ class SettleOpenTransactionsTaskHandlerTest extends TestCase
         $this->orderTransactionService->shouldReceive('syncLedger')->once()->with('XAHAU', 'rSharedAccount', 'testnet', false);
 
         $this->handler()->run();
+    }
+
+    /**
+     * PS-11 over Interledger. The merchant cancelled, the customer paid anyway: on a
+     * ledger the account's sync puts that payment in the transaction table. Here it sits
+     * in the order's own incoming payment, so the task reads that one, and what arrived
+     * goes on the order's record. The order stays cancelled.
+     */
+    public function testAPaymentIntoACancelledInterledgerOrderIsPutOnItsRecordAndNothingElseChanges(): void
+    {
+        $cancelled = $this->transaction('tx-cancelled', 'cancelled');
+
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([]));
+        $this->orderTransactionService->shouldReceive('findCancelledInterledgerTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([$cancelled]));
+        $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($cancelled)
+            ->andReturn($this->interledgerQuote(time() + 120));
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->once()->with($cancelled, Mockery::type(Context::class))
+            ->andReturn($this->interledgerQuote(time() + 120)->withFulfillment('3f2c0d8e', ['value' => '1.120060000', 'issuer' => 'https://merchant.example/pay/xrp', 'currency' => 'XRP']));
+
+        $this->stateHandler->shouldNotReceive('paid');
+        $this->stateHandler->shouldNotReceive('payPartially');
+        $this->stateHandler->shouldNotReceive('reopen');
+        $this->orderTransactionService->shouldNotReceive('syncLedger');
+
+        $this->handler()->run();
+    }
+
+    /**
+     * An incoming payment that lapsed takes nothing more. The order is read for an
+     * hour after that, which covers the read that is the last word, and then left alone:
+     * a cancelled order is not asked about at the wallet forever.
+     */
+    public function testACancelledInterledgerOrderIsNotReadOnceItsIncomingPaymentIsLongOver(): void
+    {
+        $stillReadable = $this->transaction('tx-recent', 'cancelled');
+        $longOver = $this->transaction('tx-old', 'cancelled');
+
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([]));
+        $this->orderTransactionService->shouldReceive('findCancelledInterledgerTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([$stillReadable, $longOver]));
+        $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($stillReadable)
+            ->andReturn($this->interledgerQuote(time() - 3000));
+        $this->orderTransactionService->shouldReceive('readPaymentIntent')->with($longOver)
+            ->andReturn($this->interledgerQuote(time() - 4000));
+
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->once()->with($stillReadable, Mockery::any())->andReturn(null);
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->never()->with($longOver, Mockery::any());
+
+        $this->handler()->run();
+    }
+
+    /** A wallet that cannot be read for one cancelled order does not stop the next. */
+    public function testACancelledOrderThatCannotBeReadDoesNotStopTheOthers(): void
+    {
+        $unreadable = $this->transaction('tx-unreadable', 'cancelled');
+        $fine = $this->transaction('tx-fine', 'cancelled');
+
+        $this->orderTransactionService->shouldReceive('findOpenLedgerDirectTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([]));
+        $this->orderTransactionService->shouldReceive('findCancelledInterledgerTransactions')
+            ->once()->andReturn(new OrderTransactionCollection([$unreadable, $fine]));
+        $this->orderTransactionService->shouldReceive('readPaymentIntent')->andReturn($this->interledgerQuote(time() + 120));
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->once()->with($unreadable, Mockery::any())
+            ->andThrow(new \RuntimeException('wallet hiccup'));
+        $this->orderTransactionService->shouldReceive('matchOrderTransaction')->once()->with($fine, Mockery::any())->andReturn(null);
+
+        $this->handler()->run();
+    }
+
+    private function interledgerQuote(int $expiry): PaymentIntent
+    {
+        return PaymentIntent::quote(
+            type: 'interledger-xrp-payment',
+            chain: 'INTERLEDGER',
+            network: 'testnet',
+            baseAsset: 'XRP',
+            quoteCurrency: 'EUR',
+            pairing: 'XRP/EUR',
+            exchangeRate: 0.8928,
+            // Over Interledger every amount names its wallet address, as an issued one names its issuer.
+            amountRequested: ['value' => '1.120060000', 'issuer' => 'https://merchant.example/pay/xrp', 'currency' => 'XRP'],
+            destinationAccount: 'https://merchant.example/incoming-payments/3f2c0d8e',
+            destinationTag: 123456,
+            expiry: $expiry,
+        );
     }
 
     private function stellarQuote(string $account): PaymentIntent

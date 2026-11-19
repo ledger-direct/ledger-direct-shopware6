@@ -25,6 +25,10 @@
   key but its own, so the shop is a client known by its key alone, and the node grants creating and
   reading incoming payments to it at once. Needs `hardcastle/ledger-direct-interledger` 0.2.0, which
   also sends two requests the way a Dassie node reads them (the signature header, the grant endpoint)
+- A payment into an Interledger order the merchant cancelled is put on the order's payment record. On a
+  ledger such a payment reaches the transaction table with the account's next sync; over Interledger it
+  sits in the order's own incoming payment, which nothing read once the order was closed. The scheduled
+  task now reads it until an hour after the incoming payment lapsed. The order stays cancelled
 - The plugin's chain list is its own (`Chain\ChainRegistry`) instead of the core's `ChainCatalog`: a chain
   can now come from a package next to the core. Nothing changes for the XRPL, Stellar and Xahau
 - Known gaps of the prototype: no top-up after a quote expires (an expired incoming payment accepts

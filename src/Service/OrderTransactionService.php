@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Service;
 
+use DateTimeImmutable;
 use Exception;
 use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
@@ -19,12 +20,16 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 /**
@@ -379,6 +384,44 @@ class OrderTransactionService
         $criteria->addFilter(new EqualsAnyFilter('stateMachineState.technicalName', PaymentStateService::OPEN_STATES));
         $criteria->addAssociation('stateMachineState');
         $criteria->addSorting(new FieldSorting('createdAt'));
+        $criteria->setLimit($limit);
+
+        /** @var OrderTransactionCollection $transactions */
+        $transactions = $this->orderTransactionRepository->search($criteria, $context)->getEntities();
+
+        return $transactions;
+    }
+
+    /**
+     * Interledger order transactions the merchant cancelled within the last
+     * day, newest first — the candidates for a payment that arrived anyway.
+     *
+     * On a ledger such a payment reaches the transaction table with the next
+     * sync of the receiving account, whatever became of the order. Over
+     * Interledger there is no account to sync: the money went into the
+     * order's own incoming payment, and only a read of that one finds it.
+     * The scheduled task narrows these down to the ones whose incoming
+     * payment can still have taken money (see its handler).
+     */
+    public function findCancelledInterledgerTransactions(Context $context, int $limit = 200): OrderTransactionCollection
+    {
+        $methodIds = array_map(
+            static fn (array $method): string => $method['id'],
+            PaymentMethodInstaller::paymentMethodsFor(ChainRegistry::INTERLEDGER)
+        );
+
+        if ($methodIds === []) {
+            return new OrderTransactionCollection();
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', $methodIds));
+        $criteria->addFilter(new EqualsFilter('stateMachineState.technicalName', OrderTransactionStates::STATE_CANCELLED));
+        $criteria->addFilter(new RangeFilter('createdAt', [
+            RangeFilter::GTE => (new DateTimeImmutable('-1 day'))->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]));
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
         $criteria->setLimit($limit);
 
         /** @var OrderTransactionCollection $transactions */

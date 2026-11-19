@@ -26,6 +26,11 @@
   und der Knoten erlaubt ihm das Anlegen und Lesen von Incoming Payments sofort. Benötigt
   `hardcastle/ledger-direct-interledger` 0.2.0, das außerdem zwei Anfragen so sendet, wie ein
   Dassie-Knoten sie liest (Signatur-Header, Grant-Endpunkt)
+- Eine Zahlung auf eine Interledger-Bestellung, die der Händler storniert hat, wird an der Bestellung
+  vermerkt. Auf einem Ledger landet so eine Zahlung beim nächsten Abgleich des Kontos in der
+  Transaktionstabelle; bei Interledger liegt sie im Incoming Payment der Bestellung, das nach dem Storno
+  niemand mehr gelesen hat. Der geplante Task liest es jetzt bis eine Stunde nach dessen Ablauf. Die
+  Bestellung bleibt storniert
 - Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
   Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
   nichts
