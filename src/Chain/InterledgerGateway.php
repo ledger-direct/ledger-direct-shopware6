@@ -92,7 +92,8 @@ final class InterledgerGateway
     /**
      * Whether an Interledger payment can be quoted at all: the package is
      * installed, the chain is on with a wallet address, and a key is
-     * configured in the shape the SDK signs with.
+     * configured in the shape the SDK signs with. A key id is needed only
+     * where the wallet registered the key (see credentials()).
      */
     public function isAvailable(): bool
     {
@@ -216,7 +217,8 @@ final class InterledgerGateway
 
         if ($packageConfig->getDestinationAccount(ChainRegistry::INTERLEDGER) === '' || $credentials === null) {
             throw new RuntimeException(
-                'Interledger is not configured: a wallet address, a key id and a private key are all required.'
+                'Interledger is not configured: it needs a wallet address and a private key, and the key id too '
+                . 'where the wallet registered the key.'
             );
         }
 
@@ -239,18 +241,28 @@ final class InterledgerGateway
      * the SDK signs with. A bad key is a configuration mistake the admin
      * has to see, so it is logged once here rather than thrown into a
      * checkout — `isAvailable()` then keeps the methods out of the list.
+     *
+     * The key id decides who the shop is to the wallet. With one, the shop
+     * is the client the wallet address stands for and the wallet lists the
+     * key under that id: the Interledger test wallet, any Rafiki wallet.
+     * Without one, the shop is a client known by its key alone: a Dassie
+     * node registers nobody's key, and grants what the receiving side needs
+     * to any key. That needs the package from 0.2.0; with an older one the
+     * call below fails, which is logged like any other unusable key.
      */
     private function credentials(): ?Credentials
     {
         $keyId = $this->configuration->getString(self::KEY_ID_CONFIG);
         $privateKey = $this->configuration->getString(self::PRIVATE_KEY_CONFIG);
 
-        if ($keyId === '' || $privateKey === '') {
+        if ($privateKey === '') {
             return null;
         }
 
         try {
-            return Credentials::fromBase64Pem($keyId, $privateKey);
+            return $keyId === ''
+                ? Credentials::keyOnly($privateKey)
+                : Credentials::fromBase64Pem($keyId, $privateKey);
         } catch (Throwable $exception) {
             $this->logger->warning('LedgerDirect: the configured Interledger key cannot be used', [
                 'exception' => $exception->getMessage(),

@@ -105,6 +105,39 @@ class InterledgerGatewayTest extends TestCase
         $gateway->incomingPaymentService()->quoteForOrder(19.99, 'EUR', 'EUR');
     }
 
+    /**
+     * A Dassie node as the wallet: it registers nobody's key but its own, so
+     * there is no key id to configure. The shop is then a client known by its
+     * key alone, and the key id the package signs with is the key's thumbprint.
+     */
+    public function testWithoutAKeyIdTheShopIsAClientKnownByItsKeyAlone(): void
+    {
+        $configuration = ['LedgerDirect.config.interledgerKeyId' => '', 'LedgerDirect.config.interledgerPrivateKey' => self::rfc8037Key()]
+            + Fixtures::getStaticInterledgerConfiguration();
+        $gateway = $this->gateway($configuration, new FakeOpenPayments(Fixtures::INTERLEDGER_WALLET, 'XRP', 9));
+
+        $this->assertTrue($gateway->isAvailable());
+        $this->assertSame('XRP', $gateway->walletAssetCode());
+
+        $credentials = (new \ReflectionProperty($gateway->root(), 'credentials'))->getValue($gateway->root());
+        $this->assertTrue($credentials->isKeyOnly());
+        $this->assertSame('kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k', $credentials->keyId, 'the thumbprint RFC 8037 publishes for this key');
+    }
+
+    /**
+     * The thumbprint is computed from the key, so a value that is not an
+     * Ed25519 key is refused where a registered key id would have let it
+     * through to fail at the first signature. Logged, and nothing is offered.
+     */
+    public function testWithoutAKeyIdAValueThatIsNoKeyIsNotUsedAndIsLogged(): void
+    {
+        $gateway = $this->gateway(['LedgerDirect.config.interledgerKeyId' => ''] + Fixtures::getStaticInterledgerConfiguration());
+
+        $this->assertFalse($gateway->isAvailable());
+        $this->assertSame('warning', $this->logger->records()[0]['level']);
+        $this->assertStringContainsString('Ed25519', $this->logger->records()[0]['context']['exception']);
+    }
+
     public function testAWalletAddressWrittenAsAPaymentPointerIsUsedAsItsUrl(): void
     {
         $configuration = Fixtures::getStaticInterledgerConfiguration();
@@ -178,6 +211,15 @@ class InterledgerGatewayTest extends TestCase
         $this->expectExceptionMessageMatches('/not configured/');
 
         $this->gateway(Fixtures::getStaticConfiguration())->incomingPaymentService();
+    }
+
+    /** The Ed25519 key of RFC 8037, appendix A, as a shop holds a key: base64 of its PKCS#8 PEM. */
+    private static function rfc8037Key(): string
+    {
+        $seed = base64_decode(strtr('nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A', '-_', '+/'), true);
+        $der = hex2bin('302e020100300506032b657004220420') . $seed;
+
+        return base64_encode("-----BEGIN PRIVATE KEY-----\n" . base64_encode($der) . "\n-----END PRIVATE KEY-----\n");
     }
 
     private function gateway(array $configuration, ?FakeOpenPayments $wallet = null): InterledgerGateway

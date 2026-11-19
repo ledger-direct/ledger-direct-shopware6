@@ -20,9 +20,12 @@
   Interledger, wo der Kunde keine Kennung an die Zahlung hängt, true auf jedem Ledger
 - Die Texte zu Interledger gibt es in allen sechs Sprachen. Die Prüfung des Empfangskontos aus 1.11.0
   lässt die Chain aus: eine Wallet-Adresse hat keine Trustline, keine Reserve und keine Aktivierung,
-  gefragt wird stattdessen, welches Asset die Wallet hält. Benötigt
-  `hardcastle/ledger-direct-interledger` 0.1.2, die erste Version, die sich neben Core 0.12 installieren
-  lässt
+  gefragt wird stattdessen, welches Asset die Wallet hält
+- Ein Dassie-Knoten als Wallet des Händlers: Die Key-ID bleibt dort leer. Ein Dassie-Knoten registriert
+  keinen fremden Schlüssel, der Shop ist also ein Client, der allein durch seinen Schlüssel bekannt ist,
+  und der Knoten erlaubt ihm das Anlegen und Lesen von Incoming Payments sofort. Benötigt
+  `hardcastle/ledger-direct-interledger` 0.2.0, das außerdem zwei Anfragen so sendet, wie ein
+  Dassie-Knoten sie liest (Signatur-Header, Grant-Endpunkt)
 - Die Chain-Liste des Plugins ist jetzt seine eigene (`Chain\ChainRegistry`) statt des `ChainCatalog` des
   Cores: eine Chain kann aus einem Paket neben dem Core kommen. Für XRPL, Stellar und Xahau ändert sich
   nichts
