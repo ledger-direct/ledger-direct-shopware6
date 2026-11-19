@@ -1,5 +1,8 @@
 // The way a prospect walks the try shop up to LedgerDirect's payment page: home page, add a
 // miniature to the cart, guest checkout, a LedgerDirect payment method, place order, payment page.
+// A dev shop is walked the same way with two options: `product` (an article by its number, where
+// the try catalogue's miniature does not exist) and `customer` (logged in before with logIn(), so
+// the checkout shows no address form).
 // Takes a puppeteer page and imports no browser itself, so every caller brings its own: visitor.mjs
 // (screenshots per step, the try.yml check) and the end-to-end harness (`ld-e2e record --start shop`,
 // which films the walk). The selectors live here, next to the shop they belong to, and try.yml
@@ -15,19 +18,50 @@ import { readFileSync } from 'node:fs';
 export const PRODUCT = JSON.parse(readFileSync(new URL('../catalog/catalog.json', import.meta.url))).products[0]['en-GB'].name;
 // The plugin's payment method ids (PaymentMethodInstaller).
 export const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca60321a9d2dac0fe3622a5110f55bd', usdc: '7ca60321a9d2dac0fe3622a5110f55be', xah: 'd9e4a5f06e6c4a36dfa37a410d88de42' };
+// Interledger's, by the asset of the merchant's wallet address: md5('interledger-<asset>-payment').
+// The try shop has none of them; a shop with the optional package and a wallet address offers one.
+export const INTERLEDGER_METHODS = { xrp: '730dccc0d83304840aa350d8ed944668', eur: '1a64c5cbb4e0c14f1e00cb2953e3ea99', usd: '9a2871b0a79a9eaed6c71b084de9b4ad', dsusd: 'de0d6156cdbbafe27dded2d4bd492622' };
+
+/**
+ * Logs a customer in, the way they would before shopping: the account page's login form. A
+ * logged-in customer's checkout goes straight to the confirm page, their address is on file.
+ */
+export async function logIn(page, { base, email, password }) {
+  const BASE = base.replace(/\/$/, '');
+  await page.goto(`${BASE}/account/login`, { waitUntil: 'networkidle0', timeout: 60000 });
+  // The cookie notice slides in a moment after the page; dismissed here, it stays away for the walk.
+  // Clicked in the page, not by coordinates: the notice is still moving when it becomes visible.
+  const notice = await page.waitForSelector('.js-cookie-permission-button', { visible: true, timeout: 4000 }).catch(() => null);
+  if (notice) {
+    await notice.evaluate((e) => e.click());
+    await page.waitForFunction(() => !document.querySelector('.js-cookie-permission-button')?.offsetParent, { timeout: 5000 }).catch(() => {});
+  }
+  const form = 'form[action$="/account/login"]';
+  await page.waitForSelector(`${form} [name="username"]`, { visible: true, timeout: 30000 });
+  await page.type(`${form} [name="username"]`, email);
+  await page.type(`${form} [name="password"]`, password);
+  await Promise.all([page.waitForNavigation({ timeout: 60000 }), page.click(`${form} button[type="submit"]`)]);
+  if (new URL(page.url()).pathname.startsWith('/account/login')) throw new Error('the shop did not take the login');
+}
 
 /**
  * Walks from the home page to the payment page and returns what the page shows.
  *
- * - asset: xrp, rlusd, usdc or xah (any case).
+ * - asset: xrp, rlusd, usdc or xah (any case); with chain 'INTERLEDGER' xrp, eur, usd or dsusd.
+ * - chain: 'INTERLEDGER' picks that chain's payment method for the asset; absent, the ledger's.
+ * - product: { number } buys the article with that product number from its own page instead of
+ *   the catalogue's miniature from the home page.
+ * - customer: true when logIn() ran before: the checkout is entered from the cart and shows no
+ *   address form.
  * - base: the shop's URL; default the origin of the page's current URL. A page that is already on
  *   the home page is not loaded again, so a recording that starts there shows no reload.
  * - step(name, fn): runs each step; default just runs it. visitor.mjs times it and takes a screenshot.
  * - log(line): what the walk notices on the way (the payment methods on offer).
  */
-export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (name, fn) => fn(), log = () => {} } = {}) {
+export async function walkToPaymentPage(page, { asset = 'xrp', chain, product, customer = false, base, step = (name, fn) => fn(), log = () => {} } = {}) {
   const ASSET = asset.toLowerCase();
-  if (!Object.hasOwn(METHODS, ASSET)) throw new Error(`unknown asset ${asset}: xrp, rlusd, usdc or xah`);
+  const methods = String(chain ?? '').toUpperCase() === 'INTERLEDGER' ? INTERLEDGER_METHODS : METHODS;
+  if (!Object.hasOwn(methods, ASSET)) throw new Error(`unknown asset ${asset}: ${Object.keys(methods).join(', ')}`);
   const origin = new URL(page.url()).origin;
   if (!base && origin === 'null') throw new Error('walkToPaymentPage: pass base, the page is not on the shop yet');
   const BASE = (base ?? origin).replace(/\/$/, '');
@@ -60,9 +94,19 @@ export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (nam
     if (await visible('.js-cookie-permission-button')) {
       await page.click('.js-cookie-permission-button');
     }
-    await page.waitForFunction((name) => [...document.querySelectorAll('.product-box .product-name')].some((e) => e.textContent.trim() === name), { timeout: 20000 }, PRODUCT);
+    if (!product?.number) await page.waitForFunction((name) => [...document.querySelectorAll('.product-box .product-name')].some((e) => e.textContent.trim() === name), { timeout: 20000 }, PRODUCT);
   });
   await step('2-add-to-cart', async () => {
+    if (product?.number) {
+      // A search for a product number leads straight to the article's page.
+      await page.goto(`${BASE}/search?search=${encodeURIComponent(product.number)}`, { waitUntil: 'networkidle0', timeout: 60000 });
+      // Its address is the shop's SEO URL, so the page is known by its buy button, not by its path.
+      if (!(await page.$('.product-detail-buy .btn-buy'))) throw new Error(`no article with the number ${product.number} (the search ended on ${new URL(page.url()).pathname})`);
+      await clickInView('.product-detail-buy .btn-buy');
+      await page.waitForSelector('.offcanvas.show .line-item', { visible: true, timeout: 30000 });
+      await settled();
+      return;
+    }
     const boxes = await page.$$('.product-box');
     let target = null;
     for (const box of boxes) {
@@ -75,6 +119,12 @@ export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (nam
     await settled();
   });
   await step('3-checkout-address', async () => {
+    if (customer) {
+      // From the cart, as a customer goes: their address is on file, the next page is the confirm page.
+      await Promise.all([page.waitForNavigation({ timeout: 60000 }), clickInView('.offcanvas.show .begin-checkout-btn')]);
+      if (!page.url().includes('/checkout/confirm')) throw new Error(`a logged-in customer's checkout did not open the confirm page (${page.url()})`);
+      return;
+    }
     await page.goto(`${BASE}/checkout/register`, { waitUntil: 'networkidle0', timeout: 60000 });
     const form = 'form[action$="/account/register"]';
     await page.waitForSelector(`${form} [name="email"]`, { visible: true, timeout: 30000 });
@@ -105,10 +155,17 @@ export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (nam
     }
   });
   await step('4-payment-method', async () => {
-    const radio = `input[name="paymentMethodId"][value="${METHODS[ASSET]}"]`;
+    const radio = `input[name="paymentMethodId"][value="${methods[ASSET]}"]`;
     await page.waitForSelector(radio, { timeout: 30000 });
     const titles = await page.$$eval('.payment-method-label strong, .payment-method-label .payment-method-description strong', (els) => els.map((e) => e.textContent.trim()));
     log(`payment methods: ${[...new Set(titles)].join(' | ')}`);
+    // Into view first: on a short window the payment methods are below the fold, and whoever
+    // watches (a recording) should see which one is chosen.
+    await page.$eval(radio, (e) => e.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    await page.waitForFunction(() => new Promise((resolve) => {
+      const y = window.scrollY;
+      setTimeout(() => resolve(window.scrollY === y), 150);
+    }), { timeout: 10000, polling: 50 });
     const checked = await page.$eval(radio, (e) => e.checked);
     if (!checked) {
       // Changing the payment method saves it and reloads the confirm page.
