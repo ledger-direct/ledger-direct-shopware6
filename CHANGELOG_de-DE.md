@@ -1,4 +1,4 @@
-# Unreleased
+# 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im
   Wallet-Ablauf behebt: Nach einer Teilzahlung öffnet ein Wallet-Knopf die Zahlung des Rests, statt
   die Seite immer wieder neu zu laden; eine XRP-Zahlung, deren Betrag sich ändert, während die Wallet
