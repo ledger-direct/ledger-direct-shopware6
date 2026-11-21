@@ -1,3 +1,13 @@
+# Unreleased
+- Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im
+  Wallet-Ablauf behebt: Nach einer Teilzahlung öffnet ein Wallet-Knopf die Zahlung des Rests, statt
+  die Seite immer wieder neu zu laden; eine XRP-Zahlung, deren Betrag sich ändert, während die Wallet
+  verbindet, lädt neu, statt den alten Betrag zu signieren; eine Seite, die inzwischen bezahlt oder
+  abgelaufen ist, signiert nichts; und eine ältere Statusantwort, die spät eintrifft, setzt die Seite
+  nicht mehr zurück. Nach der Zahlung führt die Seite genau einmal zur Bestellbestätigung: Ein Klick auf
+  den Knopf, während der Countdown ablief, führte auf eine Fehlerseite (die Bestellung war bezahlt). Das
+  Storefront-Bundle ist neu gebaut, sein Stylesheet unverändert
+
 # 1.11.0
 - Benötigt `hardcastle/ledger-direct-core` 0.12.0. Die Kasse bietet nur an, was das Empfangskonto
   annehmen kann. Ein Token, den das Konto nicht empfangen kann (keine Trustline, eingefroren, voll,
