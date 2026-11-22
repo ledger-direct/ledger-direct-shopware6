@@ -5,4 +5,10 @@
         v-if="transaction && isLedgerDirectTransaction"
         :order-transaction-id="transaction.id"
     />
+
+    <ledger-direct-received-payments
+        v-if="ledgerDirectReceivedPaymentsKey"
+        :key="ledgerDirectReceivedPaymentsKey"
+        :order-id="orderId"
+    />
 {% endblock %}

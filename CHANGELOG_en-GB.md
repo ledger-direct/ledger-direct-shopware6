@@ -11,6 +11,14 @@
   current transaction too and take the same parameter. A change to a LedgerDirect payment method
   needs "Allow payment change after checkout" switched on for that method, which the plugin leaves
   off; a change from LedgerDirect to one of Shopware's methods is possible in every shop
+- The order detail lists the received ledger payments of an order: a card "Received payments" under
+  the LedgerDirect card (tab Details), with one row per payment for every LedgerDirect transaction of
+  the order: when it arrived, sender, amount, and the transaction as a link to the explorer. Cancelled
+  and failed transactions are listed too, also when the order's current transaction belongs to
+  another payment method, so a payment that arrived late is found. A payment in another asset than
+  the requested one is listed and marked as not credited; payments on another network (testnet and
+  mainnet share account and tag) are left out. Read from what the shop has synced;
+  `GET /api/_action/ledger-direct/order/{orderId}/payments` answers it for whoever may read the order
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial

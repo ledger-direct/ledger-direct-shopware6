@@ -1,0 +1,66 @@
+.ledger-direct-received-payments {
+    &__transaction + &__transaction {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--color-border-primary-default, #d1d9e0);
+    }
+
+    &__heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
+
+    &__rows {
+        width: 100%;
+        border-collapse: collapse;
+        // Fixed shares: an account and a hash have no break of their own, and left to
+        // themselves they squeeze the amount into two lines.
+        table-layout: fixed;
+
+        th,
+        td {
+            padding: 8px 12px 8px 0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--color-text-secondary-default, #52667a);
+            font-weight: 400;
+            white-space: nowrap;
+
+            &:nth-child(1) {
+                width: 18%;
+            }
+
+            &:nth-child(2) {
+                width: 30%;
+            }
+
+            &:nth-child(3) {
+                width: 22%;
+            }
+        }
+
+        td {
+            border-top: 1px solid var(--color-border-primary-default, #d1d9e0);
+            overflow-wrap: anywhere;
+        }
+
+        code {
+            font-size: 12px;
+        }
+    }
+
+    &__other-asset {
+        color: var(--color-text-critical-default, #de294c);
+    }
+
+    &__note {
+        color: var(--color-text-secondary-default, #52667a);
+    }
+}

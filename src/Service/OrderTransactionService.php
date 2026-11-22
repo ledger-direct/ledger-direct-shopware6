@@ -7,9 +7,11 @@ use Hardcastle\LedgerDirect\Core\ChainCatalog;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
+use Hardcastle\LedgerDirect\Core\Stellar\StellarPayment;
 use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
+use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -240,6 +242,36 @@ class OrderTransactionService
         $this->persistPaymentIntent($orderTransaction, $fulfilledIntent, $context);
 
         return $fulfilledIntent;
+    }
+
+    /**
+     * Everything the local table holds on the intent's receiving account
+     * and tag (memo id on Stellar), newest first. For showing what arrived,
+     * not for deciding what pays; that stays findFulfillmentFor()'s job.
+     *
+     * Only rows of the intent's network: the same account and tag exist on
+     * testnet and mainnet, and test money must not be listed under a real
+     * order. The core skips them the same way when it matches.
+     *
+     * Reads the table and nothing else. No ledger sync is started here;
+     * what the payment page, the status endpoint and the scheduled task
+     * have synced is what is found.
+     *
+     * @return list<XrplTransaction|StellarPayment>
+     * @throws Exception
+     */
+    public function findReceivedPayments(PaymentIntent $intent): array
+    {
+        $sync = $this->syncFor($intent->chain);
+
+        $stored = $sync instanceof StellarSyncService
+            ? $sync->findPayments($intent->destinationAccount, (string) $intent->destinationTag)
+            : $sync->findTransactions($intent->destinationAccount, $intent->destinationTag);
+
+        return array_values(array_filter(
+            $stored,
+            static fn (XrplTransaction|StellarPayment $payment): bool => $payment->network === $intent->network
+        ));
     }
 
     /**

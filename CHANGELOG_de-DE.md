@@ -12,6 +12,16 @@
   Wechsel zu einer LedgerDirect-Zahlungsart setzt voraus, dass für sie „Zahlartwechsel nach
   Bestellabschluss erlauben“ eingeschaltet ist, was das Plugin ausgeschaltet lässt; der Wechsel von
   LedgerDirect zu einer Zahlungsart von Shopware ist in jedem Shop möglich
+- Die Bestelldetails listen die eingegangenen Ledger-Zahlungen einer Bestellung: eine Karte
+  „Eingegangene Zahlungen“ unter der LedgerDirect-Karte (Tab Details), mit einer Zeile je Zahlung für
+  jede LedgerDirect-Transaktion der Bestellung: Eingang, Absender, Betrag und die Transaktion als Link
+  zum Explorer. Stornierte und fehlgeschlagene Transaktionen stehen ebenfalls dort, auch wenn die
+  aktuelle Transaktion der Bestellung zu einer anderen Zahlungsart gehört; so findet sich eine
+  Zahlung, die verspätet eingegangen ist. Eine Zahlung in einem anderen als dem geforderten Asset wird
+  aufgeführt und als nicht angerechnet markiert; Zahlungen in einem anderen Netzwerk (Testnet und
+  Mainnet teilen sich Konto und Tag) fehlen. Gelesen wird, was der Shop synchronisiert hat;
+  `GET /api/_action/ledger-direct/order/{orderId}/payments` liefert die Liste jedem, der die
+  Bestellung lesen darf
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im

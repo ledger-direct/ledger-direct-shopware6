@@ -29,6 +29,15 @@
                 "XAHAU": "Destination tag"
             }
         },
+        "receivedPayments": {
+            "title": "Received payments",
+            "receivedOn": "Received on",
+            "sender": "Sender",
+            "amount": "Amount",
+            "otherAsset": "Not the requested asset, not credited",
+            "none": "No payment has been received for this transaction.",
+            "unavailable": "The received payments could not be loaded."
+        },
         "accountCheck": {
             "hint": "Checked: the saved receiving account on the ledger. After saving a change, check again.",
             "recheck": "Check again",
