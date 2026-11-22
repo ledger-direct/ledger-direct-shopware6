@@ -274,6 +274,17 @@ button and the quote refresh; the page polls
 every other LedgerDirect plugin (`INVARIANTS.md` in the core, "Payment status"), plus a `redirect`
 URL once the order no longer waits for payment.
 
+The page is about the order's current transaction, the newest one. When a customer changes the
+payment method after the order (Shopware's "Change payment method" in the account, or the second try
+after a failed payment), Shopware cancels the transaction and creates a new one: the page then shows
+the new payment, with its own destination tag and amount. After a change to a payment method that is
+not LedgerDirect's there is nothing left to pay here, and page and status send the customer to the
+order page. The page's address carries the transaction it is for as `orderTransactionId`, and so do
+its status check and its forms. A tab that still shows the payment from before the change is sent to
+the order's payment page at its next check or reload, instead of going on with the address, tag and
+amount of a cancelled attempt. An address without the parameter (a bookmark, the link in a mail) is
+about the current transaction.
+
 Behaviour and design come from [`@ledger-direct/payment-ui`](https://github.com/ledger-direct/ledger-direct-payment-ui),
 the package every LedgerDirect plugin shares: the five payment states, the countdown, polling,
 copy buttons, the QR code with address, destination tag and amount, and browser wallets over
@@ -311,9 +322,14 @@ Access is the order's `deepLinkCode` — the code behind the guest order link in
 or the customer of the session, no login. A wrong code and another customer's order are answered
 alike with 403; an order never quoted with LedgerDirect gets 404; a `quote` or `refresh` for an order
 that no longer waits for a payment 410 (`check` carries the `redirect` for it). An expired quote is
-handed out as the page shows it, `page.state` `expired`, and `refresh` makes a current one. The three
-routes are described in the Store API's OpenAPI document, `/store-api/_info/openapi3.json`, under the
-tag LedgerDirect. The Store API answers cross-origin requests with
+handed out as the page shows it, `page.state` `expired`, and `refresh` makes a current one. All three
+are about the order's current transaction: after the customer changed to a payment method that is not
+LedgerDirect's, `quote` and `refresh` answer 410 and `check` a `redirect` to the order page. They take
+an optional `orderTransactionId`, the id of the order transaction a page was built for. When that
+transaction is no longer the order's current one, `check` answers a `redirect` to the order's payment
+page (yours, where one is configured, with an empty `{returnUrl}`), and `quote` and `refresh` answer
+410. The three routes are described in the Store API's OpenAPI document,
+`/store-api/_info/openapi3.json`, under the tag LedgerDirect. The Store API answers cross-origin requests with
 Shopware's CORS headers, on these routes as on the core's.
 
 The payment page package renders from `page` and polls `check`; pass the access key with
@@ -321,7 +337,7 @@ The payment page package renders from `page` and polls `check`; pass the access 
 needs it where the storefront route did not.
 
 **Where the customer is sent.** By default `handle-payment` answers the storefront's payment page
-(`/ledger-direct/payment/{orderId}?returnUrl=…&deepLinkCode=…`, a relative path) and a payment arriving
+(`/ledger-direct/payment/{orderId}?returnUrl=…&deepLinkCode=…&orderTransactionId=…`, a relative path) and a payment arriving
 after Shopware's payment token has expired lands on the storefront's order page. The card
 "LedgerDirect - External front end" in the configuration moves both to your front end, **per sales
 channel**: two URL templates, filled in URL-encoded, empty by default.

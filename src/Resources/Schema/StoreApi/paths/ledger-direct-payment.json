@@ -18,6 +18,9 @@
                         "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
                     },
                     {
+                        "$ref": "#/components/parameters/ledgerDirectOrderTransactionId"
+                    },
+                    {
                         "$ref": "#/components/parameters/swLanguageId"
                     }
                 ],
@@ -39,7 +42,7 @@
                         "description": "The order was never quoted with LedgerDirect"
                     },
                     "410": {
-                        "description": "The order no longer waits for a payment (settled, cancelled or paid by hand); `check` carries the redirect"
+                        "description": "The order no longer waits for a payment (settled, cancelled or paid by hand); `check` carries the redirect; also after the customer changed to another payment method, and for an `orderTransactionId` that is no longer the order's current transaction"
                     }
                 },
                 "security": [
@@ -63,6 +66,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectOrderTransactionId"
                     },
                     {
                         "$ref": "#/components/parameters/swLanguageId"
@@ -89,7 +95,7 @@
                         "description": "No price for the new quote right now (error code `LEDGER_DIRECT__PRICE_UNAVAILABLE`): nothing changed, the order keeps its expired quote; try again in a moment"
                     },
                     "410": {
-                        "description": "The order no longer waits for a payment"
+                        "description": "The order no longer waits for a payment; also after the customer changed to another payment method, and for an `orderTransactionId` that is no longer the order's current transaction"
                     }
                 },
                 "security": [
@@ -105,7 +111,7 @@
                     "LedgerDirect"
                 ],
                 "summary": "The payment status of a LedgerDirect order",
-                "description": "Is this order paid? The LedgerDirect payment-status contract (`schema_version` 1, the same seven fields every LedgerDirect plugin returns), plus `hash` once a payment is on record and `redirect` once the order no longer waits for a payment — Shopware's finalize route while the payment token lives, the order page afterwards (the external front end's where one is configured). While the order waits, the ledger is synced, throttled. Poll it every few seconds; only `settled` or a `redirect` ends the polling.",
+                "description": "Is this order paid? The LedgerDirect payment-status contract (`schema_version` 1, the same seven fields every LedgerDirect plugin returns), plus `hash` once a payment is on record and `redirect` once the order no longer waits for a payment — Shopware's finalize route while the payment token lives, the order page afterwards (the external front end's where one is configured). The answer is about the order's current transaction. After a change to a payment method that is not LedgerDirect's it is a `redirect` to the order page; for a request whose `orderTransactionId` is no longer the current transaction, a `redirect` to the order's payment page. While the order waits, the ledger is synced, throttled. Poll it every few seconds; only `settled` or a `redirect` ends the polling.",
                 "operationId": "readLedgerDirectPaymentStatus",
                 "parameters": [
                     {
@@ -113,6 +119,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/ledgerDirectDeepLinkCode"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ledgerDirectOrderTransactionId"
                     },
                     {
                         "name": "returnUrl",
@@ -172,6 +181,16 @@
                 "description": "The order's deepLinkCode, as `POST /checkout/order` returned it — the per-order secret that opens the order without a login. Optional for the customer of the session.",
                 "schema": {
                     "type": "string"
+                }
+            },
+            "ledgerDirectOrderTransactionId": {
+                "name": "orderTransactionId",
+                "in": "query",
+                "required": false,
+                "description": "The order transaction a payment page was built for. Optional: without it the request is about the order's current transaction, the newest one. With it, a request for a transaction that is no longer the current one (the customer changed the payment method since) is not answered as if it were: `check` answers a `redirect`, `quote` and `refresh` 410.",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
                 }
             }
         },

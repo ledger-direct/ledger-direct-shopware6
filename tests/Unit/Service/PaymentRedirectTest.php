@@ -121,6 +121,37 @@ class PaymentRedirectTest extends TestCase
         $this->assertStringStartsWith('https://shop.example/payment/finalize-transaction', $target);
     }
 
+    /*
+     * The order's payment page, for a tab that shows an attempt which has
+     * been replaced: from the order alone. Nothing of a request goes on it,
+     * least of all the payment token, which is the cancelled transaction's.
+     */
+
+    public function testThePaymentPageOfAnOrderCarriesItsIdAndCodeAndNothingElse(): void
+    {
+        /** @var RouterInterface&Mockery\MockInterface $router */
+        $router = Mockery::mock(RouterInterface::class);
+        $router->shouldReceive('generate')
+            ->once()
+            ->with('frontend.checkout.ledger-direct.payment', ['orderId' => 'order-id', 'deepLinkCode' => 'the-code'], UrlGeneratorInterface::ABSOLUTE_URL)
+            ->andReturn('https://shop.example/ledger-direct/payment/order-id?deepLinkCode=the-code');
+        $redirect = new PaymentRedirect($router, new HeadlessTargets(ConfigurationServiceMock::createInstance([])));
+
+        $this->assertSame('https://shop.example/ledger-direct/payment/order-id?deepLinkCode=the-code', $redirect->paymentPage($this->order()));
+    }
+
+    public function testWithAnExternalFrontEndThePaymentPageIsItsOwnWithoutAReturnUrl(): void
+    {
+        /** @var RouterInterface&Mockery\MockInterface $router */
+        $router = Mockery::mock(RouterInterface::class);
+        $router->shouldReceive('generate')->never();
+        $redirect = new PaymentRedirect($router, new HeadlessTargets(ConfigurationServiceMock::createInstance([
+            'LedgerDirect.config.headlessPaymentPageUrl' => 'https://frontend.example/pay/{orderId}?code={deepLinkCode}&return={returnUrl}',
+        ])));
+
+        $this->assertSame('https://frontend.example/pay/order-id?code=the-code&return=', $redirect->paymentPage($this->order()));
+    }
+
     private function expectOrderPage(): void
     {
         $this->router->shouldReceive('generate')

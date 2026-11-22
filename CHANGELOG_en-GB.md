@@ -1,3 +1,17 @@
+# Unreleased
+- After a customer changes the payment method of an order (in the account under "Change payment
+  method", or with the second try after a failed payment), the payment page shows the new payment.
+  Before, page and status check looked at the order's first transaction, which Shopware cancels on a
+  change: a customer who changed from XRP to RLUSD, or from prepayment to XRP, was sent straight back
+  to the shop and could not reach the payment page of the new attempt. A browser tab that still shows
+  the payment from before the change moves on to the new one at its next status check, so nobody pays
+  to the address and tag of a cancelled attempt; after a change to a payment method that is not
+  LedgerDirect's it goes to the order. The page's address and its status check name the transaction
+  they are for (`orderTransactionId`); the Store API routes `check`, `quote` and `refresh` follow the
+  current transaction too and take the same parameter. A change to a LedgerDirect payment method
+  needs "Allow payment change after checkout" switched on for that method, which the plugin leaves
+  off; a change from LedgerDirect to one of Shopware's methods is possible in every shop
+
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial
   payments in the wallet flow: after a partial payment, a wallet button opens the payment for the

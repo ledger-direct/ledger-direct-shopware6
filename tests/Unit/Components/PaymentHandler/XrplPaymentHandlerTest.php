@@ -65,7 +65,9 @@ class XrplPaymentHandlerTest extends TestCase
 
     /**
      * The redirect carries the order's deepLinkCode: it is what lets a guest
-     * open the payment page and poll the status without a login.
+     * open the payment page and poll the status without a login. And the
+     * transaction this attempt is: the page of an attempt the customer has
+     * replaced by another payment method tells from it that it is over.
      */
     public function testPayRedirectsToThePaymentPageWithTheOrderSecret(): void
     {
@@ -76,6 +78,7 @@ class XrplPaymentHandlerTest extends TestCase
 
         $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
         $orderTransaction->shouldReceive('getOrder')->andReturn($order);
+        $orderTransaction->shouldReceive('getId')->andReturn(self::TX_ID);
 
         $this->transactionService->shouldReceive('getOrderTransactionById')
             ->with(self::TX_ID, $this->context)
@@ -89,6 +92,7 @@ class XrplPaymentHandlerTest extends TestCase
                 'orderId' => 'order-id',
                 'returnUrl' => 'https://shop.example/payment/finalize-transaction?_sw_payment_token=t',
                 'deepLinkCode' => 'the-deep-link-code',
+                'orderTransactionId' => self::TX_ID,
             ])
             ->andReturn('/ledger-direct/payment/order-id?returnUrl=...&deepLinkCode=the-deep-link-code');
 
