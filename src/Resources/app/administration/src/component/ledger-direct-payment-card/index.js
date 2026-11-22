@@ -85,6 +85,12 @@ Component.register('ledger-direct-payment-card', {
 
             return `${this.display.amountPaid} ${this.display.asset}`;
         },
+
+        // The template formats the quote's validity with it. Without it the row threw while
+        // nothing had arrived, and the card stopped at the state label.
+        dateFilter() {
+            return Shopware.Filter.getByName('date');
+        },
     },
 
     watch: {

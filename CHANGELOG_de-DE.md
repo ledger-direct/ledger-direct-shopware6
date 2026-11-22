@@ -22,6 +22,10 @@
   Mainnet teilen sich Konto und Tag) fehlen. Gelesen wird, was der Shop synchronisiert hat;
   `GET /api/_action/ledger-direct/order/{orderId}/payments` liefert die Liste jedem, der die
   Bestellung lesen darf
+- Die LedgerDirect-Karte in den Bestelldetails zeigt ihre Zeilen auch, solange nichts eingegangen
+  ist. Bei einer Bestellung, die auf ihre Zahlung wartet oder deren Kursgültigkeit abgelaufen ist,
+  endete die Karte nach dem Status: Die Zeile „Kurs gültig bis“ rief einen Datumsfilter auf, den die
+  Komponente nicht hatte
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im

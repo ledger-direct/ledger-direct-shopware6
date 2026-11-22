@@ -19,6 +19,9 @@
   the requested one is listed and marked as not credited; payments on another network (testnet and
   mainnet share account and tag) are left out. Read from what the shop has synced;
   `GET /api/_action/ledger-direct/order/{orderId}/payments` answers it for whoever may read the order
+- The LedgerDirect card on the order detail shows its rows while nothing has arrived, too. For an
+  order that waits for its payment or whose quote has expired, the card stopped at the state label:
+  the row "Quote valid until" called a date filter the component did not have
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial
