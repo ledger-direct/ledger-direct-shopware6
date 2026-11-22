@@ -22,6 +22,10 @@
 - The LedgerDirect card on the order detail shows its rows while nothing has arrived, too. For an
   order that waits for its payment or whose quote has expired, the card stopped at the state label:
   the row "Quote valid until" called a date filter the component did not have
+- The LedgerDirect card on the order detail ignores an answer that arrives late for another
+  transaction. When the order detail moved on to another transaction while the card was still
+  loading, the earlier answer could arrive last and show that transaction's payment under the
+  current one
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial

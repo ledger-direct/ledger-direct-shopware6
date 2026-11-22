@@ -100,31 +100,47 @@ Component.register('ledger-direct-payment-card', {
     },
 
     created() {
+        // Counts the requests. Not in data(): nothing renders from it.
+        this.latestLoad = 0;
         this.load();
     },
 
     methods: {
         async load() {
+            // Shopware can pick another transaction while an answer is on its way, and the
+            // older request can answer last. Only the newest one writes: an answer for the
+            // transaction shown before must not put its payment under this one.
+            this.latestLoad += 1;
+            const request = this.latestLoad;
+
             this.isLoading = true;
             this.problem = null;
             this.hidden = false;
 
             try {
-                this.info = await this.ledgerDirectPaymentInfoService.info(this.orderTransactionId);
-            } catch (error) {
-                const code = error && error.response ? error.response.status : null;
-                this.info = null;
+                const info = await this.ledgerDirectPaymentInfoService.info(this.orderTransactionId);
 
-                if (code === 404) {
-                    // Not ours, or never quoted: nothing to show.
-                    this.hidden = true;
-                } else if (code === 422) {
-                    this.problem = 'unreadable';
-                } else {
-                    this.problem = 'unavailable';
+                if (request === this.latestLoad) {
+                    this.info = info;
+                }
+            } catch (error) {
+                if (request === this.latestLoad) {
+                    const code = error && error.response ? error.response.status : null;
+                    this.info = null;
+
+                    if (code === 404) {
+                        // Not ours, or never quoted: nothing to show.
+                        this.hidden = true;
+                    } else if (code === 422) {
+                        this.problem = 'unreadable';
+                    } else {
+                        this.problem = 'unavailable';
+                    }
                 }
             } finally {
-                this.isLoading = false;
+                if (request === this.latestLoad) {
+                    this.isLoading = false;
+                }
             }
         },
     },

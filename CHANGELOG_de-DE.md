@@ -26,6 +26,10 @@
   ist. Bei einer Bestellung, die auf ihre Zahlung wartet oder deren Kursgültigkeit abgelaufen ist,
   endete die Karte nach dem Status: Die Zeile „Kurs gültig bis“ rief einen Datumsfilter auf, den die
   Komponente nicht hatte
+- Die LedgerDirect-Karte in den Bestelldetails übergeht eine Antwort, die verspätet für eine andere
+  Transaktion eintrifft. Wechselten die Bestelldetails zu einer anderen Transaktion, während die Karte
+  noch lud, konnte die frühere Antwort zuletzt ankommen und die Zahlung jener Transaktion unter der
+  aktuellen zeigen
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im

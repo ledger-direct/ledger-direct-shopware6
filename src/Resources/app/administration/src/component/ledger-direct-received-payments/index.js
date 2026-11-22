@@ -50,23 +50,38 @@ Component.register('ledger-direct-received-payments', {
     },
 
     created() {
+        // Counts the requests. Not in data(): nothing renders from it.
+        this.latestLoad = 0;
         this.load();
     },
 
     methods: {
         async load() {
+            // The order can change while an answer is on its way, and the older request can
+            // answer last. Only the newest one writes: an answer for the order shown before
+            // must neither replace the rows of this one nor end its loading.
+            this.latestLoad += 1;
+            const request = this.latestLoad;
+
             this.isLoading = true;
             this.failed = false;
 
             try {
                 const answer = await this.ledgerDirectReceivedPaymentsService.payments(this.orderId);
-                this.transactions = answer.transactions;
+
+                if (request === this.latestLoad) {
+                    this.transactions = answer.transactions;
+                }
             } catch (error) {
-                this.transactions = [];
-                // An order that is gone has no payments to show; anything else is said.
-                this.failed = !(error && error.response && error.response.status === 404);
+                if (request === this.latestLoad) {
+                    this.transactions = [];
+                    // An order that is gone has no payments to show; anything else is said.
+                    this.failed = !(error && error.response && error.response.status === 404);
+                }
             } finally {
-                this.isLoading = false;
+                if (request === this.latestLoad) {
+                    this.isLoading = false;
+                }
             }
         },
     },
