@@ -14,6 +14,7 @@ use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
 use Hardcastle\LedgerDirect\SalesChannel\PaymentRoute;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentAttempt;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Cart\CartException;
@@ -79,6 +80,11 @@ class XrplPaymentController extends StorefrontController
      * the order belongs to) authorises the request, see OrderAccessGuard.
      * With _loginRequired a guest — who has just placed the order — was sent
      * to a login page instead of the payment instructions.
+     *
+     * The page is about the order's current transaction (PaymentAttempt), the
+     * one Shopware handed to pay(), not about its oldest: after the customer
+     * changed the payment method, the first attempt is cancelled and the page
+     * of the new one must be reachable.
      */
     #[Route(path: '/ledger-direct/payment/{orderId}', name: 'frontend.checkout.ledger-direct.payment', methods: ['GET', 'POST'], options: ['seo' => 'false'])]
     public function payment(SalesChannelContext $context, string $orderId, Request $request): Response
@@ -90,11 +96,27 @@ class XrplPaymentController extends StorefrontController
             return $this->redirectToRoute('frontend.account.order.page');
         }
 
-        $orderTransaction = $order->getTransactions()->first();
-        if (!$orderTransaction) {
+        $attempt = PaymentAttempt::of($order, $request, $this->orderTransactionService);
+        if ($attempt === null) {
             return $this->redirectToRoute('frontend.account.order.page');
         }
 
+        if ($attempt->quoted !== null && !$attempt->currentIsQuoted()) {
+            // The customer changed to a payment method that is not ours: nothing waits for a
+            // ledger payment any more. To the order page, and not over the request's
+            // returnUrl, whose token belongs to the attempt that was cancelled. Nothing is
+            // synced and no state touched: the current transaction is another handler's.
+            return new RedirectResponse($this->paymentRedirect->target($order, null));
+        }
+
+        if ($attempt->superseded && $attempt->currentIsQuoted()) {
+            // A tab of an attempt that has been replaced: it must not show that attempt's
+            // address, tag and amount again. The order's payment page, without this
+            // request's token and transaction, shows the current attempt.
+            return new RedirectResponse($this->paymentRedirect->paymentPage($order));
+        }
+
+        $orderTransaction = $attempt->current;
         $returnUrl = (string) $request->get('returnUrl');
 
         /*
@@ -111,8 +133,14 @@ class XrplPaymentController extends StorefrontController
          * they stay here and the page tells them what is missing. Only a
          * transaction that is no longer open — settled, or closed by the
          * merchant — leaves the page.
+         *
+         * Only for a transaction with a payment record: one without is
+         * another handler's, or was never quoted, and has nothing on the
+         * ledger to look for.
          */
-        $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+        if ($attempt->currentIsQuoted()) {
+            $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+        }
 
         if (!$this->paymentState->isOpen($orderTransaction)) {
             return new RedirectResponse($this->paymentRedirect->target($order, $returnUrl));
@@ -169,16 +197,28 @@ class XrplPaymentController extends StorefrontController
             return $this->redirectToRoute('frontend.account.order.page');
         }
 
+        // With the transaction the form was rendered for: the page tells from it whether
+        // that attempt is still the current one, and its poll goes on naming it.
         $backToPaymentPage = $this->redirectToRoute('frontend.checkout.ledger-direct.payment', array_filter([
             'orderId' => $order->getId(),
             'deepLinkCode' => (string) $order->getDeepLinkCode(),
             'returnUrl' => (string) $request->get('returnUrl'),
+            PaymentAttempt::TRANSACTION_ID_PARAMETER => (string) $request->get(PaymentAttempt::TRANSACTION_ID_PARAMETER),
         ]));
 
-        $orderTransaction = $order->getTransactions()->first();
-        $intent = $orderTransaction === null ? null : $this->orderTransactionService->readPaymentIntent($orderTransaction);
+        $attempt = PaymentAttempt::of($order, $request, $this->orderTransactionService);
 
-        if ($intent === null || !$this->paymentState->isOpen($orderTransaction)) {
+        // Only the current attempt is quoted again, and only when it is ours. A replaced
+        // attempt keeps the quote it was cancelled with; the page sends its tab on.
+        if ($attempt === null || !$attempt->isCurrent()) {
+            return $backToPaymentPage;
+        }
+
+        $orderTransaction = $attempt->current;
+        /** @var PaymentIntent $intent the current transaction carries a record, see isCurrent() */
+        $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
+
+        if (!$this->paymentState->isOpen($orderTransaction)) {
             return $backToPaymentPage;
         }
 
@@ -234,16 +274,22 @@ class XrplPaymentController extends StorefrontController
         $values = $this->paymentPageView->values($order, $orderTransaction, $intent, $context);
         $deepLinkCode = (string) $order->getDeepLinkCode();
 
+        // The poll names the transaction this page was rendered for, whether or not the
+        // request did: once the customer changes the payment method, the poll of this
+        // page is told to leave instead of reporting on the new attempt under the old
+        // one's address, tag and amount (PaymentAttempt).
         $routeParameters = array_filter([
             'orderId' => $order->getId(),
             'deepLinkCode' => $deepLinkCode,
             'returnUrl' => $returnUrl,
+            PaymentAttempt::TRANSACTION_ID_PARAMETER => $orderTransaction->getId(),
         ]);
 
         return $values + [
             'logo' => $this->pageLogo->forShop((string) $values['shopName'], $context->getContext()),
             'returnUrl' => $returnUrl,
             'deepLinkCode' => $deepLinkCode,
+            'orderTransactionId' => $orderTransaction->getId(),
             'pageUrl' => $this->generateUrl('frontend.checkout.ledger-direct.payment', ['orderId' => $order->getId()]),
             'pollUrl' => $this->generateUrl('frontend.checkout.ledger-direct.check-payment', $routeParameters),
             'refreshUrl' => $this->generateUrl('frontend.checkout.ledger-direct.refresh-quote', ['orderId' => $order->getId()]),

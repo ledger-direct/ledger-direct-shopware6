@@ -1,3 +1,18 @@
+# Unreleased
+- Wechselt ein Kunde nach der Bestellung die Zahlungsart (im Konto über „Zahlungsart ändern“ oder mit
+  dem zweiten Versuch nach einer fehlgeschlagenen Zahlung), zeigt die Zahlungsseite die neue Zahlung.
+  Bisher sahen Seite und Statusabfrage auf die erste Transaktion der Bestellung, die Shopware beim
+  Wechsel storniert: Wer von XRP zu RLUSD oder von Vorkasse zu XRP wechselte, landete sofort wieder im
+  Shop und erreichte die Zahlungsseite des neuen Versuchs nicht. Ein Browser-Tab, der noch die Zahlung
+  vor dem Wechsel zeigt, geht bei seiner nächsten Statusabfrage zur neuen über, damit niemand an
+  Adresse und Tag eines stornierten Versuchs zahlt; nach dem Wechsel zu einer Zahlungsart, die nicht
+  von LedgerDirect ist, führt er zur Bestellung. Die Adresse der Seite und ihre Statusabfrage nennen
+  die Transaktion, für die sie gelten (`orderTransactionId`); die Store-API-Routen `check`, `quote`
+  und `refresh` folgen ebenfalls der aktuellen Transaktion und nehmen denselben Parameter an. Der
+  Wechsel zu einer LedgerDirect-Zahlungsart setzt voraus, dass für sie „Zahlartwechsel nach
+  Bestellabschluss erlauben“ eingeschaltet ist, was das Plugin ausgeschaltet lässt; der Wechsel von
+  LedgerDirect zu einer Zahlungsart von Shopware ist in jedem Shop möglich
+
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im
   Wallet-Ablauf behebt: Nach einer Teilzahlung öffnet ein Wallet-Knopf die Zahlung des Rests, statt

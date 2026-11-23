@@ -14,6 +14,7 @@ use Hardcastle\LedgerDirect\Presentation\AmountFormatter;
 use Hardcastle\LedgerDirect\Presentation\PaymentPageView;
 use Hardcastle\LedgerDirect\Service\OrderAccessGuard;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentAttempt;
 use Hardcastle\LedgerDirect\Service\PaymentRedirect;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Cart\CartException;
@@ -72,6 +73,18 @@ class PaymentRoute
      * the customer need not come back over the returnUrl for the merchant
      * to see "paid" or "partially paid".
      *
+     * The answer is about the order's current transaction (PaymentAttempt),
+     * and it is `redirect` at once, without a sync and without a state
+     * change, in two cases. The customer changed to a payment method that is
+     * not ours: the order no longer waits for a ledger payment, and the
+     * target is the order page. Or the request names, as
+     * `orderTransactionId`, an attempt that is no longer the current one:
+     * the page that polls shows a cancelled attempt's address, tag and
+     * amount, and the target is the order's payment page without a payment
+     * token, which shows the current attempt. Both answer 200 with the
+     * contract's fields: a page treats every other status as "nothing new"
+     * and would stay as it is.
+     *
      * Guarded by the order's deepLinkCode or the session customer, not by
      * _loginRequired — see OrderAccessGuard. 403 for anything else, without
      * telling whether the order exists; 404 for an order that was never
@@ -90,13 +103,17 @@ class PaymentRoute
             throw CartException::insufficientPermission();
         }
 
-        $orderTransaction = $order->getTransactions()->first();
+        $attempt = PaymentAttempt::of($order, $request, $this->orderTransactionService);
 
-        if ($orderTransaction === null || $this->orderTransactionService->readPaymentIntent($orderTransaction) === null) {
+        if ($attempt === null || $attempt->quoted === null) {
             throw new NoPaymentIntentException($orderId);
         }
 
-        $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+        if (!$attempt->isCurrent()) {
+            return new PaymentRouteResponse(new ArrayStruct($this->movedOnPayload($order, $attempt)));
+        }
+
+        $orderTransaction = $this->paymentState->syncAndApply($attempt->current, $context->getContext(), throttled: true);
 
         /** @var \Hardcastle\LedgerDirect\Core\Payment\PaymentIntent $intent the record just checked, or as the sync left it */
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -128,7 +145,10 @@ class PaymentRoute
      * show for the same code. 403 for anything else, without telling whether
      * the order exists; 404 for an order never quoted with LedgerDirect; 410
      * for an order that no longer waits for a payment — `check` carries the
-     * redirect for it. An expired quote is handed out as the page shows it,
+     * redirect for it. That includes an order whose customer changed to
+     * another payment method, and a request that names, as
+     * `orderTransactionId`, an attempt which is no longer the order's current
+     * one. An expired quote is handed out as the page shows it,
      * with `page.state` `expired`: the amount is stale and the page says so;
      * `refresh` is the way to a current one.
      *
@@ -204,13 +224,24 @@ class PaymentRoute
             throw CartException::insufficientPermission();
         }
 
-        $orderTransaction = $order->getTransactions()->first();
+        $attempt = PaymentAttempt::of($order, $request, $this->orderTransactionService);
 
-        if ($orderTransaction === null || $this->orderTransactionService->readPaymentIntent($orderTransaction) === null) {
+        if ($attempt === null || $attempt->quoted === null) {
             throw new NoPaymentIntentException($orderId);
         }
 
-        $orderTransaction = $this->paymentState->syncAndApply($orderTransaction, $context->getContext(), throttled: true);
+        /*
+         * The order was quoted, but what is asked for is not its current
+         * attempt: the customer changed to a payment method that is not ours,
+         * or the request names an attempt that has been replaced. Gone, not
+         * "never quoted", and nothing of the replaced attempt is handed out
+         * as if it could still be paid.
+         */
+        if (!$attempt->isCurrent()) {
+            throw new TransactionLifetimeException('This order no longer waits for this payment');
+        }
+
+        $orderTransaction = $this->paymentState->syncAndApply($attempt->current, $context->getContext(), throttled: true);
 
         /** @var PaymentIntent $intent the record as the sync left it */
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
@@ -231,6 +262,44 @@ class PaymentRoute
         }
 
         return [$order, $orderTransaction, $intent];
+    }
+
+    /**
+     * The status answer for a request that is not about a current attempt of
+     * ours: the contract's fields and `redirect`. Nothing is synced and no
+     * state touched; the request only has to leave.
+     *
+     * The fields come from the newest payment record the order has. For a
+     * request that named a replaced attempt that is the current
+     * transaction's record: a page shows "paid" for `settled` before it
+     * follows `redirect`, and it must say that only when the order is.
+     *
+     * Where to: when an attempt of ours is current, the order's payment
+     * page, which shows it; without a payment token, because the one the
+     * request carries is the replaced transaction's. Otherwise the order
+     * page: nothing is left to pay here, and a front end sent to its payment
+     * page would ask for a quote, get 410, poll, and be sent there again.
+     *
+     * @return array<string, mixed>
+     */
+    private function movedOnPayload(OrderEntity $order, PaymentAttempt $attempt): array
+    {
+        /** @var OrderTransactionEntity $quoted the caller has checked that the order was quoted */
+        $quoted = $attempt->quoted;
+        /** @var PaymentIntent $intent */
+        $intent = $this->orderTransactionService->readPaymentIntent($quoted);
+
+        $payload = PaymentStatus::fromIntent($intent, $this->settlementPolicy)->toArray();
+
+        if ($intent->hash !== null) {
+            $payload['hash'] = $intent->hash;
+        }
+
+        $payload['redirect'] = $attempt->currentIsQuoted()
+            ? $this->paymentRedirect->paymentPage($order)
+            : $this->paymentRedirect->target($order, null);
+
+        return $payload;
     }
 
     /**
