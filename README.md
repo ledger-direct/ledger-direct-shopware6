@@ -107,6 +107,15 @@ XRPL explorer. The card is read-only and computed on the server; it is the same 
 page polls. A transaction the merchant closed by hand (cancelled, failed, refunded) is never reopened
 by a late payment.
 
+Under it, the card **Received payments** lists the ledger payments of every LedgerDirect transaction
+of the order, each transaction with its own: when it arrived, the sender, the amount, and the
+transaction as a link to the explorer. A cancelled or failed transaction is listed too, also when
+Shopware shows another payment method's transaction as the current one, so a payment that arrived
+after the shop gave up on an attempt is found here. A payment in another asset than the requested one
+is listed and marked as not credited. The list is what the shop has synced from the ledger (payment
+page, status endpoint, scheduled task), and only payments on the network the transaction was quoted
+for.
+
 The page asks the server every 8 seconds. That endpoint syncs with the XRPL node at most once every
 5 seconds per receiving account, whatever the number of customers waiting; in between it answers
 from what is already stored. A guest order can poll too — the link carries the order's deep link

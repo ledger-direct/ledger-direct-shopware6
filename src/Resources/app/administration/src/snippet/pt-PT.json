@@ -29,6 +29,15 @@
                 "XAHAU": "Destination tag"
             }
         },
+        "receivedPayments": {
+            "title": "Pagamentos recebidos",
+            "receivedOn": "Recebido em",
+            "sender": "Remetente",
+            "amount": "Montante",
+            "otherAsset": "Não é o ativo pedido, não creditado",
+            "none": "Ainda não há nenhum pagamento registado para esta transação. Um novo pagamento aparece aqui após a próxima sincronização com o ledger.",
+            "unavailable": "Não foi possível carregar os pagamentos recebidos."
+        },
         "accountCheck": {
             "hint": "É verificada a conta de receção guardada no ledger. Depois de guardar uma alteração, verifique novamente.",
             "recheck": "Verificar novamente",

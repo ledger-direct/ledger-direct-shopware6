@@ -29,6 +29,15 @@
                 "XAHAU": "Destination tag"
             }
         },
+        "receivedPayments": {
+            "title": "Paiements reçus",
+            "receivedOn": "Reçu le",
+            "sender": "Expéditeur",
+            "amount": "Montant",
+            "otherAsset": "Pas l'actif demandé, non crédité",
+            "none": "Aucun paiement n'est encore enregistré pour cette transaction. Un nouveau paiement apparaît ici après la prochaine synchronisation avec le registre.",
+            "unavailable": "Les paiements reçus n'ont pas pu être chargés."
+        },
         "accountCheck": {
             "hint": "Vérification du compte de réception enregistré, sur le registre. Après l'enregistrement d'une modification, vérifiez à nouveau.",
             "recheck": "Vérifier à nouveau",

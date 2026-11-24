@@ -29,6 +29,15 @@
                 "XAHAU": "Destination tag"
             }
         },
+        "receivedPayments": {
+            "title": "Ontvangen betalingen",
+            "receivedOn": "Ontvangen op",
+            "sender": "Afzender",
+            "amount": "Bedrag",
+            "otherAsset": "Niet het gevraagde asset, niet gecrediteerd",
+            "none": "Voor deze transactie is nog geen betaling vastgelegd. Een nieuwe betaling verschijnt hier na de volgende synchronisatie met de ledger.",
+            "unavailable": "De ontvangen betalingen konden niet worden geladen."
+        },
         "accountCheck": {
             "hint": "Gecontroleerd wordt het opgeslagen ontvangstaccount op de ledger. Controleer opnieuw nadat u een wijziging hebt opgeslagen.",
             "recheck": "Opnieuw controleren",

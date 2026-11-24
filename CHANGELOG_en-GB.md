@@ -11,6 +11,27 @@
   current transaction too and take the same parameter. A change to a LedgerDirect payment method
   needs "Allow payment change after checkout" switched on for that method, which the plugin leaves
   off; a change from LedgerDirect to one of Shopware's methods is possible in every shop
+- The order detail lists the received ledger payments of an order: a card "Received payments" under
+  the LedgerDirect card (tab Details), with one row per payment for every LedgerDirect transaction of
+  the order: when it arrived, sender, amount, and the transaction as a link to the explorer. Cancelled
+  and failed transactions are listed too, also when the order's current transaction belongs to
+  another payment method, so a payment that arrived late is found. A payment in another asset than
+  the requested one is listed and marked as not credited; payments on another network (testnet and
+  mainnet share account and tag) are left out. Read from what the shop has synced;
+  `GET /api/_action/ledger-direct/order/{orderId}/payments` answers it for whoever may read the order
+- The LedgerDirect card on the order detail shows its rows while nothing has arrived, too. For an
+  order that waits for its payment or whose quote has expired, the card stopped at the state label:
+  the row "Quote valid until" called a date filter the component did not have
+- The LedgerDirect card on the order detail ignores an answer that arrives late for another
+  transaction. When the order detail moved on to another transaction while the card was still
+  loading, the earlier answer could arrive last and show that transaction's payment under the
+  current one
+- A payment record with a field of the wrong type (a destination tag that is empty or text, say)
+  counts as unreadable, like one with a field missing: the LedgerDirect card says it cannot read the
+  record, and "Received payments" names it and lists the other transactions. Before, the core's type
+  error went through: the card said it could not load, and the list failed as a whole. The checkout
+  still stops on such a record instead of quoting over it: its account and tag may be intact and
+  already paid to
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial
