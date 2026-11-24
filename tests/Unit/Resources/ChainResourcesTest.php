@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Tests\Unit\Resources;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Presentation\Explorer;
 use PHPUnit\Framework\TestCase;
@@ -61,6 +62,10 @@ class ChainResourcesTest extends TestCase
     /**
      * The keys ConfigurationService reads by name: the switch, the network,
      * an account per network, a toggle per issued asset.
+     *
+     * Interledger has no asset toggles: a wallet address holds exactly one
+     * asset and says which, so the checkout offers that one and there is
+     * nothing for a merchant to switch (PaymentMethodRouteDecorator).
      */
     public function testEveryHandledChainHasItsConfigurationCard(): void
     {
@@ -76,7 +81,7 @@ class ChainResourcesTest extends TestCase
                 $expected[] = $key . ucfirst($network) . 'DestinationAccount';
             }
 
-            foreach ($chain->assets as $asset) {
+            foreach ($chain->chain === ChainRegistry::INTERLEDGER ? [] : $chain->assets as $asset) {
                 if (!$asset->native) {
                     $expected[] = $key . 'Is' . ucfirst(strtolower($asset->code)) . 'Enabled';
                 }
@@ -88,6 +93,11 @@ class ChainResourcesTest extends TestCase
         }
     }
 
+    /**
+     * Interledger has no explorer: a payment there is not a transaction on a
+     * ledger anyone can look up, and its record is the incoming payment at
+     * the merchant's own wallet.
+     */
     public function testEveryHandledChainHasAnExplorerAndIsInTheStoreApiSchema(): void
     {
         $schema = file_get_contents(self::RESOURCES . '/Schema/StoreApi/paths/ledger-direct-payment.json');
@@ -95,6 +105,12 @@ class ChainResourcesTest extends TestCase
 
         foreach (PaymentMethodInstaller::supportedChains() as $chain) {
             foreach ($chain->networks as $network) {
+                if ($chain->chain === ChainRegistry::INTERLEDGER) {
+                    $this->assertSame('', Explorer::transactionBase($chain->chain, $network), "{$chain->chain} {$network}");
+
+                    continue;
+                }
+
                 $this->assertStringStartsWith('https://', Explorer::transactionBase($chain->chain, $network), "{$chain->chain} {$network}");
             }
 

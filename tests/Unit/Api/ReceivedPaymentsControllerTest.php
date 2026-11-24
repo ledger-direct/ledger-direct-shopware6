@@ -3,7 +3,9 @@
 namespace Hardcastle\LedgerDirect\Tests\Unit\Api;
 
 use GuzzleHttp\Psr7\HttpFactory;
+use Doctrine\DBAL\Connection;
 use Hardcastle\LedgerDirect\Api\ReceivedPaymentsController;
+use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -22,8 +24,11 @@ use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
+use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Tests\Fixtures\Fixtures;
 use Hardcastle\LedgerDirect\Tests\Mock\Http\StubHttpClient;
+use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
@@ -251,6 +256,25 @@ class ReceivedPaymentsControllerTest extends TestCase
     }
 
     /**
+     * Open Payments keeps no record of single payments: an Interledger transaction is not
+     * listed (the LedgerDirect card shows what arrived on its incoming payment). The
+     * order's other transactions keep their rows.
+     */
+    public function testAnInterledgerTransactionIsNotListed(): void
+    {
+        $this->xrplTable->saveTransactions([$this->payment('HASH-GOOD', 1002, '40000000')]);
+
+        $answer = $this->answer($this->order([
+            $this->transaction('tx-interledger', 'paid', 'Paid', $this->interledgerQuote()),
+            $this->transaction('tx-good', 'open', 'Open', $this->xrpQuote(1002)),
+        ]));
+
+        $this->assertSame(['tx-good'], array_column($answer['transactions'], 'orderTransactionId'));
+        $this->assertSame(['HASH-GOOD'], array_column($answer['transactions'][0]['payments'], 'hash'));
+        $this->assertSame(0, $this->httpClient->ledgerRequests, 'nothing is synced to answer the list');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function answer(OrderEntity $order): array
@@ -288,6 +312,7 @@ class ReceivedPaymentsControllerTest extends TestCase
                 new SyncService(new XrplClient($this->httpClient, $httpFactory, $httpFactory), $this->xrplTable, $logger),
                 new StellarPaymentIntentService($prices, new MemoIdService($this->stellarTable), $config),
                 new StellarSyncService(new HorizonClient($this->httpClient, $httpFactory), $this->stellarTable, $logger),
+                $this->interledgerGateway($httpFactory, $logger),
                 new SyncThrottle($cache, $logger),
                 $logger,
                 new PaymentIntentService($prices, new DestinationTagService($this->xahauTable), $config, null, 'XAHAU'),
@@ -344,6 +369,31 @@ class ReceivedPaymentsControllerTest extends TestCase
             network: $network, ledgerIndex: $ledgerIndex, hash: $hash, ctid: 'C000000000000000', account: 'rSender',
             destination: self::ACCOUNT, destinationTag: $tag, date: 848499942,
             meta: ['TransactionResult' => 'tesSUCCESS', 'delivered_amount' => $delivered], tx: [],
+        );
+    }
+
+    private function interledgerGateway(HttpFactory $httpFactory, NullLogger $logger): InterledgerGateway
+    {
+        $configuration = ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration());
+
+        return new InterledgerGateway(
+            $configuration,
+            new ShopwareConfigProvider($configuration),
+            $this->httpClient,
+            $httpFactory,
+            $this->createStub(Connection::class),
+            new InMemoryCache(),
+            $logger,
+        );
+    }
+
+    private function interledgerQuote(): PaymentIntent
+    {
+        return PaymentIntent::quote(
+            type: 'interledger-xrp-payment', chain: 'INTERLEDGER', network: 'testnet', baseAsset: 'XRP',
+            quoteCurrency: 'EUR', pairing: 'XRP/EUR', exchangeRate: 0.8928,
+            amountRequested: ['value' => '1.120060000', 'issuer' => 'https://merchant.example/pay/xrp', 'currency' => 'XRP'],
+            destinationAccount: 'https://merchant.example/incoming-payments/3f2c0d8e', destinationTag: 123456,
         );
     }
 

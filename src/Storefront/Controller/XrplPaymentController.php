@@ -2,7 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Storefront\Controller;
 
-use Hardcastle\LedgerDirect\Core\ChainCatalog;
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentStatus;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
@@ -250,7 +250,7 @@ class XrplPaymentController extends StorefrontController
     {
         $intent = $this->orderTransactionService->readPaymentIntent($orderTransaction);
 
-        if ($intent === null || ChainCatalog::forType($intent->type) === null) {
+        if ($intent === null || ChainRegistry::forType($intent->type) === null) {
             $this->addFlash('danger', $this->trans('LedgerDirect.checkout.notPayable'));
             return $this->redirectToRoute('frontend.checkout.cart.page');
         }

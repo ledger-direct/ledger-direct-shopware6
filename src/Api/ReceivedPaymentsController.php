@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\Api;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Presentation\ReceivedPaymentsPresenter;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -71,6 +72,12 @@ class ReceivedPaymentsController extends AbstractController
 
             if ($intent === null) {
                 // Another payment method's transaction, or one of ours that was never quoted.
+                continue;
+            }
+
+            if ($intent->chain === ChainRegistry::INTERLEDGER) {
+                // Open Payments keeps no record of single payments: the incoming payment is the
+                // order's one record, and the LedgerDirect card shows what arrived on it.
                 continue;
             }
 

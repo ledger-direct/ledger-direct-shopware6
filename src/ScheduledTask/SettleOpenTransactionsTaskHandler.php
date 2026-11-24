@@ -2,6 +2,7 @@
 
 namespace Hardcastle\LedgerDirect\ScheduledTask;
 
+use Hardcastle\LedgerDirect\Chain\ChainRegistry;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
 use Hardcastle\LedgerDirect\Port\ShopwareConfigProvider;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
@@ -26,6 +27,11 @@ use Throwable;
  * only from the configuration: a shop with a test phase has orders on both networks,
  * and an order quoted against an earlier receiving address still has to
  * settle after the merchant changed it.
+ *
+ * Interledger has no account to sync: a payment is in the order's own incoming payment.
+ * The open orders are read one by one in the match; an order the merchant cancelled is read
+ * too while its incoming payment can still have taken money, so that what arrived is on the
+ * order's record. Nothing reopens it: the state is the merchant's decision.
  */
 #[AsMessageHandler(handles: SettleOpenTransactionsTask::class)]
 final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
@@ -39,6 +45,13 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
     }
+
+    /**
+     * How long after its incoming payment lapsed a cancelled order is still read. A lapsed
+     * incoming payment takes nothing more, so one read after that moment is the last word;
+     * an hour is twelve runs, enough for a wallet that was down for a while.
+     */
+    private const CANCELLED_READ_SECONDS = 3600;
 
     public function run(): void
     {
@@ -99,7 +112,47 @@ final class SettleOpenTransactionsTaskHandler extends ScheduledTaskHandler
             'accounts_synced' => count($accounts),
             'checked' => count($matchable),
             'settled' => $settled,
+            'recorded_on_cancelled' => $this->recordPaymentsOnCancelledOrders($context),
         ]);
+    }
+
+    /**
+     * What arrived in the incoming payment of an Interledger order the merchant cancelled is
+     * written to the order's payment record, and nothing else changes: the order stays
+     * cancelled, the merchant sees the money and decides. On a ledger the same payment is in
+     * the transaction table after the account's sync above.
+     *
+     * @return int how many cancelled orders have a payment on record after this run's reads
+     */
+    private function recordPaymentsOnCancelledOrders(Context $context): int
+    {
+        $recorded = 0;
+
+        /** @var OrderTransactionEntity $transaction */
+        foreach ($this->orderTransactionService->findCancelledInterledgerTransactions($context) as $transaction) {
+            $intent = $this->readIntent($transaction);
+
+            if ($intent === null || $intent->chain !== ChainRegistry::INTERLEDGER || $intent->expiry === null) {
+                continue;
+            }
+
+            if (time() > $intent->expiry + self::CANCELLED_READ_SECONDS) {
+                continue;
+            }
+
+            try {
+                if ($this->orderTransactionService->matchOrderTransaction($transaction, $context) !== null) {
+                    ++$recorded;
+                }
+            } catch (Throwable $exception) {
+                $this->exceptionLogger->error('LedgerDirect: could not read the incoming payment of a cancelled order', [
+                    'order_transaction_id' => $transaction->getId(),
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return $recorded;
     }
 
     private function readIntent(OrderTransactionEntity $transaction): ?\Hardcastle\LedgerDirect\Core\Payment\PaymentIntent

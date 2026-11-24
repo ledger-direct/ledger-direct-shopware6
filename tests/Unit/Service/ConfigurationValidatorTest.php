@@ -175,6 +175,19 @@ class ConfigurationValidatorTest extends TestCase
         $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.useStellarTestnet', $off, null));
     }
 
+    /**
+     * Interledger is a preview as well, and its mainnet does not exist yet: Dassie
+     * and the Interledger test wallet move test money only. The same rule, asked
+     * through the plugin's own chain list, which is where Interledger comes from.
+     */
+    public function testSwitchingInterledgerToTheMainnetIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/Interledger.* is a preview and runs on the testnet only/');
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent('LedgerDirect.config.useInterledgerTestnet', false, null));
+    }
+
     /** @return array<string, array{0: mixed}> */
     public static function offValues(): array
     {
@@ -233,5 +246,34 @@ class ConfigurationValidatorTest extends TestCase
     private function validator(): ConfigurationValidator
     {
         return new ConfigurationValidator(ConfigurationServiceMock::createInstance(Fixtures::getStaticConfiguration()), new NullLogger());
+    }
+
+    /**
+     * An Interledger wallet address is an https URL. A payment pointer is a
+     * way of writing one, so it is stored as the URL it means; anything else
+     * is refused like a malformed ledger account.
+     */
+    public function testAnInterledgerWalletAddressIsCheckedAndNormalised(): void
+    {
+        $event = new BeforeSystemConfigChangedEvent(
+            'LedgerDirect.config.interledgerTestnetDestinationAccount',
+            '  $ilp.interledger-test.dev/acme/  ',
+            null
+        );
+
+        $this->validator()->onBeforeChange($event);
+
+        $this->assertSame('https://ilp.interledger-test.dev/acme', $event->getValue());
+    }
+
+    public function testSomethingThatIsNoWalletAddressIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->validator()->onBeforeChange(new BeforeSystemConfigChangedEvent(
+            'LedgerDirect.config.interledgerTestnetDestinationAccount',
+            'http://ilp.interledger-test.dev/acme',
+            null
+        ));
     }
 }
