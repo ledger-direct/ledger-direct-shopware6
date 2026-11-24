@@ -77,8 +77,14 @@ jobs:
           persist-credentials: false
 
       # NOTE: verify the action reference against https://sw-cli.fos.gg/
+      # The action installs the latest shopware-cli unless told otherwise, so the
+      # tool is pinned like the action: 0.21.0 made `extension validate` check
+      # formatting by default and failed every run from 2026-11-23 on. Raising
+      # it is a pull request of its own; Dependabot does not see this input.
       - name: Setup shopware-cli
         uses: shopware/shopware-cli-action@b67b48ccb52beb8533ea276152e1f89f29bbd080 # v3.0.0
+        with:
+          version: 0.20.0
 
       - name: Validate extension (basic + store compliance)
         run: |

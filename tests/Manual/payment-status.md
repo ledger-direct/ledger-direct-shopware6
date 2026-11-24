@@ -28,10 +28,12 @@ a case get automated or become a merge gate one day, it keeps its ID.
 - Plugin configuration: Settings → Extensions → My extensions → LedgerDirect: *Use Testnet* on,
   the testnet wallet as *Merchant Wallet Address (Testnet)*, RLUSD and USDC enabled,
   *Quote validity* 300 s unless a case says otherwise.
-- The payment page: `/ledger-direct/payment/{orderId}?deepLinkCode=…&returnUrl=…`. The poll it
-  makes: `/ledger-direct/payment/check/{orderId}?deepLinkCode=…&returnUrl=…` (the same payload as
-  `/store-api/ledger-direct/payment/check/{orderId}`). Watch it in the browser's network tab, or
-  call it with `curl -H 'Accept: application/json'`.
+- The payment page: `/ledger-direct/payment/{orderId}?deepLinkCode=…&returnUrl=…&orderTransactionId=…`.
+  The poll it makes: `/ledger-direct/payment/check/{orderId}?deepLinkCode=…&returnUrl=…&orderTransactionId=…`
+  (the same payload as `/store-api/ledger-direct/payment/check/{orderId}`). Watch it in the browser's
+  network tab, or call it with `curl -H 'Accept: application/json'`. `orderTransactionId` names the
+  order transaction the page was rendered for; without it a request is about the order's current
+  transaction.
 - Transaction state: Orders → order → *Payment status*, or
 
   ```sql
@@ -198,6 +200,27 @@ nothing. After a minute `quote` answers `page.state` `expired` with the stale am
 `page.state` `waiting`. Set the validity back to 300 s afterwards.
 Without `sw-access-key` the Store API answers 401 — the payment page package passes the key with
 `options.headers`.
+
+## Shopware only — the customer changes the payment method after the order
+
+Not one of the core's cases: only Shopware gives an order a second transaction. Needs a customer
+with an account, and for the changes *to* a LedgerDirect method "Allow payment change after
+checkout" switched on for that method (Settings → Payment methods; the plugin leaves it off). No
+payment is needed.
+
+1. **XRP → RLUSD.** Order with XRP and leave the payment page open (tab 1). In a second tab:
+   Account → Orders → *Change payment method* → RLUSD → complete. *Expected:* tab 2 shows the RLUSD
+   payment page with a destination tag and an amount of its own; Orders → order shows the XRP
+   transaction *Cancelled* and an RLUSD one *Open*. Tab 1 leaves for the RLUSD page at its next poll
+   (the poll answers `redirect` to `/ledger-direct/payment/{orderId}?deepLinkCode=…`, without a
+   `returnUrl`), and a reload of tab 1 lands there too. It never goes on showing the XRP request.
+2. **Prepayment → XRP.** Order with a Shopware method, then change to XRP. *Expected:* the XRP
+   payment page; the poll answers `waiting`, not 404.
+3. **XRP → prepayment.** Order with XRP, leave the page open, change to a Shopware method (possible
+   in every shop). *Expected:* Shopware's own "Thank you for updating your order"; the open tab leaves
+   for the order page at its next poll, and so does a reload. `quote` over the Store API answers 410,
+   `check` 200 with a `redirect`. The transactions stay as Shopware left them: XRP *Cancelled*, the
+   other one *Open*.
 
 ## Automated with ld-e2e
 

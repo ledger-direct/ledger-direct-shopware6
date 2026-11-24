@@ -27,8 +27,12 @@ jobs:
           persist-credentials: false
           fetch-depth: 0 # the zip is built from the tag, not from the checkout as it is
 
+      # The same shopware-cli as in ci.yml, pinned there for the reason given there:
+      # the release builds and validates with the tool the pull request was checked with.
       - name: Setup shopware-cli
         uses: shopware/shopware-cli-action@b67b48ccb52beb8533ea276152e1f89f29bbd080 # v3.0.0
+        with:
+          version: 0.20.0
 
       # The tag is the version everywhere - Packagist, the plugin list, the zip
       # name. A composer.json that says something else is a release that would

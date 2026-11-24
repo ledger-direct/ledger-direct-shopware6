@@ -61,6 +61,26 @@ final class PaymentRedirect
     }
 
     /**
+     * The order's payment page with nothing of a request on it: no payment
+     * token, no transaction. Where a tab is sent that was rendered for an
+     * attempt which is no longer the order's current one. Its own returnUrl
+     * will not do: the token in it belongs to the cancelled transaction. The
+     * page then shows the current attempt, or leaves itself.
+     *
+     * The external front end's page where a sales channel has one, with an
+     * empty returnUrl; built from the configuration and the router like
+     * every target here.
+     */
+    public function paymentPage(OrderEntity $order): string
+    {
+        return $this->headlessTargets->paymentPageUrl($order, '') ?? $this->router->generate(
+            'frontend.checkout.ledger-direct.payment',
+            ['orderId' => $order->getId(), 'deepLinkCode' => (string) $order->getDeepLinkCode()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+    }
+
+    /**
      * The payment token from the returnUrl, if it is still valid. Only the
      * `exp` claim is read, without verifying the signature: whether the
      * token is genuine is Shopware's check at the finalize route. This only

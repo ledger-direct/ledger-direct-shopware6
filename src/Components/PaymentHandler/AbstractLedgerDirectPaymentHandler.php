@@ -6,6 +6,7 @@ use Hardcastle\LedgerDirect\Core\Price\PriceUnavailableException;
 use Hardcastle\LedgerDirect\Exception\PriceTemporarilyUnavailableException;
 use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentAttempt;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
@@ -96,10 +97,14 @@ abstract class AbstractLedgerDirectPaymentHandler extends AbstractPaymentHandler
 
         // The deepLinkCode is the order secret the payment page and the status
         // endpoint accept instead of a login — a guest has no other way in.
+        // The transaction id says which attempt this page is for: when the
+        // customer changes the payment method later, the page of this attempt
+        // can tell that it is no longer the current one (PaymentAttempt).
         $redirectUrl = $this->router->generate('frontend.checkout.ledger-direct.payment', [
             'orderId' => $order->getId(),
             'returnUrl' => $transaction->getReturnUrl(),
             'deepLinkCode' => $order->getDeepLinkCode(),
+            PaymentAttempt::TRANSACTION_ID_PARAMETER => $orderTransaction->getId(),
         ]);
 
         return new RedirectResponse($redirectUrl);

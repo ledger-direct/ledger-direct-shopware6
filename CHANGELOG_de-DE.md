@@ -37,6 +37,48 @@
 - Bekannte Lücken des Prototyps: keine Nachzahlung nach Ablauf der Quote (ein abgelaufenes Incoming
   Payment nimmt nichts mehr an), keine Fiat-Umrechnung (eine EUR-Wallet nimmt EUR-Bestellungen), kein
   Settlement-Nachweis je Zahlung, keine Browser-Wallet auf der Zahlungsseite
+- Wechselt ein Kunde nach der Bestellung die Zahlungsart (im Konto über „Zahlungsart ändern“ oder mit
+  dem zweiten Versuch nach einer fehlgeschlagenen Zahlung), zeigt die Zahlungsseite die neue Zahlung.
+  Bisher sahen Seite und Statusabfrage auf die erste Transaktion der Bestellung, die Shopware beim
+  Wechsel storniert: Wer von XRP zu RLUSD oder von Vorkasse zu XRP wechselte, landete sofort wieder im
+  Shop und erreichte die Zahlungsseite des neuen Versuchs nicht. Ein Browser-Tab, der noch die Zahlung
+  vor dem Wechsel zeigt, geht bei seiner nächsten Statusabfrage zur neuen über, damit niemand an
+  Adresse und Tag eines stornierten Versuchs zahlt; nach dem Wechsel zu einer Zahlungsart, die nicht
+  von LedgerDirect ist, führt er zur Bestellung. Die Adresse der Seite und ihre Statusabfrage nennen
+  die Transaktion, für die sie gelten (`orderTransactionId`); die Store-API-Routen `check`, `quote`
+  und `refresh` folgen ebenfalls der aktuellen Transaktion und nehmen denselben Parameter an. Der
+  Wechsel zu einer LedgerDirect-Zahlungsart setzt voraus, dass für sie „Zahlartwechsel nach
+  Bestellabschluss erlauben“ eingeschaltet ist, was das Plugin ausgeschaltet lässt; der Wechsel von
+  LedgerDirect zu einer Zahlungsart von Shopware ist in jedem Shop möglich
+- Die Bestelldetails listen die eingegangenen Ledger-Zahlungen einer Bestellung: eine Karte
+  „Eingegangene Zahlungen“ unter der LedgerDirect-Karte (Tab Details), mit einer Zeile je Zahlung für
+  jede LedgerDirect-Transaktion der Bestellung: Eingang, Absender, Betrag und die Transaktion als Link
+  zum Explorer. Stornierte und fehlgeschlagene Transaktionen stehen ebenfalls dort, auch wenn die
+  aktuelle Transaktion der Bestellung zu einer anderen Zahlungsart gehört; so findet sich eine
+  Zahlung, die verspätet eingegangen ist. Eine Zahlung in einem anderen als dem geforderten Asset wird
+  aufgeführt und als nicht angerechnet markiert; Zahlungen in einem anderen Netzwerk (Testnet und
+  Mainnet teilen sich Konto und Tag) fehlen. Gelesen wird, was der Shop synchronisiert hat;
+  `GET /api/_action/ledger-direct/order/{orderId}/payments` liefert die Liste jedem, der die
+  Bestellung lesen darf
+- Die LedgerDirect-Karte in den Bestelldetails zeigt ihre Zeilen auch, solange nichts eingegangen
+  ist. Bei einer Bestellung, die auf ihre Zahlung wartet oder deren Kursgültigkeit abgelaufen ist,
+  endete die Karte nach dem Status: Die Zeile „Kurs gültig bis“ rief einen Datumsfilter auf, den die
+  Komponente nicht hatte
+- Die LedgerDirect-Karte in den Bestelldetails übergeht eine Antwort, die verspätet für eine andere
+  Transaktion eintrifft. Wechselten die Bestelldetails zu einer anderen Transaktion, während die Karte
+  noch lud, konnte die frühere Antwort zuletzt ankommen und die Zahlung jener Transaktion unter der
+  aktuellen zeigen
+- Ein Zahlungsdatensatz mit einem Feld vom falschen Typ (etwa einem leeren oder textförmigen
+  Destination Tag) gilt als unlesbar, wie einer, dem ein Feld fehlt: Die LedgerDirect-Karte meldet,
+  dass sie den Datensatz nicht lesen kann, und „Eingegangene Zahlungen“ nennt ihn und listet die
+  übrigen Transaktionen. Bisher schlug der Typfehler des Cores durch: Die Karte meldete, sie könne
+  nicht laden, und die Liste schlug als Ganzes fehl. Der Checkout bricht bei einem solchen Datensatz
+  weiter ab, statt einen neuen Kurs darüberzuschreiben: Konto und Tag können intakt und schon bezahlt
+  sein
+- „Eingegangene Zahlungen“ in den Bestelldetails lässt Interledger-Transaktionen aus: Open Payments
+  führt keine einzelnen Zahlungen, und die LedgerDirect-Karte darüber zeigt, was auf dem Incoming
+  Payment eingegangen ist. Eine Bestellung, die nur über Interledger bezahlt wurde, zeigt diese Karte
+  nicht
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im

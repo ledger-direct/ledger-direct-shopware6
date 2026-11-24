@@ -30,6 +30,15 @@
                 "INTERLEDGER": "Referenz"
             }
         },
+        "receivedPayments": {
+            "title": "Eingegangene Zahlungen",
+            "receivedOn": "Eingegangen am",
+            "sender": "Absender",
+            "amount": "Betrag",
+            "otherAsset": "Nicht das geforderte Asset, nicht angerechnet",
+            "none": "Für diese Transaktion ist noch keine Zahlung erfasst. Eine neue Zahlung erscheint hier nach dem nächsten Abgleich mit dem Ledger.",
+            "unavailable": "Die eingegangenen Zahlungen konnten nicht geladen werden."
+        },
         "accountCheck": {
             "hint": "Geprüft wird das gespeicherte Empfangskonto auf dem Ledger. Nach dem Speichern einer Änderung erneut prüfen.",
             "recheck": "Erneut prüfen",

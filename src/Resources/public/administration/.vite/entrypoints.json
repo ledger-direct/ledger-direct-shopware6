@@ -3,11 +3,11 @@
   "entryPoints": {
     "ledger-direct": {
       "css": [
-        "/bundles/ledgerdirect/administration/assets/ledger-direct-CANFXNlH.css"
+        "/bundles/ledgerdirect/administration/assets/ledger-direct-CL_O0-b2.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/ledgerdirect/administration/assets/ledger-direct-M8yQ14TZ.js"
+        "/bundles/ledgerdirect/administration/assets/ledger-direct-B18gLie0.js"
       ],
       "legacy": false,
       "preload": []

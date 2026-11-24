@@ -7,6 +7,7 @@ use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy;
 use Hardcastle\LedgerDirect\Service\HeadlessTargets;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentAttempt;
 use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Hardcastle\LedgerDirect\Tests\Mock\LedgerDirect\Service\ConfigurationServiceMock;
 use Mockery;
@@ -84,6 +85,7 @@ class InterledgerPaymentHandlerTest extends TestCase
 
         $orderTransaction = Mockery::mock(OrderTransactionEntity::class);
         $orderTransaction->shouldReceive('getOrder')->andReturn($order);
+        $orderTransaction->shouldReceive('getId')->andReturn(self::TX_ID);
 
         $this->transactionService->shouldReceive('getOrderTransactionById')
             ->with(self::TX_ID, $this->context)
@@ -98,6 +100,8 @@ class InterledgerPaymentHandlerTest extends TestCase
                 'orderId' => 'order-id',
                 'returnUrl' => 'https://shop.example/payment/finalize-transaction?_sw_payment_token=t',
                 'deepLinkCode' => 'the-deep-link-code',
+                // The attempt the page is for, as on every chain (PaymentAttempt).
+                PaymentAttempt::TRANSACTION_ID_PARAMETER => self::TX_ID,
             ])
             ->andReturn('/ledger-direct/payment/order-id?deepLinkCode=the-deep-link-code');
 

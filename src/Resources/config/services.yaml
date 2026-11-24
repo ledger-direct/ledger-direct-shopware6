@@ -50,6 +50,14 @@ services:
         calls:
             - [setContainer, ['@service_container']]
 
+    Hardcastle\LedgerDirect\Api\ReceivedPaymentsController:
+        public: true
+        arguments:
+            - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
+            - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+        calls:
+            - [setContainer, ['@service_container']]
+
     Hardcastle\LedgerDirect\Storefront\Controller\XrpPriceAggregatorController:
         public: true
         calls:

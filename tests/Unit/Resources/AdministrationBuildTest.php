@@ -63,6 +63,26 @@ class AdministrationBuildTest extends TestCase
     }
 
     /**
+     * A component added to the sources without a new build is simply not there in the shop:
+     * the order detail renders an unknown tag as nothing, and no test of the server notices.
+     */
+    public function testTheBuiltScriptRegistersEveryComponentOfTheSources(): void
+    {
+        $script = (string) file_get_contents(self::BUILD . '/' . self::json('/.vite/manifest.json')['main.js']['file']);
+        $components = array_map('basename', (array) glob(__DIR__ . '/../../../src/Resources/app/administration/src/component/*', GLOB_ONLYDIR));
+
+        $this->assertContains('ledger-direct-received-payments', $components);
+
+        foreach ($components as $component) {
+            $this->assertStringContainsString(
+                '.register("' . $component . '"',
+                $script,
+                "{$component} is not in the built script; rebuild the administration"
+            );
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private static function json(string $path): array

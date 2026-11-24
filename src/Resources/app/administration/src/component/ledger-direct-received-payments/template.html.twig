@@ -1,0 +1,72 @@
+{% block ledger_direct_received_payments %}
+<mt-card
+    v-if="!hidden"
+    class="ledger-direct-received-payments"
+    position-identifier="ledger-direct-received-payments"
+    :title="$tc('ledger-direct.receivedPayments.title')"
+    :is-loading="isLoading"
+>
+    {% block ledger_direct_received_payments_problem %}
+    <p v-if="failed" class="ledger-direct-received-payments__note">
+        {{ $tc('ledger-direct.receivedPayments.unavailable') }}
+    </p>
+    {% endblock %}
+
+    {% block ledger_direct_received_payments_transactions %}
+    <section
+        v-for="transaction in transactions"
+        :key="transaction.orderTransactionId"
+        class="ledger-direct-received-payments__transaction"
+    >
+        {% block ledger_direct_received_payments_transaction_heading %}
+        <header class="ledger-direct-received-payments__heading">
+            <span v-if="!transaction.unreadable">
+                {{ $tc('ledger-direct.paymentCard.amountRequested') }}:
+                {{ transaction.amountRequested }} {{ transaction.asset }}
+                ({{ transaction.chain }} {{ transaction.network }})
+            </span>
+            <sw-label appearance="pill" size="medium">{{ transaction.stateName || transaction.state }}</sw-label>
+        </header>
+        {% endblock %}
+
+        {% block ledger_direct_received_payments_transaction_rows %}
+        <p v-if="transaction.unreadable" class="ledger-direct-received-payments__note">
+            {{ $tc('ledger-direct.paymentCard.unreadable') }}
+        </p>
+        <p v-else-if="transaction.payments.length === 0" class="ledger-direct-received-payments__note">
+            {{ $tc('ledger-direct.receivedPayments.none') }}
+        </p>
+        <table v-else class="ledger-direct-received-payments__rows">
+            <thead>
+                <tr>
+                    <th>{{ $tc('ledger-direct.receivedPayments.receivedOn') }}</th>
+                    <th>{{ $tc('ledger-direct.receivedPayments.sender') }}</th>
+                    <th>{{ $tc('ledger-direct.receivedPayments.amount') }}</th>
+                    <th>{{ $tc('ledger-direct.paymentCard.transaction') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="payment in transaction.payments" :key="payment.id">
+                    <td>{{ dateFilter(payment.date, { hour: '2-digit', minute: '2-digit' }) }}</td>
+                    <td><code>{{ payment.sender }}</code></td>
+                    <td>
+                        {{ payment.amount.value }} {{ payment.amount.asset }}
+                        <div v-if="!payment.quotedAsset" class="ledger-direct-received-payments__other-asset">
+                            {{ $tc('ledger-direct.receivedPayments.otherAsset') }}
+                            <template v-if="payment.amount.issuer">
+                                <br>{{ $tc('ledger-direct.paymentCard.issuer') }}: <code>{{ payment.amount.issuer }}</code>
+                            </template>
+                        </div>
+                    </td>
+                    <td>
+                        <a v-if="payment.explorerUrl" :href="payment.explorerUrl" target="_blank" rel="noopener noreferrer"><code>{{ payment.hash }}</code></a>
+                        <code v-else>{{ payment.hash }}</code>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {% endblock %}
+    </section>
+    {% endblock %}
+</mt-card>
+{% endblock %}

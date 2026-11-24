@@ -9,9 +9,11 @@ use Hardcastle\LedgerDirect\Chain\InterledgerGateway;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntent;
 use Hardcastle\LedgerDirect\Core\Payment\PaymentIntentService;
 use Hardcastle\LedgerDirect\Core\Stellar\PaymentIntentService as StellarPaymentIntentService;
+use Hardcastle\LedgerDirect\Core\Stellar\StellarPayment;
 use Hardcastle\LedgerDirect\Core\Stellar\SyncService as StellarSyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncService;
 use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
+use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Interledger\IncomingPaymentService as InterledgerIncomingPaymentService;
 use Hardcastle\LedgerDirect\Interledger\ReceiptSyncService as InterledgerReceiptSyncService;
 use Hardcastle\LedgerDirect\Installer\PaymentMethodInstaller;
@@ -298,6 +300,47 @@ class OrderTransactionService
     }
 
     /**
+     * Everything the local table holds on the intent's receiving account
+     * and tag (memo id on Stellar), newest first. For showing what arrived,
+     * not for deciding what pays; that stays findFulfillmentFor()'s job.
+     *
+     * Only rows of the intent's network: the same account and tag exist on
+     * testnet and mainnet, and test money must not be listed under a real
+     * order. The core skips them the same way when it matches.
+     *
+     * Reads the table and nothing else. No ledger sync is started here;
+     * what the payment page, the status endpoint and the scheduled task
+     * have synced is what is found.
+     *
+     * Empty on Interledger: there is no table, the incoming payment is the
+     * order's one record (ReceiptSyncService).
+     *
+     * @return list<XrplTransaction|StellarPayment>
+     * @throws Exception
+     */
+    public function findReceivedPayments(PaymentIntent $intent): array
+    {
+        if ($intent->chain === ChainRegistry::INTERLEDGER) {
+            // No table to read, and no wallet to ask: Open Payments has the incoming payment,
+            // not single payments.
+            return [];
+        }
+
+        $sync = $this->syncFor($intent->chain);
+
+        $stored = match (true) {
+            $sync instanceof StellarSyncService => $sync->findPayments($intent->destinationAccount, (string) $intent->destinationTag),
+            $sync instanceof SyncService => $sync->findTransactions($intent->destinationAccount, $intent->destinationTag),
+            default => [],
+        };
+
+        return array_values(array_filter(
+            $stored,
+            static fn (XrplTransaction|StellarPayment $payment): bool => $payment->network === $intent->network
+        ));
+    }
+
+    /**
      * Pulls the account's transactions from the ledger into the local table.
      *
      * Throttled per receiving account and network, not per order: the sync
@@ -438,24 +481,46 @@ class OrderTransactionService
      * see the retrofit notes: the plugin was never released, so there is no
      * legacy format to keep reading, and quietly ignoring an unreadable
      * record would hide a real problem behind an "unpaid" order.
+     *
+     * Unreadable is always an InvalidArgumentException, which is what every
+     * caller handles. The core checks that the fields are there, not their
+     * types, and hands a stored value straight to a typed constructor: a null
+     * or a text where it wants an int is a TypeError there (core 0.12).
      */
     public function readPaymentIntent(OrderTransactionEntity $orderTransaction): ?PaymentIntent
     {
         $paymentIntentData = ($orderTransaction->getCustomFields() ?? [])[self::CUSTOM_FIELDS_KEY] ?? null;
 
-        return is_array($paymentIntentData) ? PaymentIntent::fromArray($paymentIntentData) : null;
+        if (!is_array($paymentIntentData)) {
+            return null;
+        }
+
+        try {
+            return PaymentIntent::fromArray($paymentIntentData);
+        } catch (\TypeError $error) {
+            throw new InvalidArgumentException('Unreadable payment record: ' . $error->getMessage(), 0, $error);
+        }
     }
 
     /**
      * Like readPaymentIntent(), but for the quoting path, where an
      * unreadable record simply means "quote from scratch" — the customer is
      * about to be given a fresh destination tag and amount anyway.
+     *
+     * Not a record of the wrong types: its account and tag may be intact and
+     * already paid to, and a refreshed quote keeps them (core INVARIANTS.md,
+     * resolveDestination()). Quoting over it would leave such a payment
+     * without its order, so the checkout stops on it, as it always did.
      */
     private function readReusablePaymentIntent(OrderTransactionEntity $orderTransaction): ?PaymentIntent
     {
         try {
             return $this->readPaymentIntent($orderTransaction);
-        } catch (InvalidArgumentException) {
+        } catch (InvalidArgumentException $error) {
+            if ($error->getPrevious() instanceof \TypeError) {
+                throw $error;
+            }
+
             return null;
         }
     }

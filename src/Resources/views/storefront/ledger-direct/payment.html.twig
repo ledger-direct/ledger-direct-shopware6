@@ -99,6 +99,7 @@
                                     <form method="post" action="{{ refreshUrl }}">
                                         <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
                                         <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
+                                        <input type="hidden" name="orderTransactionId" value="{{ orderTransactionId }}">
                                         <button type="submit" class="ld-btn ld-btn--primary">{{ "LedgerDirect.paymentPage.refreshQuoteButton"|trans }}</button>
                                     </form>
                                 </div>
@@ -243,6 +244,7 @@
                         <form method="post" action="{{ pageUrl }}" data-ld-check-form>
                             <input type="hidden" name="deepLinkCode" value="{{ deepLinkCode }}">
                             <input type="hidden" name="returnUrl" value="{{ returnUrl }}">
+                            <input type="hidden" name="orderTransactionId" value="{{ orderTransactionId }}">
                             <button type="submit" class="ld-btn ld-btn--secondary" data-ld-check>
                                 <span data-ld-check-label="idle">{{ "LedgerDirect.paymentPage.checkPaymentButton"|trans }}</span>
                                 <span data-ld-check-label="busy" hidden><span class="ld-spinner" aria-hidden="true"></span> {{ "LedgerDirect.paymentPage.checking"|trans }}</span>

@@ -474,6 +474,55 @@ class OrderTransactionServiceTest extends TestCase
         $this->assertSame(2, $this->httpClient->ledgerRequests);
     }
 
+    /**
+     * A record whose field has the wrong type is unreadable like one with a field missing.
+     * The core passes a stored value straight to a typed constructor, so a null where an
+     * int belongs is a TypeError there; every caller handles "unreadable" as an
+     * InvalidArgumentException and nothing else.
+     *
+     * @param array<string, mixed> $change
+     */
+    #[DataProvider('mistypedRecords')]
+    public function testARecordWithAFieldOfTheWrongTypeIsUnreadable(array $change): void
+    {
+        $record = array_replace($this->givenStoredIntent()->toArray(), $change);
+        $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID, $record);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->createService()->readPaymentIntent($orderTransaction);
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function mistypedRecords(): array
+    {
+        return [
+            'no destination tag' => [['destination_tag' => null]],
+            'a destination tag as text' => [['destination_tag' => 'abc']],
+            'a chain that is no string' => [['chain' => ['XRPL']]],
+        ];
+    }
+
+    /**
+     * The checkout does not quote over a record of the wrong types: its account and tag may
+     * be intact and already paid to, and a refreshed quote keeps them (core INVARIANTS.md,
+     * resolveDestination()). It stops, as it did before such a record counted as unreadable.
+     */
+    public function testPrepareDoesNotQuoteOverARecordWithAFieldOfTheWrongType(): void
+    {
+        $this->transactionRepository->shouldReceive('nextDestinationTagSequence')->never();
+        $this->orderTransactionRepository->shouldReceive('upsert')->never();
+
+        $record = array_replace($this->givenStoredIntent()->toArray(), ['chain' => ['XRPL']]);
+        $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID, $record);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->createService()->prepareOrderTransaction($this->givenOrder(), $orderTransaction, $this->context);
+    }
+
     public function testSyncWithoutAStoredQuoteReturnsNull(): void
     {
         $orderTransaction = $this->givenOrderTransaction(PaymentMethodInstaller::XRP_PAYMENT_ID);
@@ -707,6 +756,17 @@ class OrderTransactionServiceTest extends TestCase
 
         $this->assertNotNull($matched, 'the wallet is still read for an open order');
         $this->assertSame('19.99', $matched->amountPaidValue());
+    }
+
+    /**
+     * Open Payments keeps no record of single payments: an Interledger intent lists none,
+     * and no wallet is asked to answer the order detail's list.
+     */
+    public function testAnInterledgerIntentListsNoReceivedPayments(): void
+    {
+        $intent = PaymentIntent::fromArray($this->interledgerIntent());
+
+        $this->assertSame([], $this->createService()->findReceivedPayments($intent));
     }
 
     /** @return array<string, mixed> */
