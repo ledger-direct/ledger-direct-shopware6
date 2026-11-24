@@ -35,7 +35,7 @@
             "sender": "Afzender",
             "amount": "Bedrag",
             "otherAsset": "Niet het gevraagde asset, niet gecrediteerd",
-            "none": "Voor deze transactie is geen betaling ontvangen.",
+            "none": "Voor deze transactie is nog geen betaling vastgelegd. Een nieuwe betaling verschijnt hier na de volgende synchronisatie met de ledger.",
             "unavailable": "De ontvangen betalingen konden niet worden geladen."
         },
         "accountCheck": {

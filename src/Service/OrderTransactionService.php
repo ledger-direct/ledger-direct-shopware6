@@ -369,24 +369,46 @@ class OrderTransactionService
      * see the retrofit notes: the plugin was never released, so there is no
      * legacy format to keep reading, and quietly ignoring an unreadable
      * record would hide a real problem behind an "unpaid" order.
+     *
+     * Unreadable is always an InvalidArgumentException, which is what every
+     * caller handles. The core checks that the fields are there, not their
+     * types, and hands a stored value straight to a typed constructor: a null
+     * or a text where it wants an int is a TypeError there (core 0.12).
      */
     public function readPaymentIntent(OrderTransactionEntity $orderTransaction): ?PaymentIntent
     {
         $paymentIntentData = ($orderTransaction->getCustomFields() ?? [])[self::CUSTOM_FIELDS_KEY] ?? null;
 
-        return is_array($paymentIntentData) ? PaymentIntent::fromArray($paymentIntentData) : null;
+        if (!is_array($paymentIntentData)) {
+            return null;
+        }
+
+        try {
+            return PaymentIntent::fromArray($paymentIntentData);
+        } catch (\TypeError $error) {
+            throw new InvalidArgumentException('Unreadable payment record: ' . $error->getMessage(), 0, $error);
+        }
     }
 
     /**
      * Like readPaymentIntent(), but for the quoting path, where an
      * unreadable record simply means "quote from scratch" — the customer is
      * about to be given a fresh destination tag and amount anyway.
+     *
+     * Not a record of the wrong types: its account and tag may be intact and
+     * already paid to, and a refreshed quote keeps them (core INVARIANTS.md,
+     * resolveDestination()). Quoting over it would leave such a payment
+     * without its order, so the checkout stops on it, as it always did.
      */
     private function readReusablePaymentIntent(OrderTransactionEntity $orderTransaction): ?PaymentIntent
     {
         try {
             return $this->readPaymentIntent($orderTransaction);
-        } catch (InvalidArgumentException) {
+        } catch (InvalidArgumentException $error) {
+            if ($error->getPrevious() instanceof \TypeError) {
+                throw $error;
+            }
+
             return null;
         }
     }

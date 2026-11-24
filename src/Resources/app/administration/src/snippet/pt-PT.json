@@ -35,7 +35,7 @@
             "sender": "Remetente",
             "amount": "Montante",
             "otherAsset": "Não é o ativo pedido, não creditado",
-            "none": "Não foi recebido nenhum pagamento para esta transação.",
+            "none": "Ainda não há nenhum pagamento registado para esta transação. Um novo pagamento aparece aqui após a próxima sincronização com o ledger.",
             "unavailable": "Não foi possível carregar os pagamentos recebidos."
         },
         "accountCheck": {

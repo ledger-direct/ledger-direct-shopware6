@@ -35,7 +35,7 @@
             "sender": "Sender",
             "amount": "Amount",
             "otherAsset": "Not the requested asset, not credited",
-            "none": "No payment has been received for this transaction.",
+            "none": "No payment recorded for this transaction yet. A new payment shows here after the next sync with the ledger.",
             "unavailable": "The received payments could not be loaded."
         },
         "accountCheck": {

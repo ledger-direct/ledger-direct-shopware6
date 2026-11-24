@@ -26,6 +26,12 @@
   transaction. When the order detail moved on to another transaction while the card was still
   loading, the earlier answer could arrive last and show that transaction's payment under the
   current one
+- A payment record with a field of the wrong type (a destination tag that is empty or text, say)
+  counts as unreadable, like one with a field missing: the LedgerDirect card says it cannot read the
+  record, and "Received payments" names it and lists the other transactions. Before, the core's type
+  error went through: the card said it could not load, and the list failed as a whole. The checkout
+  still stops on such a record instead of quoting over it: its account and tag may be intact and
+  already paid to
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial

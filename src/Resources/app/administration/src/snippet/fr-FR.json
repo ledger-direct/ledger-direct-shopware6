@@ -35,7 +35,7 @@
             "sender": "Expéditeur",
             "amount": "Montant",
             "otherAsset": "Pas l'actif demandé, non crédité",
-            "none": "Aucun paiement n'a été reçu pour cette transaction.",
+            "none": "Aucun paiement n'est encore enregistré pour cette transaction. Un nouveau paiement apparaît ici après la prochaine synchronisation avec le registre.",
             "unavailable": "Les paiements reçus n'ont pas pu être chargés."
         },
         "accountCheck": {

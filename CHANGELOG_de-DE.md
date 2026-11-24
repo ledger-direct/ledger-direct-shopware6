@@ -30,6 +30,13 @@
   Transaktion eintrifft. Wechselten die Bestelldetails zu einer anderen Transaktion, während die Karte
   noch lud, konnte die frühere Antwort zuletzt ankommen und die Zahlung jener Transaktion unter der
   aktuellen zeigen
+- Ein Zahlungsdatensatz mit einem Feld vom falschen Typ (etwa einem leeren oder textförmigen
+  Destination Tag) gilt als unlesbar, wie einer, dem ein Feld fehlt: Die LedgerDirect-Karte meldet,
+  dass sie den Datensatz nicht lesen kann, und „Eingegangene Zahlungen“ nennt ihn und listet die
+  übrigen Transaktionen. Bisher schlug der Typfehler des Cores durch: Die Karte meldete, sie könne
+  nicht laden, und die Liste schlug als Ganzes fehl. Der Checkout bricht bei einem solchen Datensatz
+  weiter ab, statt einen neuen Kurs darüberzuschreiben: Konto und Tag können intakt und schon bezahlt
+  sein
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im

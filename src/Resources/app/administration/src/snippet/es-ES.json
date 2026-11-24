@@ -35,7 +35,7 @@
             "sender": "Remitente",
             "amount": "Importe",
             "otherAsset": "No es el activo solicitado, no abonado",
-            "none": "No se ha recibido ningún pago para esta transacción.",
+            "none": "Todavía no hay ningún pago registrado para esta transacción. Un pago nuevo aparece aquí tras la próxima sincronización con el ledger.",
             "unavailable": "No se han podido cargar los pagos recibidos."
         },
         "accountCheck": {

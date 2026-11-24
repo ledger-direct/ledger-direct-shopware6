@@ -231,6 +231,26 @@ class ReceivedPaymentsControllerTest extends TestCase
     }
 
     /**
+     * The same for a record with every field there and one of the wrong type: the core
+     * throws a TypeError for it, and that must not take the list down either.
+     */
+    public function testARecordWithAFieldOfTheWrongTypeIsNamedAndDoesNotFailTheList(): void
+    {
+        $this->xrplTable->saveTransactions([$this->payment('HASH-GOOD', 1002, '40000000')]);
+
+        $broken = $this->transaction('tx-broken', 'cancelled', 'Cancelled', null);
+        $broken->setCustomFields([OrderTransactionService::CUSTOM_FIELDS_KEY => ['destination_tag' => null] + $this->xrpQuote(1001)->toArray()]);
+
+        $answer = $this->answer($this->order([$broken, $this->transaction('tx-good', 'open', 'Open', $this->xrpQuote(1002))]));
+
+        $this->assertSame(
+            ['orderTransactionId' => 'tx-broken', 'state' => 'cancelled', 'stateName' => 'Cancelled', 'unreadable' => true, 'payments' => []],
+            $answer['transactions'][0]
+        );
+        $this->assertSame(['HASH-GOOD'], array_column($answer['transactions'][1]['payments'], 'hash'));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function answer(OrderEntity $order): array
