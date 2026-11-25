@@ -32,6 +32,12 @@
   error went through: the card said it could not load, and the list failed as a whole. The checkout
   still stops on such a record instead of quoting over it: its account and tag may be intact and
   already paid to
+- For shops with an external front end: the Store API's `quote` and `refresh` name the transaction
+  they answer for, as `orderTransactionId`. A front end that sends it back on `check` is told when the
+  customer has changed the payment method since: the status then carries a `redirect` to the payment
+  page, where a new `quote` is the new payment. Without it, a payment page left open kept showing the
+  address, tag and amount of the cancelled payment while its status was the new one's. The storefront's
+  own page does this already. The field is new; nothing else in the answers changes
 
 # 1.11.1
 - The payment page uses @ledger-direct/payment-ui 0.4.2 instead of 0.4.0, which fixes partial

@@ -156,6 +156,8 @@ class PaymentRoute
      * from the first release and stay as they are. `page` is the complete
      * value set of the payment page — the same PaymentPageView the Twig page
      * renders, for every chain and asset — with its own `schema_version`.
+     * `orderTransactionId`, among the flat fields, names the transaction the
+     * quote is of, for the front end to send back (see quotePayload()).
      */
     #[Route(
         path: '/store-api/ledger-direct/payment/quote/{orderId}',
@@ -310,6 +312,17 @@ class PaymentRoute
         return [
             'orderId' => $order->getId(),
             'orderNumber' => $order->getOrderNumber(),
+            /*
+             * The transaction this quote is of, under the name the routes
+             * take it back by. A front end keeps it with the page it builds
+             * and sends it on `check`, `quote` and `refresh`: once the
+             * customer has changed the payment method, `check` answers that
+             * page `redirect` instead of reporting on the new attempt under
+             * this one's address, tag and amount. The storefront's page gets
+             * the same id from its controller. Here and not under `page`:
+             * that is what a payment page shows, this is a parameter.
+             */
+            PaymentAttempt::TRANSACTION_ID_PARAMETER => $orderTransaction->getId(),
             'currencyCode' => $intent->quoteCurrency,
             'currencySymbol' => $order->getCurrency()?->getSymbol(),
             'price' => $orderTransaction->getAmount()->getTotalPrice(),

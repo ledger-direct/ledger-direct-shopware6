@@ -337,8 +337,15 @@ LedgerDirect's, `quote` and `refresh` answer 410 and `check` a `redirect` to the
 an optional `orderTransactionId`, the id of the order transaction a page was built for. When that
 transaction is no longer the order's current one, `check` answers a `redirect` to the order's payment
 page (yours, where one is configured, with an empty `{returnUrl}`), and `quote` and `refresh` answer
-410. The three routes are described in the Store API's OpenAPI document,
-`/store-api/_info/openapi3.json`, under the tag LedgerDirect. The Store API answers cross-origin requests with
+410. `quote` and `refresh` name the transaction they answer for, as `orderTransactionId` next to
+`orderId`. Keep it with the page you build from the quote and send it back on `check` (and on `quote`
+and `refresh`, when you call them for that page). A page that is still open when the customer changes
+the payment method elsewhere is then told so: its next `check` carries a `redirect` to the order's
+payment page (yours, where one is configured), where a new `quote`, asked without the old id, is the
+new payment with a new id. Without the id
+a `check` is always about the current transaction, and an old page would show the status of the new
+payment under the address, tag and amount of the cancelled one. The three routes are described in the
+Store API's OpenAPI document, `/store-api/_info/openapi3.json`, under the tag LedgerDirect. The Store API answers cross-origin requests with
 Shopware's CORS headers, on these routes as on the core's.
 
 The payment page package renders from `page` and polls `check`; pass the access key with

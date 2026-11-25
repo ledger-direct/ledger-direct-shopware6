@@ -37,6 +37,13 @@
   nicht laden, und die Liste schlug als Ganzes fehl. Der Checkout bricht bei einem solchen Datensatz
   weiter ab, statt einen neuen Kurs darüberzuschreiben: Konto und Tag können intakt und schon bezahlt
   sein
+- Für Shops mit externem Frontend: `quote` und `refresh` der Store API nennen die Transaktion, für die
+  sie antworten, als `orderTransactionId`. Ein Frontend, das sie bei `check` mitschickt, erfährt, wenn
+  der Kunde inzwischen die Zahlungsart gewechselt hat: Der Status trägt dann ein `redirect` zur
+  Zahlungsseite, auf der ein neues `quote` die neue Zahlung ist. Ohne die Angabe zeigte eine offen
+  gelassene Zahlungsseite weiter Adresse, Tag und Betrag der stornierten Zahlung, während ihr Status der
+  der neuen war. Die Zahlungsseite der Storefront macht das bereits so. Das Feld ist neu, sonst ändert
+  sich an den Antworten nichts
 
 # 1.11.1
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.4.2 statt 0.4.0, das Teilzahlungen im
