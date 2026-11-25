@@ -187,7 +187,7 @@
                 "name": "orderTransactionId",
                 "in": "query",
                 "required": false,
-                "description": "The order transaction a payment page was built for. Optional: without it the request is about the order's current transaction, the newest one. With it, a request for a transaction that is no longer the current one (the customer changed the payment method since) is not answered as if it were: `check` answers a `redirect`, `quote` and `refresh` 410.",
+                "description": "The order transaction a payment page was built for, as `quote` and `refresh` name it in `orderTransactionId`. Optional: without it the request is about the order's current transaction, the newest one. With it, a request for a transaction that is no longer the current one (the customer changed the payment method since) is not answered as if it were: `check` answers a `redirect`, `quote` and `refresh` 410.",
                 "schema": {
                     "type": "string",
                     "pattern": "^[0-9a-f]{32}$"
@@ -305,6 +305,7 @@
                 "required": [
                     "orderId",
                     "orderNumber",
+                    "orderTransactionId",
                     "currencyCode",
                     "network",
                     "destinationAccount",
@@ -321,6 +322,10 @@
                     },
                     "orderNumber": {
                         "type": "string"
+                    },
+                    "orderTransactionId": {
+                        "type": "string",
+                        "description": "The order transaction this quote is of. Keep it with the page built from the quote and send it back as `orderTransactionId` on `check`, `quote` and `refresh`: when the customer has changed the payment method since, `check` then answers a `redirect` to the payment page, where a new `quote` without the old id is the new payment."
                     },
                     "currencyCode": {
                         "type": "string",

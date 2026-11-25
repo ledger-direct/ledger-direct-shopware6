@@ -81,6 +81,9 @@ class PaymentRouteCurrentTransactionTest extends TestCase
 
     private OrderEntity $order;
 
+    /** @var array<string, string> the plugin configuration; an external front end's templates where a test has one */
+    private array $configuration = [];
+
     protected function setUp(): void
     {
         /** @var OrderTransactionService&Mockery\MockInterface $orderTransactionService */
@@ -328,6 +331,113 @@ class PaymentRouteCurrentTransactionTest extends TestCase
         }
     }
 
+    /*
+     * What an external front end needs to do the same: the quote names its
+     * transaction.
+     *
+     * The storefront's page knows the transaction it was rendered for and
+     * names it on its poll. A front end that builds its own page from `quote`
+     * had no way to learn it, so its page of a replaced attempt went on
+     * polling without an id and was answered about the new attempt, under the
+     * old one's address, tag and amount. The quote hands the id out, the front
+     * end sends it back, and `check` tells it when that attempt is over.
+     */
+
+    /**
+     * Next to `orderId`, among the route's own fields, and only there: `page`
+     * is what a payment page shows, the same set the storefront renders from,
+     * and this is a parameter of the routes.
+     */
+    public function testTheQuoteNamesTheTransactionItIsFor(): void
+    {
+        $only = $this->transaction('tx-xrp', 'open', $this->xrpQuote());
+        $this->givenOrder($only);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->with($only, $this->context, true)->andReturn(null);
+
+        $quote = $this->quote();
+
+        $this->assertSame('tx-xrp', $quote['orderTransactionId'] ?? null);
+        $this->assertArrayNotHasKey('orderTransactionId', $quote['page']);
+        $this->assertSame(
+            ['orderId', 'orderNumber', 'orderTransactionId'],
+            array_slice(array_keys($quote), 0, 3),
+            'with the fields that say what the quote is of'
+        );
+    }
+
+    public function testAfterAChangeBetweenOurMethodsTheQuoteNamesTheNewAttempt(): void
+    {
+        $cancelled = $this->transaction('tx-xrp', 'cancelled', $this->xrpQuote());
+        $current = $this->transaction('tx-usdc', 'open', $this->usdcQuote());
+        $this->givenOrder($cancelled, $current);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->with($current, $this->context, true)->andReturn(null);
+
+        $this->assertSame('tx-usdc', $this->quote()['orderTransactionId'] ?? null, 'the attempt that is quoted, not the first one of the order');
+    }
+
+    /**
+     * `refresh` answers what `quote` answers, for the transaction it quoted again.
+     */
+    public function testARefreshNamesTheTransactionItQuotedAgain(): void
+    {
+        $cancelled = $this->transaction('tx-xrp', 'cancelled', $this->xrpQuote(expiry: time() - 60));
+        $current = $this->transaction('tx-usdc', 'open', $this->usdcQuote(expiry: time() - 60));
+        $this->givenOrder($cancelled, $current);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->andReturn(null);
+        $this->orderTransactionService->shouldReceive('prepareOrderTransaction')->once()->with($this->order, $current, $this->context);
+        $this->orderTransactionService->shouldReceive('getOrderTransactionById')->once()->with('tx-usdc', $this->context)->andReturn($current);
+
+        $quote = $this->route()->refresh(self::ORDER_ID, $this->request(), $this->salesChannelContext)->getObject()->getVars();
+
+        $this->assertSame('tx-usdc', $quote['orderTransactionId'] ?? null);
+    }
+
+    /**
+     * The whole round of a front end's own page. It asks for the quote and
+     * keeps the id. The customer changes the payment method elsewhere. The
+     * page's next status request, with the id it has, is told to leave for the
+     * order's payment page. There it asks for the quote again, without the old
+     * id, and gets the new attempt with a new id, which `check` accepts.
+     */
+    public function testACheckNamingTheIdOfTheFirstQuoteIsToldToLeaveAndTheNextQuoteNamesTheNewAttempt(): void
+    {
+        $first = $this->transaction('tx-xrp', 'open', $this->xrpQuote());
+        $this->givenOrder($first);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->once()->with($first, $this->context, true)->andReturn(null);
+        $idOfTheFirstQuote = $this->quote()['orderTransactionId'] ?? null;
+        $this->assertSame('tx-xrp', $idOfTheFirstQuote);
+
+        // The customer changes to USDC: Shopware cancels the transaction and creates a new one.
+        $this->setUp();
+        $cancelled = $this->transaction('tx-xrp', 'cancelled', $this->xrpQuote());
+        $current = $this->transaction('tx-usdc', 'open', $this->usdcQuote());
+        $this->givenOrder($cancelled, $current);
+        $this->orderTransactionService->shouldReceive('syncOrderTransaction')->twice()->with($current, $this->context, true)->andReturn(null);
+
+        $status = $this->check(['orderTransactionId' => $idOfTheFirstQuote]);
+        $this->assertSame(self::PAYMENT_PAGE, $status['redirect'] ?? null, 'the page of the first quote is told to leave');
+
+        $next = $this->quote();
+        $this->assertSame('tx-usdc', $next['orderTransactionId'] ?? null);
+        $this->assertSame('USDC', $next['page']['assetLabel']);
+        $this->assertArrayNotHasKey('redirect', $this->check(['orderTransactionId' => $next['orderTransactionId']]), 'and with the new id it waits for its payment');
+    }
+
+    /**
+     * On a sales channel with an external front end the page to leave for is
+     * that front end's own, from the merchant's template with an empty
+     * returnUrl; the storefront's would be a page it does not serve.
+     */
+    public function testOnAnExternalFrontEndAReplacedAttemptIsSentToItsOwnPaymentPage(): void
+    {
+        $this->configuration = ['LedgerDirect.config.headlessPaymentPageUrl' => 'https://frontend.example/pay/{orderId}?code={deepLinkCode}&return={returnUrl}'];
+        $this->givenOrder($this->transaction('tx-xrp', 'cancelled', $this->xrpQuote()), $this->transaction('tx-usdc', 'open', $this->usdcQuote()));
+
+        $status = $this->check(['orderTransactionId' => 'tx-xrp']);
+
+        $this->assertSame('https://frontend.example/pay/order-id?code=the-code&return=', $status['redirect'] ?? null);
+    }
+
     /**
      * @param array<string, string> $query
      *
@@ -371,7 +481,7 @@ class PaymentRouteCurrentTransactionTest extends TestCase
             new OrderAccessGuard($this->orderTransactionService),
             $settlementPolicy,
             new PaymentStateService($this->stateHandler, $this->orderTransactionService, $settlementPolicy, new NullLogger()),
-            new PaymentRedirect($router, new HeadlessTargets(ConfigurationServiceMock::createInstance([]))),
+            new PaymentRedirect($router, new HeadlessTargets(ConfigurationServiceMock::createInstance($this->configuration))),
             new PaymentPageView($settlementPolicy, ConfigurationServiceMock::createInstance([]))
         );
     }

@@ -187,8 +187,9 @@ curl -H 'sw-access-key: <key>' -H 'Accept: application/json' \
 ```
 
 Look for: `quote` answers 200 with `page.schema_version` 1 and the values the payment page of the
-same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `paymentUri`); `check`
-answers the contract. With a wrong code, and with a well-formed order id that does not exist, both
+same order shows (`destinationAccount`, `destinationTag`, `amountDueDisplay`, `paymentUri`), and with
+`orderTransactionId`, the id of the order's current transaction; `check` answers the contract, with
+and without `&orderTransactionId=<that id>`. With a wrong code, and with a well-formed order id that does not exist, both
 routes answer 403 with the same body. Pay the displayed amount: `check` turns `settled`; its `redirect`
 is an absolute URL (Shopware's finalize route while the payment token lives, the external front end's
 order page afterwards where one is configured), and a separate `hash` field names the transaction.
