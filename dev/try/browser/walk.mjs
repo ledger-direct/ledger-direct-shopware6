@@ -13,13 +13,21 @@ import { readFileSync } from 'node:fs';
 // The article to buy: the first miniature of the catalogue, found on the home page by its name —
 // never "the first product", which changes with the catalogue.
 export const PRODUCT = JSON.parse(readFileSync(new URL('../catalog/catalog.json', import.meta.url))).products[0]['en-GB'].name;
-// The plugin's payment method ids (PaymentMethodInstaller).
-export const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca60321a9d2dac0fe3622a5110f55bd', usdc: '7ca60321a9d2dac0fe3622a5110f55be', xah: 'd9e4a5f06e6c4a36dfa37a410d88de42' };
+// The plugin's payment method ids (PaymentMethodInstaller). XLM is on Stellar, a preview chain the
+// try shop starts with switched off: the checkout offers it only after its card is switched on with a
+// receiving account (`ld-e2e --chain STELLAR shop reset --account G…`).
+export const METHODS = {
+  xrp: '7ca60321a9d2dac0fe3622a5110f55bb',
+  rlusd: '7ca60321a9d2dac0fe3622a5110f55bd',
+  usdc: '7ca60321a9d2dac0fe3622a5110f55be',
+  xah: 'd9e4a5f06e6c4a36dfa37a410d88de42',
+  xlm: 'b1f20212cf6d96a588d76bbe1d21ecb9',
+};
 
 /**
  * Walks from the home page to the payment page and returns what the page shows.
  *
- * - asset: xrp, rlusd, usdc or xah (any case).
+ * - asset: xrp, rlusd, usdc, xah or xlm (any case).
  * - base: the shop's URL; default the origin of the page's current URL. A page that is already on
  *   the home page is not loaded again, so a recording that starts there shows no reload.
  * - step(name, fn): runs each step; default just runs it. visitor.mjs times it and takes a screenshot.
@@ -27,7 +35,7 @@ export const METHODS = { xrp: '7ca60321a9d2dac0fe3622a5110f55bb', rlusd: '7ca603
  */
 export async function walkToPaymentPage(page, { asset = 'xrp', base, step = (name, fn) => fn(), log = () => {} } = {}) {
   const ASSET = asset.toLowerCase();
-  if (!Object.hasOwn(METHODS, ASSET)) throw new Error(`unknown asset ${asset}: xrp, rlusd, usdc or xah`);
+  if (!Object.hasOwn(METHODS, ASSET)) throw new Error(`unknown asset ${asset}: ${Object.keys(METHODS).join(', ')}`);
   const origin = new URL(page.url()).origin;
   if (!base && origin === 'null') throw new Error('walkToPaymentPage: pass base, the page is not on the shop yet');
   const BASE = (base ?? origin).replace(/\/$/, '');
