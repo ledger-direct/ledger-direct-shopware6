@@ -55,6 +55,7 @@ services:
         arguments:
             - '@Hardcastle\LedgerDirect\Service\OrderTransactionService'
             - '@Hardcastle\LedgerDirect\Core\Payment\SettlementPolicy'
+            - '@Hardcastle\LedgerDirect\Service\PaymentStateService'
         calls:
             - [setContainer, ['@service_container']]
 

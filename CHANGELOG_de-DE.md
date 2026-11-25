@@ -1,4 +1,16 @@
 # Unreleased
+- Die Karte „Eingegangene Zahlungen“ in den Bestelldetails hat eine Schaltfläche „Aktualisieren“. Die
+  Liste zeigt, was der Shop synchronisiert hat, und sobald eine Transaktion nicht mehr offen ist,
+  gleicht nur noch der Scheduled Task ihr Empfangskonto ab: Eine zweite Zahlung auf eine bezahlte
+  Bestellung oder eine Zahlung auf einen stornierten Versuch erschien bis zu fünf Minuten später. Die
+  Schaltfläche fragt das Ledger nach den Empfangskonten aller LedgerDirect-Transaktionen der
+  Bestellung (denen aus ihren Zahlungsdatensätzen, also auch nach einem früheren Empfangskonto),
+  gedrosselt wie jeder Abgleich, und zeigt die Liste neu. Eine noch offene Transaktion erhält ihren
+  Status aus dem, was gefunden wurde, und die LedgerDirect-Karte darüber lädt neu. Ist ein Knoten
+  nicht erreichbar, zeigt die Karte, was gespeichert ist, und weist darauf hin, dass die Liste
+  möglicherweise nicht aktuell ist.
+  `POST /api/_action/ledger-direct/order/{orderId}/payments/refresh` liefert die Liste sowie `sync`
+  (`synced`, `throttled`, `failed`) jedem, der die Bestellung lesen darf
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.6.0 statt 0.5.0.
   - **WalletConnect funktioniert und hat einen eigenen Button.** Mit einer WalletConnect-Projekt-ID
     steht „Mit Wallet-App bezahlen (WalletConnect)“ über „Mit Browser-Wallet bezahlen“, auf jeder

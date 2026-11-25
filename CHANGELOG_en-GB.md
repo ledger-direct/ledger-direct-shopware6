@@ -1,4 +1,14 @@
 # Unreleased
+- The card "Received payments" on the order detail has a "Refresh" button. The list shows what the
+  shop has synced, and once a transaction is no longer open only the scheduled task syncs its
+  receiving account: a second payment on a paid order, or a payment on a cancelled attempt, appeared
+  up to five minutes late. The button asks the ledger for the receiving accounts of all LedgerDirect
+  transactions of the order (those in their payment records, so an earlier receiving account is
+  covered), throttled like every sync, and shows the list again. A transaction that is still open
+  gets its state from what was found, and the LedgerDirect card above loads again. If a node cannot
+  be reached, the card shows what is stored and says that the list may not be up to date.
+  `POST /api/_action/ledger-direct/order/{orderId}/payments/refresh` answers the list plus `sync`
+  (`synced`, `throttled`, `failed`), for whoever may read the order
 - The payment page uses @ledger-direct/payment-ui 0.6.0 instead of 0.5.0.
   - **WalletConnect works and has its own button.** With a WalletConnect project id, "Pay with a
     wallet app (WalletConnect)" sits above "Pay with a browser wallet", on every screen width, and

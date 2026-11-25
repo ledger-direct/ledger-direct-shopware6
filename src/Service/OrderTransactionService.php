@@ -42,6 +42,15 @@ class OrderTransactionService
      */
     public const CUSTOM_FIELDS_KEY = 'ledger_direct';
 
+    /** What syncLedger() did: asked the node and stored what it answered. */
+    public const SYNC_DONE = 'synced';
+
+    /** What syncLedger() did: nothing, the account was synced within the throttle's interval. */
+    public const SYNC_THROTTLED = 'throttled';
+
+    /** What syncLedger() did: asked the node and got no usable answer; the table is as it was. */
+    public const SYNC_FAILED = 'failed';
+
     private EntityRepository $orderRepository;
 
     private EntityRepository $orderTransactionRepository;
@@ -285,14 +294,18 @@ class OrderTransactionService
      *
      * A failed sync is logged, not thrown: the checkout must not go down
      * with the node, and matching still runs against what is stored.
+     *
+     * @return self::SYNC_* what happened, for a caller that has to say
+     *     whether what is stored is current (the administration's refresh);
+     *     the payment page and the scheduled task do not look at it
      */
-    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): void
+    public function syncLedger(string $chain, string $destinationAccount, string $network, bool $throttled): string
     {
         if ($throttled) {
             $throttle = $chain === ChainCatalog::XAHAU ? $this->xahauThrottle : $this->syncThrottle;
 
             if (!$throttle->shouldSync($network, $destinationAccount)) {
-                return;
+                return self::SYNC_THROTTLED;
             }
 
             $throttle->markSynced($network, $destinationAccount);
@@ -309,6 +322,8 @@ class OrderTransactionService
                 'network' => $network,
                 'throttled' => $throttled,
             ]);
+
+            return self::SYNC_DONE;
         } catch (Exception $exception) {
             $this->logger->error('LedgerDirect: ledger sync failed, matching against stored transactions', [
                 'chain' => $chain,
@@ -316,6 +331,8 @@ class OrderTransactionService
                 'network' => $network,
                 'exception' => $exception->getMessage(),
             ]);
+
+            return self::SYNC_FAILED;
         }
     }
 

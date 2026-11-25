@@ -2,7 +2,9 @@
  * Runs the administration's order components against answers that arrive in
  * the wrong order. A component that loads again when its prop changes has two
  * requests under way for a moment, and the first can answer last: its answer
- * is for the order shown before and must change nothing.
+ * is for the order shown before and must change nothing. The "Refresh" button
+ * of the received payments is a request of the same kind, and held to the
+ * same rule.
  *
  * This is the components' own code, not a copy: each definition is taken from
  * its index.js as the source registers it, and created(), the watcher and
@@ -18,7 +20,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const COMPONENTS = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Resources/app/administration/src/component');
+const SOURCES = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Resources/app/administration/src');
+const COMPONENTS = join(SOURCES, 'component');
 
 /**
  * The components that load on a watched prop, and how to drive them. One that
@@ -57,6 +60,19 @@ function definitionOf(name) {
     return definition;
 }
 
+/** What the plugin adds to Shopware's Details tab of the order, as its source hands it to Shopware.Component.override(). */
+function detailsOverride() {
+    const source = readFileSync(join(SOURCES, 'view/sw-order-detail-details/index.js'), 'utf8')
+        .replace(/^import template from '[^']+';$/m, "const template = '';");
+    let definition = null;
+
+    // eslint-disable-next-line no-new-func
+    new Function('Shopware', source)({ Component: { override(name, options) { definition = options; } } });
+    assert.ok(definition, 'the source overrides no component');
+
+    return definition;
+}
+
 function deferred() {
     const answer = {};
     answer.promise = new Promise((resolve, reject) => {
@@ -80,6 +96,8 @@ function start(name, first) {
     const { prop, service, method } = WATCHED[name];
     const definition = definitionOf(name);
     const answers = {};
+    const refreshes = {};
+    const emitted = [];
     const instance = Object.assign(Object.create(definition.methods), definition.data(), {
         [prop]: first,
         [service]: {
@@ -88,6 +106,15 @@ function start(name, first) {
 
                 return answers[id].promise;
             },
+            /** The button of the received payments; the payment card has none and never calls it. */
+            refresh(id) {
+                refreshes[id] = deferred();
+
+                return refreshes[id].promise;
+            },
+        },
+        $emit(event) {
+            emitted.push(event);
         },
     });
     definition.created.call(instance);
@@ -95,6 +122,9 @@ function start(name, first) {
     return {
         instance,
         answers,
+        /** refreshes[id] settles the refresh asked for that id. */
+        refreshes,
+        emitted,
         /** The administration moves on: the prop changes and the watcher loads again. */
         moveOn(next) {
             instance[prop] = next;
@@ -107,6 +137,20 @@ const PAYMENTS = 'ledger-direct-received-payments';
 const CARD = 'ledger-direct-payment-card';
 
 const rowsOf = (order) => ({ transactions: [{ orderTransactionId: `transaction-of-${order}` }] });
+/** What the refresh route answers: the list, and how the sync went. */
+const refreshed = (order, sync) => ({
+    transactions: [{ orderTransactionId: `transaction-of-${order}` }, { orderTransactionId: `found-on-the-ledger-for-${order}` }],
+    sync,
+});
+
+/** The card of order A with its list loaded, as it stands when someone presses "Refresh". */
+async function loaded(order = 'A') {
+    const card = start(PAYMENTS, order);
+    card.answers[order].resolve(rowsOf(order));
+    await settled();
+
+    return card;
+}
 const infoOf = (transaction) => ({ status: { state: 'settled' }, display: { hash: `hash-of-${transaction}` } });
 
 const cases = {
@@ -286,6 +330,177 @@ const cases = {
 
         assert.equal(instance.hidden, true);
         assert.equal(instance.info, null);
+    },
+
+    /* The "Refresh" button of the received payments. */
+
+    [`${PAYMENTS}: a refresh shows the list it is answered and is busy until then`]: async () => {
+        const { instance, refreshes } = await loaded();
+        assert.equal(instance.isLoading, false);
+
+        instance.refresh();
+        assert.equal(instance.isLoading, true, 'the button is disabled while the request runs');
+
+        refreshes.A.resolve(refreshed('A', 'synced'));
+        await settled();
+
+        assert.deepEqual(instance.transactions, refreshed('A', 'synced').transactions);
+        assert.equal(instance.isLoading, false);
+        assert.equal(instance.ledgerUnreachable, false);
+    },
+
+    [`${PAYMENTS}: a node that did not answer is said, a throttled sync is not`]: async () => {
+        const failed = await loaded();
+        failed.instance.refresh();
+        failed.refreshes.A.resolve(refreshed('A', 'failed'));
+        await settled();
+        assert.equal(failed.instance.ledgerUnreachable, true);
+        assert.deepEqual(failed.instance.transactions, refreshed('A', 'failed').transactions, 'the stored rows are shown all the same');
+        assert.equal(failed.instance.failed, false, 'the list itself was loaded');
+
+        const throttled = await loaded();
+        throttled.instance.refresh();
+        throttled.refreshes.A.resolve(refreshed('A', 'throttled'));
+        await settled();
+        assert.equal(throttled.instance.ledgerUnreachable, false);
+        assert.deepEqual(throttled.instance.transactions, refreshed('A', 'throttled').transactions);
+    },
+
+    [`${PAYMENTS}: the notice stays through a throttled refresh and goes with one that reached the ledger`]: async () => {
+        const { instance, refreshes } = await loaded();
+        instance.refresh();
+        refreshes.A.resolve(refreshed('A', 'failed'));
+        await settled();
+
+        // The click right after a failed one: the server asks no node, so nothing is known that takes the notice back.
+        instance.refresh();
+        refreshes.A.resolve(refreshed('A', 'throttled'));
+        await settled();
+        assert.equal(instance.ledgerUnreachable, true);
+
+        instance.refresh();
+        refreshes.A.resolve(refreshed('A', 'synced'));
+        await settled();
+        assert.equal(instance.ledgerUnreachable, false);
+    },
+
+    [`${PAYMENTS}: every refresh that is shown tells the page, loading the list does not`]: async () => {
+        // Whatever the sync did: the transaction can have been settled since the page was opened, by the
+        // scheduled task or the customer's payment page, and then only the list knows.
+        for (const sync of ['synced', 'throttled', 'failed']) {
+            const { instance, refreshes, emitted } = await loaded();
+            assert.deepEqual(emitted, [], 'the first load is the page\'s own; nothing on it is older');
+
+            instance.refresh();
+            assert.deepEqual(emitted, [], `${sync}: not before the answer`);
+            refreshes.A.resolve(refreshed('A', sync));
+            await settled();
+
+            assert.deepEqual(emitted, ['refreshed'], sync);
+        }
+    },
+
+    [`${PAYMENTS}: a refresh that fails is said like a list that fails to load`]: async () => {
+        const { instance, refreshes, emitted } = await loaded();
+        instance.refresh();
+        refreshes.A.resolve(refreshed('A', 'failed'));
+        await settled();
+
+        instance.refresh();
+        refreshes.A.reject(httpError(500));
+        await settled();
+
+        assert.deepEqual(instance.transactions, []);
+        assert.equal(instance.failed, true);
+        assert.equal(instance.ledgerUnreachable, false, 'one problem is said, not two');
+        assert.equal(instance.isLoading, false, 'and the button can be pressed again');
+        assert.deepEqual(emitted, ['refreshed'], 'the first refresh was shown, the failed one shows nothing new');
+    },
+
+    [`${PAYMENTS}: a late answer of a refresh for the order before changes nothing`]: async () => {
+        const { instance, answers, refreshes, emitted, moveOn } = await loaded();
+        instance.refresh();
+        moveOn('B');
+
+        answers.B.resolve(rowsOf('B'));
+        await settled();
+        refreshes.A.resolve(refreshed('A', 'failed'));
+        await settled();
+
+        assert.deepEqual(instance.transactions, rowsOf('B').transactions, 'the rows of A are not written into B');
+        assert.equal(instance.ledgerUnreachable, false, 'nor is what the refresh found out about A\'s ledger');
+        assert.deepEqual(emitted, [], 'and B\'s payment card is not asked to load for a refresh of A');
+        assert.equal(instance.isLoading, false);
+        assert.equal(instance.failed, false);
+    },
+
+    [`${PAYMENTS}: a late failure of a refresh for the order before does not clear the rows`]: async () => {
+        const { instance, answers, refreshes, moveOn } = await loaded();
+        instance.refresh();
+        moveOn('B');
+
+        answers.B.resolve(rowsOf('B'));
+        await settled();
+        refreshes.A.reject(httpError(500));
+        await settled();
+
+        assert.deepEqual(instance.transactions, rowsOf('B').transactions);
+        assert.equal(instance.failed, false);
+    },
+
+    [`${PAYMENTS}: the answer of a refresh for the order before does not end the loading of this one`]: async () => {
+        const { instance, answers, refreshes, moveOn } = await loaded();
+        instance.refresh();
+        moveOn('B');
+
+        refreshes.A.resolve(refreshed('A', 'synced'));
+        await settled();
+
+        assert.equal(instance.isLoading, true, 'B is still under way');
+        assert.deepEqual(instance.transactions, rowsOf('A').transactions, 'what was shown, not what the refresh answered');
+
+        answers.B.resolve(rowsOf('B'));
+        await settled();
+
+        assert.deepEqual(instance.transactions, rowsOf('B').transactions);
+        assert.equal(instance.isLoading, false);
+    },
+
+    [`${PAYMENTS}: a refresh that never answers does not keep the next order's button disabled`]: async () => {
+        const { instance, answers, moveOn } = await loaded();
+        instance.refresh();
+        moveOn('B');
+
+        answers.B.resolve(rowsOf('B'));
+        await settled();
+
+        assert.equal(instance.isLoading, false, 'one busy flag for both requests, ended by the newest');
+    },
+
+    [`${PAYMENTS}: the notice about the ledger does not follow to the next order`]: async () => {
+        const { instance, refreshes, moveOn } = await loaded();
+        instance.refresh();
+        refreshes.A.resolve(refreshed('A', 'failed'));
+        await settled();
+        assert.equal(instance.ledgerUnreachable, true);
+
+        moveOn('B');
+
+        assert.equal(instance.ledgerUnreachable, false);
+    },
+
+    /* The page: after a refresh the payment card above loads again. */
+
+    'the payment card loads again after a refresh, and a page without one does nothing': async () => {
+        const { methods } = detailsOverride();
+        let loads = 0;
+
+        methods.onLedgerDirectPaymentsRefreshed.call({ $refs: { ledgerDirectPaymentCard: { load() { loads += 1; } } } });
+        assert.equal(loads, 1);
+
+        // The transaction Shopware picked is another payment method's: the card is not rendered.
+        methods.onLedgerDirectPaymentsRefreshed.call({ $refs: {} });
+        assert.equal(loads, 1);
     },
 
     /* The rule is for every component, also one that is added later. */

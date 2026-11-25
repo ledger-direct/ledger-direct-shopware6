@@ -36,7 +36,9 @@
             "amount": "Amount",
             "otherAsset": "Not the requested asset, not credited",
             "none": "No payment recorded for this transaction yet. A new payment shows here after the next sync with the ledger.",
-            "unavailable": "The received payments could not be loaded."
+            "unavailable": "The received payments could not be loaded.",
+            "refresh": "Refresh",
+            "ledgerUnreachable": "The ledger could not be reached. The list may not be up to date."
         },
         "accountCheck": {
             "hint": "Checked: the saved receiving account on the ledger. After saving a change, check again.",

@@ -83,6 +83,30 @@ class AdministrationBuildTest extends TestCase
     }
 
     /**
+     * A route added to a service of the sources without a new build is a button that calls
+     * nothing: the "Refresh" of the received payments would be missing from the card.
+     */
+    public function testTheBuiltScriptCallsEveryRouteOfTheSources(): void
+    {
+        $script = (string) file_get_contents(self::BUILD . '/' . self::json('/.vite/manifest.json')['main.js']['file']);
+        $routes = [];
+
+        foreach ((array) glob(__DIR__ . '/../../../src/Resources/app/administration/src/service/*.js') as $service) {
+            preg_match_all('/`(\/_action\/ledger-direct\/[^`]*)`/', (string) file_get_contents((string) $service), $found);
+            $routes = [...$routes, ...$found[1]];
+        }
+
+        $this->assertContains('/_action/ledger-direct/order/${orderId}/payments/refresh', $routes);
+
+        foreach ($routes as $route) {
+            // The build renames what stands between the fixed parts of a path.
+            foreach ((array) preg_split('/\$\{[^}]*\}/', $route, -1, PREG_SPLIT_NO_EMPTY) as $part) {
+                $this->assertStringContainsString((string) $part, $script, "{$route} is not in the built script; rebuild the administration");
+            }
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private static function json(string $path): array
