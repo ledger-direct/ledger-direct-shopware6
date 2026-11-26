@@ -244,7 +244,7 @@ destination tag; the QR code carries a SEP-7 payment request.
 |---|---|
 | Logo | What the payment page shows in its header: the theme's shop logo, a picture from the media library, or the first letter of the shop name. |
 | Accent colour | The one colour of the payment page — buttons, countdown bar, destination tag — with white text on it, so it must be dark enough (contrast 4.5:1). Default `#1f5eff`; a lighter colour falls back to the default. |
-| Xaman API key, WalletConnect project id | Public identifiers, optional. With one of them, customers on a phone get an "Open in wallet app" button. Restrict them to your shop domain in the respective dashboard. |
+| Xaman API key, WalletConnect project id | Public identifiers, optional. With the Xaman key, customers on a phone get an "Open in wallet app" button. With the WalletConnect project id, every customer gets a "Pay with a wallet app (WalletConnect)" button: it shows a code to scan with a wallet app such as Joey Wallet, and the app is told the shop's name and favicon. Restrict both to your shop domain in the respective dashboard. |
 
 Issuer addresses are not configurable. They are fixed in the core: a wrong issuer would send
 customer funds to a dead trustline.
@@ -296,7 +296,7 @@ about the current transaction.
 
 Behaviour and design come from [`@ledger-direct/payment-ui`](https://github.com/ledger-direct/ledger-direct-payment-ui),
 the package every LedgerDirect plugin shares: the five payment states, the countdown, polling,
-copy buttons, the QR code with address, destination tag and amount, and browser wallets over
+copy buttons, the QR code with address, destination tag and amount, the address and the tag as QR codes of their own, and browser wallets over
 XRPL Connect (Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu, Xyra, and Joey through the package's own adapter; Xaman and WalletConnect
 with the identifiers above). `src/Resources/app/storefront/src/package.json` pins the package's
 tag; `main.js` is the Shopware hull that registers the page as a storefront plugin, and the
