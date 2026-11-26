@@ -244,7 +244,7 @@ destination tag; the QR code carries a SEP-7 payment request.
 |---|---|
 | Logo | What the payment page shows in its header: the theme's shop logo, a picture from the media library, or the first letter of the shop name. |
 | Accent colour | The one colour of the payment page — buttons, countdown bar, destination tag — with white text on it, so it must be dark enough (contrast 4.5:1). Default `#1f5eff`; a lighter colour falls back to the default. |
-| Xaman API key, WalletConnect project id | Public identifiers, optional. With the Xaman key, customers on a phone get an "Open in wallet app" button. With the WalletConnect project id, every customer gets a "Pay with a wallet app (WalletConnect)" button: it shows a code to scan with a wallet app such as Joey Wallet, and the app is told the shop's name and favicon. Restrict both to your shop domain in the respective dashboard. |
+| Xaman API key, WalletConnect project id | Public identifiers, optional. With the Xaman key, customers on a phone get an "Open in wallet app" button. With the WalletConnect project id, every customer paying on the XRP Ledger gets a "Pay with a wallet app (WalletConnect)" button (the wallet section is the XRP Ledger's: none on Xahau or Stellar, and none once the amount has expired): it shows a code to scan with a wallet app such as Joey Wallet, and the app is told the shop's name and favicon. Restrict both to your shop domain in the respective dashboard. |
 
 Issuer addresses are not configurable. They are fixed in the core: a wrong issuer would send
 customer funds to a dead trustline.
