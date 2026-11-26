@@ -1,4 +1,20 @@
 # Unreleased
+- Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.6.0 statt 0.5.0.
+  - **WalletConnect funktioniert und hat einen eigenen Button.** Mit einer WalletConnect-Projekt-ID
+    steht „Mit Wallet-App bezahlen (WalletConnect)“ über „Mit Browser-Wallet bezahlen“, auf jeder
+    Bildschirmbreite, und öffnet den Dialog von WalletConnect mit dem Code zum Scannen. Bisher zeigte
+    der Klick nichts zum Scannen. Die Wallet-App erfährt Name und Favicon des Shops statt des
+    Hostnamens. Der Button „In Wallet-App öffnen“ auf dem Handy gehört jetzt allein Xaman; bisher
+    öffnete er WalletConnect, wenn kein Xaman-Schlüssel gesetzt war.
+  - **Adresse und Destination Tag als eigene QR-Codes,** in einem Dialog neben ihren Kopier-Buttons,
+    für Wallets, deren Scanner ein Feld nach dem anderen füllt (Joey Wallet liest keine
+    Zahlungsanfrage).
+  - Die Überschrift über dem QR-Code nennt auf dem XRP Ledger und auf Xahau Xaman („Mit Xaman
+    scannen“), die Bildunterschrift auf dem XRP Ledger ebenso; Stellar behält „Mit Wallet-App
+    scannen“. Die Bildunterschrift steht zentriert unter dem Code, das „oder“ zwischen den
+    Alternativen ist größer, die Wallet-Meldung zentriert.
+  - Im Build ändern sich nur ledger-direct.js und die Kopie des Stylesheets; die übrigen Chunks sind
+    byte-identisch.
 - Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.5.0 statt 0.4.2. Die Browser-Erweiterung
   von Joey Wallet steht in der Wallet-Liste, wenn sie installiert ist; sie verbindet sich auf dem
   Netz der Seite, zahlt auf keinem anderen, und eine Verbindung, die Joey beendet (Zugriff
