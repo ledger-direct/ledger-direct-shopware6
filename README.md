@@ -297,7 +297,7 @@ about the current transaction.
 Behaviour and design come from [`@ledger-direct/payment-ui`](https://github.com/ledger-direct/ledger-direct-payment-ui),
 the package every LedgerDirect plugin shares: the five payment states, the countdown, polling,
 copy buttons, the QR code with address, destination tag and amount, and browser wallets over
-XRPL Connect (Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu, Xyra; Xaman and WalletConnect
+XRPL Connect (Crossmark, GemWallet, MetaMask Snap, Ledger, Otsu, Xyra, and Joey through the package's own adapter; Xaman and WalletConnect
 with the identifiers above). `src/Resources/app/storefront/src/package.json` pins the package's
 tag; `main.js` is the Shopware hull that registers the page as a storefront plugin, and the
 template renders the package's markup contract (`src/README.md` there). Every sentence a customer

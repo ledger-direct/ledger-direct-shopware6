@@ -1,4 +1,11 @@
 # Unreleased
+- The payment page uses @ledger-direct/payment-ui 0.5.0 instead of 0.4.2. Joey Wallet's browser
+  extension is offered in the wallet list when it is installed; it connects on the page's network,
+  pays nothing on another, and a connection Joey ends (access revoked, account gone, network
+  switched) is forgotten, so the next click asks Joey again. A wallet error (another network, a
+  wallet that does not respond, a failed payment) now shows as a warning box instead of grey text
+  under the hint, where it went unseen. Only ledger-direct.js and the stylesheet copy change; the
+  wallet chunk and the other chunks are byte-identical.
 - After a customer changes the payment method of an order (in the account under "Change payment
   method", or with the second try after a failed payment), the payment page shows the new payment.
   Before, page and status check looked at the order's first transaction, which Shopware cancels on a

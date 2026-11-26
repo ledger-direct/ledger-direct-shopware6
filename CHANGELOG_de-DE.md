@@ -1,4 +1,12 @@
 # Unreleased
+- Die Zahlungsseite nutzt @ledger-direct/payment-ui 0.5.0 statt 0.4.2. Die Browser-Erweiterung
+  von Joey Wallet steht in der Wallet-Liste, wenn sie installiert ist; sie verbindet sich auf dem
+  Netz der Seite, zahlt auf keinem anderen, und eine Verbindung, die Joey beendet (Zugriff
+  entzogen, Konto entfernt, Netz gewechselt), wird vergessen, sodass der nächste Klick Joey neu
+  fragt. Ein Wallet-Fehler (anderes Netz, Wallet antwortet nicht, Zahlung fehlgeschlagen) erscheint
+  jetzt als Warnkasten statt als graue Zeile unter dem Hinweis, wo er übersehen wurde. Nur
+  ledger-direct.js und die Kopie des Stylesheets ändern sich; der Wallet-Chunk und die übrigen
+  Chunks sind byte-identisch.
 - Wechselt ein Kunde nach der Bestellung die Zahlungsart (im Konto über „Zahlungsart ändern“ oder mit
   dem zweiten Versuch nach einer fehlgeschlagenen Zahlung), zeigt die Zahlungsseite die neue Zahlung.
   Bisher sahen Seite und Statusabfrage auf die erste Transaktion der Bestellung, die Shopware beim
