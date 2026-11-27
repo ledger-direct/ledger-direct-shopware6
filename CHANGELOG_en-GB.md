@@ -1,4 +1,4 @@
-# Unreleased
+# 1.12.0
 - The setting "WalletConnect project ID" explains where the ID comes from (dashboard.reown.com) and
   links to the new README section "Setting up WalletConnect": account, project, domain allowlist and a
   check, step by step. Every shop needs its own project ID.
