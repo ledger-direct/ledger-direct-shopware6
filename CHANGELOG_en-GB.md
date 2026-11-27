@@ -1,3 +1,14 @@
+# Unreleased
+- Needs `hardcastle/ledger-direct-core` 0.13.
+- In preparation for refunds, the update creates two tables, `ledger_direct_xrpl_refund` and
+  `ledger_direct_xahau_refund`. Nothing writes to them yet and nothing in the shop changes. They are
+  kept on uninstall, like the destination-tag counter: a refund's row will hold what is nowhere on the
+  ledger (which order a payment was for, who confirmed where the money goes back to, whether the refund
+  is booked), and without it a payment could be refunded in full a second time.
+- An XRP Ledger or Xahau node that reports success without a list of transactions counts as a failed
+  sync, no longer as "nothing new" (core 0.13). The payment page goes on with what is stored, and
+  "Refresh" on the order says that the list may not be up to date. A working node always sends the list.
+
 # 1.12.0
 - The setting "WalletConnect project ID" explains where the ID comes from (dashboard.reown.com) and
   links to the new README section "Setting up WalletConnect": account, project, domain allowlist and a

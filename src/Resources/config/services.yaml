@@ -388,3 +388,89 @@ services:
             - '@ledger_direct.xahau.intents'
             - '@ledger_direct.xahau.sync'
             - '@ledger_direct.xahau.sync_throttle'
+
+    # Refunds (core 0.13), one stack per chain that speaks the XRPL protocol: its own table, node and
+    # throttle, nothing shared with the other chain. The arguments are named, so a chain cannot slip
+    # into another argument's place. Nothing uses these services yet; they are public until the
+    # refund routes do, because the container removes a private service nobody asks for, and the
+    # wiring could then not be tested.
+    Hardcastle\LedgerDirect\Port\DbalRefundRepository:
+        public: true
+        arguments:
+            $connection: '@Doctrine\DBAL\Connection'
+            $chain: 'XRPL'
+
+    # Finds the refunds' payments on the ledger. Its place in the paying account's history is kept
+    # in the cache; without one every pass would start at the oldest watched refund again.
+    Hardcastle\LedgerDirect\Core\Xrpl\RefundReconciler:
+        public: true
+        arguments:
+            $client: '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
+            $refunds: '@Hardcastle\LedgerDirect\Port\DbalRefundRepository'
+            $logger: '@logger'
+            $cache: '@ledger_direct.rate_cache'
+            $chain: 'XRPL'
+
+    # The reconciler is passed in: left out, the service would build one of its own without the cache.
+    # The reference key makes a refund's reference computable again from the payment it refunds.
+    Hardcastle\LedgerDirect\Core\Xrpl\RefundService:
+        public: true
+        arguments:
+            $client: '@Hardcastle\LedgerDirect\Core\Xrpl\XrplClient'
+            $transactions: '@Hardcastle\LedgerDirect\Port\DbalXrplTransactionRepository'
+            $refunds: '@Hardcastle\LedgerDirect\Port\DbalRefundRepository'
+            $logger: '@logger'
+            $chain: 'XRPL'
+            $referenceKey: '%kernel.secret%'
+            $reconciler: '@Hardcastle\LedgerDirect\Core\Xrpl\RefundReconciler'
+
+    # A key space of its own: looking for a refund's payment and the payment sync of the same
+    # account do not hold each other back.
+    ledger_direct.xrpl.refund_throttle:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle
+        public: true
+        arguments:
+            $cache: '@ledger_direct.rate_cache'
+            $logger: '@logger'
+            $intervalSeconds: !php/const Hardcastle\LedgerDirect\Core\Payment\PaymentStatus::MIN_SYNC_INTERVAL_SECONDS
+            $chain: 'XRPL'
+            $purpose: 'refund'
+
+    ledger_direct.xahau.refund_repository:
+        class: Hardcastle\LedgerDirect\Port\DbalRefundRepository
+        public: true
+        arguments:
+            $connection: '@Doctrine\DBAL\Connection'
+            $chain: 'XAHAU'
+
+    ledger_direct.xahau.refund_reconciler:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\RefundReconciler
+        public: true
+        arguments:
+            $client: '@ledger_direct.xahau.client'
+            $refunds: '@ledger_direct.xahau.refund_repository'
+            $logger: '@logger'
+            $cache: '@ledger_direct.rate_cache'
+            $chain: 'XAHAU'
+
+    ledger_direct.xahau.refunds:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\RefundService
+        public: true
+        arguments:
+            $client: '@ledger_direct.xahau.client'
+            $transactions: '@ledger_direct.xahau.transaction_repository'
+            $refunds: '@ledger_direct.xahau.refund_repository'
+            $logger: '@logger'
+            $chain: 'XAHAU'
+            $referenceKey: '%kernel.secret%'
+            $reconciler: '@ledger_direct.xahau.refund_reconciler'
+
+    ledger_direct.xahau.refund_throttle:
+        class: Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle
+        public: true
+        arguments:
+            $cache: '@ledger_direct.rate_cache'
+            $logger: '@logger'
+            $intervalSeconds: !php/const Hardcastle\LedgerDirect\Core\Payment\PaymentStatus::MIN_SYNC_INTERVAL_SECONDS
+            $chain: 'XAHAU'
+            $purpose: 'refund'

@@ -189,6 +189,9 @@ and the destination-tag counter); activating the plugin switches the payment met
 them to sales channels is still yours to do (see Configuration). Uninstalling deactivates the payment methods and
 deliberately **keeps** the tables: the destination-tag counter cannot be reconstructed, and reusing
 tags would match new orders against old payments.
+The same holds for the two refund tables (`ledger_direct_xrpl_refund`, `ledger_direct_xahau_refund`),
+which the plugin creates and does not use yet: a refund's row will hold what is nowhere on the ledger,
+such as which order a payment was for and who confirmed where the money goes back to.
 
 Updates run the plugin's migrations through Shopware's usual `plugin:update`.
 

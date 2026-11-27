@@ -303,6 +303,25 @@ class ReceivedPaymentsRefreshTest extends TestCase
     }
 
     /**
+     * "Success" without a list of transactions is not "nothing new": since
+     * core 0.13 the sync refuses such an answer, and the card must not show
+     * the stored list as if the ledger had confirmed it.
+     */
+    public function testANodeThatReportsSuccessWithoutAListIsAFailedSync(): void
+    {
+        $this->givenOrder($this->transaction('tx-paid', 'paid', $this->xrpQuote(1001)->withFulfillment('HASH-STORED', 40.0, 'C0000064000100001')));
+        $this->xrplNode->receives(self::ACCOUNT, 'HASH-STORED', 1001, '40000000', 100);
+        $this->xrplTable->saveTransactions($this->asStored($this->xrplNode));
+        $this->xrplNode->withoutList = true;
+
+        $after = $this->refresh();
+
+        $this->assertSame([self::ACCOUNT], $this->xrplNode->asked);
+        $this->assertSame('failed', $after['sync']);
+        $this->assertSame(['HASH-STORED'], array_column($after['transactions'][0]['payments'], 'hash'));
+    }
+
+    /**
      * A second click within the throttle's interval asks no node: what is
      * stored is seconds old. That is no failure and gets no notice.
      */

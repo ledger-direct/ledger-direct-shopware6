@@ -1,3 +1,16 @@
+# Unreleased
+- Benötigt `hardcastle/ledger-direct-core` 0.13.
+- Als Vorbereitung für Erstattungen legt das Update zwei Tabellen an, `ledger_direct_xrpl_refund` und
+  `ledger_direct_xahau_refund`. Noch schreibt nichts hinein, und im Shop ändert sich nichts. Sie bleiben
+  bei einer Deinstallation erhalten, wie der Zähler der Destination Tags: Die Zeile einer Erstattung hält
+  fest, was nirgends auf dem Ledger steht (zu welcher Bestellung eine Zahlung gehörte, wer bestätigt hat,
+  wohin das Geld zurückgeht, ob die Erstattung verbucht ist), und ohne sie ließe sich eine Zahlung ein
+  zweites Mal vollständig erstatten.
+- Meldet ein Knoten des XRP Ledger oder von Xahau Erfolg, ohne eine Liste von Transaktionen zu schicken,
+  gilt der Sync als fehlgeschlagen und nicht mehr als „nichts Neues“ (Core 0.13). Die Zahlungsseite
+  arbeitet mit dem Gespeicherten weiter, und „Aktualisieren“ an der Bestellung sagt, dass die Liste
+  möglicherweise nicht aktuell ist. Ein funktionierender Knoten schickt die Liste immer.
+
 # 1.12.0
 - Die Einstellung „WalletConnect-Projekt-ID“ sagt, woher die ID kommt (dashboard.reown.com), und
   verweist auf den neuen README-Abschnitt „Setting up WalletConnect“: Konto, Projekt, Domain-Freigabe

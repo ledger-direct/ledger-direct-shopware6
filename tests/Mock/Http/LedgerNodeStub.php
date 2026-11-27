@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface;
  * An XRPL or Xahau node for tests that have to know what a sync asked for:
  * it answers `account_tx` with the payments it was given for the account
  * named in the request, remembers every account asked, and can be down for
- * some accounts or for all.
+ * some accounts or for all, or answer without the list.
  *
  * StubHttpClient answers every account alike and never fails, which is all
  * the tests of the quoting and matching need.
@@ -30,6 +30,9 @@ class LedgerNodeStub implements ClientInterface
 
     /** @var list<string> these accounts get no answer */
     public array $downFor = [];
+
+    /** The node reports success and sends no list of transactions. */
+    public bool $withoutList = false;
 
     /**
      * A payment as `account_tx` hands it out.
@@ -62,6 +65,12 @@ class LedgerNodeStub implements ClientInterface
 
         if ($this->down || \in_array($account, $this->downFor, true)) {
             throw new class('The node did not answer.') extends \RuntimeException implements ClientExceptionInterface {};
+        }
+
+        if ($this->withoutList) {
+            return new Response(200, ['Content-Type' => 'application/json'], (string) json_encode([
+                'result' => ['status' => 'success'],
+            ]));
         }
 
         return new Response(200, ['Content-Type' => 'application/json'], (string) json_encode([
