@@ -1,4 +1,7 @@
 # Unreleased
+- The setting "WalletConnect project ID" explains where the ID comes from (dashboard.reown.com) and
+  links to the new README section "Setting up WalletConnect": account, project, domain allowlist and a
+  check, step by step. Every shop needs its own project ID.
 - The card "Received payments" on the order detail has a "Refresh" button. The list shows what the
   shop has synced, and once a transaction is no longer open only the scheduled task syncs its
   receiving account: a second payment on a paid order, or a payment on a cancelled attempt, appeared
