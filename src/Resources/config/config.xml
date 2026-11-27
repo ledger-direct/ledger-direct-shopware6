@@ -386,12 +386,12 @@
             <label lang="nl-NL">WalletConnect-project-ID (optioneel)</label>
             <label lang="es-ES">ID de proyecto de WalletConnect (opcional)</label>
             <label lang="pt-PT">ID de projeto WalletConnect (opcional)</label>
-            <helpText>A public browser identifier, not a secret. Offers WalletConnect wallets; restrict it to your shop domain in the WalletConnect dashboard.</helpText>
-            <helpText lang="de-DE">Eine öffentliche Browser-Kennung, kein Geheimnis. Bietet WalletConnect-Wallets an; im WalletConnect-Dashboard auf die Shop-Domain beschränken.</helpText>
-            <helpText lang="fr-FR">Un identifiant public pour le navigateur, pas un secret. Propose les portefeuilles WalletConnect ; limitez-le au domaine de votre boutique dans le tableau de bord WalletConnect.</helpText>
-            <helpText lang="nl-NL">Een openbare browser-ID, geen geheim. Biedt WalletConnect-wallets aan; beperk de ID tot uw winkeldomein in het WalletConnect-dashboard.</helpText>
-            <helpText lang="es-ES">Un identificador público del navegador, no un secreto. Ofrece carteras WalletConnect; restrínjalo al dominio de su tienda en el panel de WalletConnect.</helpText>
-            <helpText lang="pt-PT">Um identificador público do navegador, não um segredo. Disponibiliza carteiras WalletConnect; restrinja-o ao domínio da loja no painel do WalletConnect.</helpText>
+            <helpText>Your shop's own project ID from dashboard.reown.com (WalletConnect), if you want to offer wallet apps over WalletConnect. Public, not a secret; allow only your shop's domain there. Step by step: https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
+            <helpText lang="de-DE">Die eigene Projekt-ID Ihres Shops von dashboard.reown.com (WalletConnect), wenn Sie Wallet-Apps über WalletConnect anbieten wollen. Öffentlich, kein Geheimnis; lassen Sie dort nur die Domain Ihres Shops zu. Schritt für Schritt: https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
+            <helpText lang="fr-FR">L'ID de projet propre à votre boutique, sur dashboard.reown.com (WalletConnect), si vous souhaitez proposer des applications de portefeuille via WalletConnect. Public, pas un secret ; n'y autorisez que le domaine de votre boutique. Étape par étape : https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
+            <helpText lang="nl-NL">De eigen project-ID van uw winkel van dashboard.reown.com (WalletConnect), als u wallet-apps via WalletConnect wilt aanbieden. Openbaar, geen geheim; sta daar alleen het domein van uw winkel toe. Stap voor stap: https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
+            <helpText lang="es-ES">El ID de proyecto propio de su tienda, de dashboard.reown.com (WalletConnect), si desea ofrecer aplicaciones de cartera mediante WalletConnect. Público, no es un secreto; permita allí solo el dominio de su tienda. Paso a paso: https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
+            <helpText lang="pt-PT">O ID de projeto próprio da loja, de dashboard.reown.com (WalletConnect), para disponibilizar aplicações de carteira através do WalletConnect. Público, não é um segredo; permita lá apenas o domínio da loja. Passo a passo: https://github.com/ledger-direct/ledger-direct-shopware6#setting-up-walletconnect</helpText>
         </input-field>
     </card>
 

@@ -1,4 +1,7 @@
 # Unreleased
+- Die Einstellung „WalletConnect-Projekt-ID“ sagt, woher die ID kommt (dashboard.reown.com), und
+  verweist auf den neuen README-Abschnitt „Setting up WalletConnect“: Konto, Projekt, Domain-Freigabe
+  und eine Prüfung, Schritt für Schritt. Jeder Shop braucht seine eigene Projekt-ID.
 - Die Karte „Eingegangene Zahlungen“ in den Bestelldetails hat eine Schaltfläche „Aktualisieren“. Die
   Liste zeigt, was der Shop synchronisiert hat, und sobald eine Transaktion nicht mehr offen ist,
   gleicht nur noch der Scheduled Task ihr Empfangskonto ab: Eine zweite Zahlung auf eine bezahlte
