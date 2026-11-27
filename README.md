@@ -184,11 +184,13 @@ bin/console cache:clear
 The core is installed into the shop as for the zip. The storefront and administration bundles are
 committed, no build is needed.
 
-Installing creates the three payment methods and two tables for ledger data (synced transactions
-and the destination-tag counter); activating the plugin switches the payment methods on, assigning
-them to sales channels is still yours to do (see Configuration). Uninstalling deactivates the payment methods and
-deliberately **keeps** the tables: the destination-tag counter cannot be reconstructed, and reusing
-tags would match new orders against old payments.
+Installing creates the payment methods and the tables for ledger data (synced transactions and the
+destination-tag counter); activating the plugin switches the payment methods on, assigning them to
+sales channels is still yours to do (see Configuration). Deactivating the plugin switches its payment
+methods off, and activating it again switches all of them on, also one you had switched off yourself
+before. An update leaves them as you set them. Uninstalling switches the payment methods off, keeps
+them for the orders that carry them, and deliberately **keeps** the tables: the destination-tag
+counter cannot be reconstructed, and reusing tags would match new orders against old payments.
 
 Updates run the plugin's migrations through Shopware's usual `plugin:update`.
 

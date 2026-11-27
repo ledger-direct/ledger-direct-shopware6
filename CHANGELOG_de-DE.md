@@ -1,3 +1,15 @@
+# Unreleased
+- Das Deaktivieren oder Deinstallieren des Plugins schaltet seine Zahlarten ab. Bisher blieben sie an,
+  und bei inaktivem Plugin lief dessen Filter im Checkout nicht mehr: Ein Shop, der sie einem
+  Verkaufskanal zugeordnet hatte, bot XRP, RLUSD, USDC und XAH weiter an, ohne dass etwas dahinter
+  stand. Die Zahlarten selbst bleiben erhalten, für die Bestellungen, die sie tragen.
+- Das Aktivieren des Plugins schaltet seine Zahlarten ein, wie es die README schon immer sagt; bisher
+  musste jede unter Einstellungen → Zahlungsarten eingeschaltet werden. Angeboten wird eine Zahlart
+  weiterhin nur, wenn ihre Chain eingeschaltet ist, eine Empfangsadresse hat und die Zahlart dem
+  Verkaufskanal zugeordnet ist. Das Aktivieren schaltet alle ein, auch eine, die Sie vor dem
+  Deaktivieren des Plugins selbst abgeschaltet hatten; ein Update lässt sie, wie Sie sie eingestellt
+  haben.
+
 # 1.12.0
 - Die Einstellung „WalletConnect-Projekt-ID“ sagt, woher die ID kommt (dashboard.reown.com), und
   verweist auf den neuen README-Abschnitt „Setting up WalletConnect“: Konto, Projekt, Domain-Freigabe
