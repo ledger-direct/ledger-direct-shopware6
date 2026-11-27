@@ -36,7 +36,9 @@
             "amount": "Montant",
             "otherAsset": "Pas l'actif demandé, non crédité",
             "none": "Aucun paiement n'est encore enregistré pour cette transaction. Un nouveau paiement apparaît ici après la prochaine synchronisation avec le registre.",
-            "unavailable": "Les paiements reçus n'ont pas pu être chargés."
+            "unavailable": "Les paiements reçus n'ont pas pu être chargés.",
+            "refresh": "Actualiser",
+            "ledgerUnreachable": "Le registre n'a pas pu être joint. La liste n'est peut-être pas à jour."
         },
         "accountCheck": {
             "hint": "Vérification du compte de réception enregistré, sur le registre. Après l'enregistrement d'une modification, vérifiez à nouveau.",

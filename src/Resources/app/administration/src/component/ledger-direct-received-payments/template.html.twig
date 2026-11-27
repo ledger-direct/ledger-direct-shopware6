@@ -6,10 +6,32 @@
     :title="$tc('ledger-direct.receivedPayments.title')"
     :is-loading="isLoading"
 >
+    {% block ledger_direct_received_payments_refresh %}
+    <template #headerRight>
+        <mt-button
+            class="ledger-direct-received-payments__refresh"
+            size="small"
+            variant="secondary"
+            :disabled="isLoading"
+            @click="refresh"
+        >
+            {{ $tc('ledger-direct.receivedPayments.refresh') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+
     {% block ledger_direct_received_payments_problem %}
     <p v-if="failed" class="ledger-direct-received-payments__note">
         {{ $tc('ledger-direct.receivedPayments.unavailable') }}
     </p>
+    <mt-banner
+        v-if="ledgerUnreachable"
+        class="ledger-direct-received-payments__ledger-unreachable"
+        variant="attention"
+        :closable="false"
+    >
+        {{ $tc('ledger-direct.receivedPayments.ledgerUnreachable') }}
+    </mt-banner>
     {% endblock %}
 
     {% block ledger_direct_received_payments_transactions %}

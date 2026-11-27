@@ -3,6 +3,7 @@
 
     <ledger-direct-payment-card
         v-if="transaction && isLedgerDirectTransaction"
+        ref="ledgerDirectPaymentCard"
         :order-transaction-id="transaction.id"
     />
 
@@ -10,5 +11,6 @@
         v-if="ledgerDirectReceivedPaymentsKey"
         :key="ledgerDirectReceivedPaymentsKey"
         :order-id="orderId"
+        @refreshed="onLedgerDirectPaymentsRefreshed"
     />
 {% endblock %}

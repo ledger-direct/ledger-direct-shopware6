@@ -116,6 +116,21 @@ is listed and marked as not credited. The list is what the shop has synced from 
 page, status endpoint, scheduled task), and only payments on the network the transaction was quoted
 for.
 
+Once a transaction is no longer open, only the scheduled task syncs its receiving account, so a
+second payment on a paid order, or a payment on a cancelled attempt, shows up with the task's next
+run. **Refresh** in the card fetches it now: the shop asks the ledger for the receiving account of
+every LedgerDirect transaction of the order (the account each one was quoted for, also after the
+configured one has changed), each account once and throttled like every sync, and shows the list
+again. A transaction that is still open gets its state from what was found, as on the payment page,
+and the LedgerDirect card above loads again; a transaction that is closed keeps its state. If a node
+cannot be reached, the card shows what is stored and says that the list may not be up to date; a
+click inside the throttle's five seconds asks no node and says nothing. The button needs no more
+than the right to read the order (`POST /api/_action/ledger-direct/order/{orderId}/payments/refresh`,
+which answers the list plus `sync`: `synced`, `throttled` or `failed`). A state it brings about is
+recorded like one the scheduled task sets, without a user. Shopware's own state selection on the
+page shows a new state once the order is opened again: the page works on a draft of the order,
+taken when it was opened.
+
 The page asks the server every 8 seconds. That endpoint syncs with the XRPL node at most once every
 5 seconds per receiving account, whatever the number of customers waiting; in between it answers
 from what is already stored. A guest order can poll too — the link carries the order's deep link

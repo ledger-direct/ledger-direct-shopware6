@@ -36,7 +36,9 @@
             "amount": "Betrag",
             "otherAsset": "Nicht das geforderte Asset, nicht angerechnet",
             "none": "Für diese Transaktion ist noch keine Zahlung erfasst. Eine neue Zahlung erscheint hier nach dem nächsten Abgleich mit dem Ledger.",
-            "unavailable": "Die eingegangenen Zahlungen konnten nicht geladen werden."
+            "unavailable": "Die eingegangenen Zahlungen konnten nicht geladen werden.",
+            "refresh": "Aktualisieren",
+            "ledgerUnreachable": "Das Ledger war nicht erreichbar. Die Liste ist möglicherweise nicht aktuell."
         },
         "accountCheck": {
             "hint": "Geprüft wird das gespeicherte Empfangskonto auf dem Ledger. Nach dem Speichern einer Änderung erneut prüfen.",

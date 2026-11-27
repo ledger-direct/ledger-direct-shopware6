@@ -34,4 +34,31 @@ class AdministrationTemplateTest extends TestCase
 
         $this->assertGreaterThan(0, $checked, 'no component with a date found; has the test lost its subject?');
     }
+
+    /**
+     * The "Refresh" button of the received payments: it calls the component's
+     * refresh(), and is disabled while a request runs.
+     */
+    public function testTheReceivedPaymentsCardHasItsRefreshButton(): void
+    {
+        $template = (string) file_get_contents(self::COMPONENTS . '/ledger-direct-received-payments/template.html.twig');
+
+        $this->assertSame(1, preg_match('/<mt-button\b[^>]*>\s*\{\{ \$tc\(\'ledger-direct\.receivedPayments\.refresh\'\) \}\}/', $template, $button), 'no button with the refresh label');
+        $this->assertStringContainsString('@click="refresh"', $button[0]);
+        $this->assertStringContainsString(':disabled="isLoading"', $button[0]);
+        $this->assertSame(1, preg_match('/<mt-banner\b[^>]*v-if="ledgerUnreachable"[^>]*>\s*\{\{ \$tc\(\'ledger-direct\.receivedPayments\.ledgerUnreachable\'\) \}\}/', $template), 'no notice for a ledger that could not be reached');
+    }
+
+    /**
+     * After a refresh the payment card above loads again: the list tells the
+     * page, and the page has the card to tell. What the two do with it,
+     * administration-load-order.mjs runs.
+     */
+    public function testThePageHandsARefreshToThePaymentCard(): void
+    {
+        $page = (string) file_get_contents(self::COMPONENTS . '/../view/sw-order-detail-details/template.html.twig');
+
+        $this->assertSame(1, preg_match('/<ledger-direct-received-payments\b[^>]*@refreshed="onLedgerDirectPaymentsRefreshed"/', $page), 'the list\'s refresh is not heard');
+        $this->assertSame(1, preg_match('/<ledger-direct-payment-card\b[^>]*ref="ledgerDirectPaymentCard"/', $page), 'the payment card cannot be reached');
+    }
 }

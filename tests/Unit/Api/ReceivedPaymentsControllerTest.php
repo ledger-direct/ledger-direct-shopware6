@@ -23,11 +23,13 @@ use Hardcastle\LedgerDirect\Core\Xrpl\SyncThrottle;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplClient;
 use Hardcastle\LedgerDirect\Core\Xrpl\XrplTransaction;
 use Hardcastle\LedgerDirect\Service\OrderTransactionService;
+use Hardcastle\LedgerDirect\Service\PaymentStateService;
 use Hardcastle\LedgerDirect\Tests\Mock\Http\StubHttpClient;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderCollection;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
@@ -279,23 +281,27 @@ class ReceivedPaymentsControllerTest extends TestCase
         $config = new FakeConfigProvider();
         $cache = new InMemoryCache();
 
-        return new ReceivedPaymentsController(
-            new OrderTransactionService(
-                $orders,
-                $this->createStub(EntityRepository::class),
-                $this->createStub(EntityRepository::class),
-                new PaymentIntentService($prices, new DestinationTagService($this->xrplTable), $config),
-                new SyncService(new XrplClient($this->httpClient, $httpFactory, $httpFactory), $this->xrplTable, $logger),
-                new StellarPaymentIntentService($prices, new MemoIdService($this->stellarTable), $config),
-                new StellarSyncService(new HorizonClient($this->httpClient, $httpFactory), $this->stellarTable, $logger),
-                new SyncThrottle($cache, $logger),
-                $logger,
-                new PaymentIntentService($prices, new DestinationTagService($this->xahauTable), $config, null, 'XAHAU'),
-                new SyncService(new XrplClient($this->httpClient, $httpFactory, $httpFactory, 'XAHAU'), $this->xahauTable, $logger, null, 'XAHAU'),
-                new SyncThrottle($cache, $logger, chain: 'XAHAU')
-            ),
-            new SettlementPolicy()
+        $settlementPolicy = new SettlementPolicy();
+        $service = new OrderTransactionService(
+            $orders,
+            $this->createStub(EntityRepository::class),
+            $this->createStub(EntityRepository::class),
+            new PaymentIntentService($prices, new DestinationTagService($this->xrplTable), $config),
+            new SyncService(new XrplClient($this->httpClient, $httpFactory, $httpFactory), $this->xrplTable, $logger),
+            new StellarPaymentIntentService($prices, new MemoIdService($this->stellarTable), $config),
+            new StellarSyncService(new HorizonClient($this->httpClient, $httpFactory), $this->stellarTable, $logger),
+            new SyncThrottle($cache, $logger),
+            $logger,
+            new PaymentIntentService($prices, new DestinationTagService($this->xahauTable), $config, null, 'XAHAU'),
+            new SyncService(new XrplClient($this->httpClient, $httpFactory, $httpFactory, 'XAHAU'), $this->xahauTable, $logger, null, 'XAHAU'),
+            new SyncThrottle($cache, $logger, chain: 'XAHAU')
         );
+
+        // The list sets no state; a handler that is asked to fails the test.
+        $stateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $stateHandler->expects($this->never())->method($this->anything());
+
+        return new ReceivedPaymentsController($service, $settlementPolicy, new PaymentStateService($stateHandler, $service, $settlementPolicy, $logger));
     }
 
     /**
