@@ -281,15 +281,19 @@ It comes from Reown, the company behind WalletConnect.
 
 1. Sign in at [dashboard.reown.com](https://dashboard.reown.com), or create an account there.
 2. Create a project with **New Project** and give it your shop's name.
-3. Copy the project's **Project ID** and paste it into **WalletConnect project ID** in Settings → Extensions → My
-   extensions → LedgerDirect → Configure, card "LedgerDirect – Payment page".
-4. In the project, open **Configuration**, go to **Domain**, click **+ Domain**, enter your shop's address as
-   scheme and host (`https://shop.example.com`, a port only if the shop uses one) and click **Allowlist**. Add every
-   other address the payment page is served from, such as a staging shop. Reown then refuses requests from any other
-   origin ("Invalid App Configuration"), so nobody else can use your project ID.
-5. Check it: place an order, open the payment page and click **Pay with a wallet app (WalletConnect)**. A dialog with
-   a code opens; scan it with a wallet app that supports the XRP Ledger over WalletConnect, such as Joey Wallet. The
-   app shows your shop's name and the theme's favicon.
+3. Copy the project's **Project ID**, paste it into **WalletConnect project ID** in Settings → Extensions → My
+   extensions → LedgerDirect → Configure, card "LedgerDirect – Payment page", and click **Save**. The ID is read from
+   the global configuration (All Sales Channels) and applies to every sales channel: with several on different
+   domains, put every domain on the project's allowlist (step 4).
+4. In the project, open **Configuration**, go to **Domain**, click **+ Domain**, enter your shop's address as scheme
+   and host (`https://shop.example.com`, a port only if the shop uses one) and click **Allowlist**. Add every other
+   address the payment page is served from, such as a staging shop. Reown then refuses requests from other origins
+   ("Invalid App Configuration"), so other sites cannot use your project ID; only `localhost` is always allowed, and
+   while the list is empty, every origin is. A change to the list takes up to 15 minutes to apply.
+5. Check it, at least 15 minutes after the last change to the allowlist: place an order, open the payment page and
+   click **Pay with a wallet app (WalletConnect)**. A dialog with a code opens; scan it with a wallet app that
+   supports the XRP Ledger over WalletConnect, such as Joey Wallet. The app shows your shop's name and the theme's
+   favicon.
 
 The project ID is public, like the Xaman API key: it is in the page source of every payment page. Without one, the
 WalletConnect button is not shown; the Xaman code, the address and destination tag, and the browser wallets work as
