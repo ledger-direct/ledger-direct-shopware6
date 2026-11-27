@@ -1,3 +1,14 @@
+# Unreleased
+- Deactivating or uninstalling the plugin switches its payment methods off. They stayed on before,
+  and with the plugin inactive its checkout filter no longer ran: a shop that had assigned them to a
+  sales channel went on offering XRP, RLUSD, USDC and XAH with nothing behind them. The methods
+  themselves stay, for the orders that carry them.
+- Activating the plugin switches its payment methods on, as the README has always said; before, each
+  had to be switched on under Settings → Payment methods. A method is still offered only while its
+  chain is on, has a receiving address, and the method is assigned to the sales channel. Activating
+  switches all of them on, also one you had switched off yourself before the plugin was deactivated;
+  an update leaves them as you set them.
+
 # 1.12.0
 - The setting "WalletConnect project ID" explains where the ID comes from (dashboard.reown.com) and
   links to the new README section "Setting up WalletConnect": account, project, domain allowlist and a
