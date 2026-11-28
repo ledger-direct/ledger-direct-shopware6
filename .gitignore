@@ -16,3 +16,6 @@ NOTES.md
 /Handover-*.md
 /CLAUDE.md
 /var/
+
+# The decision register, cloned by bin/decisions. It is private: never commit it.
+/.decisions/
