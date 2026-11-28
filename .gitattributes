@@ -13,3 +13,6 @@
 /makefile         export-ignore
 /payment_page.png export-ignore
 /.coderabbit.yaml export-ignore
+/bin                     export-ignore
+/AGENTS.md               export-ignore
+/docs/adr                export-ignore

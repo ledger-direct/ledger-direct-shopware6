@@ -16,3 +16,8 @@ NOTES.md
 /Handover-*.md
 /CLAUDE.md
 /var/
+
+# The decision register, cloned by bin/decisions, and the local snapshot that
+# bin/decisions --write can produce. The register is private: never commit either.
+/.decisions/
+/docs/adr/APPLICABLE.md
